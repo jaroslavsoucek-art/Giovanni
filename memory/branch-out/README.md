@@ -73,7 +73,7 @@ These rules are repeated here verbatim from `docs/prediction.md` and the constit
 8. Agent writes draft decision record to `memory/decisions/<date>-<slug>.md`.
 9. Principal fills decision record + commits separately.
 
-The full `/branch-out` workflow spec lives at `.claude/commands/branch-out.template.md`.
+The full `/branch-out` command spec lives at `.claude/commands/branch-out.md`.
 
 ---
 
@@ -113,6 +113,6 @@ If you see any of these in a branch-out artifact, the artifact is **broken**:
 - **Triage heuristic:** `memory/triage-heuristic.yaml`
 - **Shadow hypotheses:** `memory/shadow/README.md`
 - **Calibration scoring:** `memory/calibration/README.md`
-- **Slash command spec:** `.claude/commands/branch-out.template.md`
+- **Slash command spec:** `.claude/commands/branch-out.md`
 - **Full predictive-layer documentation:** `docs/prediction.md`
 - **Constitution governance section:** `knowledge/<constitution-file>.md` § "Predictive layer governance"

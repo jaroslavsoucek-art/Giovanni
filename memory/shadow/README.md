@@ -131,8 +131,8 @@ Shadow hypotheses are **never deleted**. They feed calibration in perpetuity. Af
 - **Template:** `memory/templates/shadow-hypothesis.template.md`
 - **Triage heuristic (specificity_gate):** `memory/triage-heuristic.yaml`
 - **Calibration aggregation:** `memory/calibration/README.md`
-- **/shadow-review slash command:** `.claude/commands/shadow-review.template.md`
-- **/calibration-report slash command:** `.claude/commands/calibration-report.template.md`
+- **/shadow-review slash command:** `.claude/commands/shadow-review.md`
+- **/calibration-report slash command:** `.claude/commands/calibration-report.md`
 - **Full predictive-layer documentation:** `docs/prediction.md`
 - **Branch-out artifacts that spawn shadows:** `memory/branch-out/`
 - **Constitution governance section:** `knowledge/<constitution-file>.md` § "Predictive layer governance"

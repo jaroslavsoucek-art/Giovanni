@@ -457,4 +457,4 @@ Next action for principal: <one sentence>
 - **Triage heuristic:** `memory/triage-heuristic.yaml`
 - **Lint rules:** `scripts/lint_rules/no_percentages_in_predictions.py`, `branch_out_no_recommendation.py`, `shadow_expired_pending.py`
 - **Full predictive layer doc:** `docs/prediction.md`
-- **Slash command specs:** `.claude/commands/branch-out.template.md`, `shadow-review.template.md`, `calibration-report.template.md`
+- **Slash command specs:** `.claude/commands/branch-out.md`, `shadow-review.md`, `calibration-report.md`

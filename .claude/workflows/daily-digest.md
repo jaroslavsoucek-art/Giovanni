@@ -428,7 +428,7 @@ If the principal verbally says "X changed" in chat:
 After digest render, the principal sees active candidates in "Active branch-out candidates". To execute:
 
 1. Principal runs `/branch-out <situation-slug>`.
-2. The `/branch-out` workflow runs per `.claude/commands/branch-out.template.md`.
+2. The `/branch-out` command runs per `.claude/commands/branch-out.md`.
 3. Output: branch-out artifact in `memory/branch-out/` + decision record draft in `memory/decisions/`.
 4. Principal fills the decision record (`chosen_move`, `reasoning`, `trigger_conditions`) and commits with `decision:` prefix.
 

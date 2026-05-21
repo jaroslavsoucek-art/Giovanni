@@ -243,7 +243,7 @@ Agent runs once, output is treated as final. No adversarial review. No spot-chec
 
 Slash commands route through `prediction-runtime` (for `/branch-out`, `/shadow-review`, `/calibration-report`) or directly invoke other agents (`/market-radar` → `market-radar`; `/consistency-check` → `consistency-checker`).
 
-Slash command runtime implementation belongs to `slash-command-architect`'s domain (pending). For now, the slash command spec templates in `.claude/commands/*.template.md` document the contract.
+Slash command runtime implementation lives in `.claude/commands/*.md` (one file per command). Each file is a thin invocation shell — pre-flight, argument parsing, agent routing. The mechanics live in the agents and workflows. See [`docs/slash-commands.md`](slash-commands.md) for design patterns + argument conventions and [`.claude/commands/README.md`](../.claude/commands/README.md) for the registry.
 
 ### Daily digest
 

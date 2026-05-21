@@ -138,7 +138,7 @@ If you see any of these, calibration discipline has broken:
 - **Shadow hypotheses (the input):** `memory/shadow/README.md`
 - **Branch-out (where some hypotheses originate):** `memory/branch-out/README.md`
 - **Slash commands:** 
-  - `.claude/commands/calibration-report.template.md`
-  - `.claude/commands/shadow-review.template.md`
+  - `.claude/commands/calibration-report.md`
+  - `.claude/commands/shadow-review.md`
 - **Full predictive-layer documentation:** `docs/prediction.md`
 - **Constitution governance section:** `knowledge/<constitution-file>.md` § "Predictive layer governance"

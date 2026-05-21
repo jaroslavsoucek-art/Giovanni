@@ -306,9 +306,9 @@ Fix: the tiers are no longer testing what they should. Re-read actor profile, re
   - `memory/shadow/README.md`
   - `memory/calibration/README.md`
 - **Slash commands:**
-  - `.claude/commands/branch-out.template.md`
-  - `.claude/commands/shadow-review.template.md`
-  - `.claude/commands/calibration-report.template.md`
+  - `.claude/commands/branch-out.md`
+  - `.claude/commands/shadow-review.md`
+  - `.claude/commands/calibration-report.md`
 - **Lint rules:**
   - `scripts/lint_rules/no_percentages_in_predictions.py`
   - `scripts/lint_rules/shadow_expired_pending.py`
