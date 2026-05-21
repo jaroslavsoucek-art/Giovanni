@@ -33,7 +33,7 @@ Single-session hobby build over a few hours. Each architect: write spec → spaw
 
 3. **Slash command runtime parser.** Argument syntax is documented per-command; the actual `$ARGUMENTS` parsing is the Claude Code runtime's job. If forks need a shared parser utility, that's a `scripts/` addition for Setup2.
 
-4. **Setup-guide for fork-to-domain.** `docs/setup-guide.md` is not yet written. Setup2 will write this as it learns what's actually needed to fork cleanly.
+4. **Setup-guide for fork-to-domain.** `docs/setup-guide.md` exists as a WIP stub (added 2026-05-21 post-audit) — 10-step walkthrough + month-by-month expectations + 5 failure modes. **Architect-side intent, not battle-tested.** Setup2 (first real fork) is the validation pass; the guide updates as actual friction surfaces.
 
 5. **CI/CD integration.** `scripts/install-hooks.sh` exists for pre-commit; no GitHub Actions or other CI wiring.
 

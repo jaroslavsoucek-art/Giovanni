@@ -63,9 +63,28 @@ Required body sections (workflow stress-tested):
 
 **Tool:** invoke `profile-bootstrap` agent for any stakeholder you want auto-populated from chat/email/calendar/project-tracker signal. See [`.claude/agents/profile-bootstrap.md`](../.claude/agents/profile-bootstrap.md).
 
-## Step 4 — Configure signal sources
+## Step 4 — Configure runtime state files from templates
 
-Open `memory/digest-sources.template.md`, rename to `memory/digest-sources.md`, configure your actual sources.
+**Important:** Giovanni's templates use hyphens (`digest-sources.template.md`), runtime files use underscores (`digest_sources.md`). Naming is inconsistent — match runtime paths shown below exactly, don't auto-rename.
+
+Copy three template files to their runtime locations:
+
+```bash
+# Digest sources config (runtime file uses underscore!)
+cp memory/digest-sources.template.md memory/digest_sources.md
+
+# Digest state (runtime file uses underscore!)
+cp memory/digest-state.template.md memory/digest_state.md
+
+# Triage heuristic (runtime keeps hyphen — different convention)
+cp memory/triage-heuristic.template.yaml memory/triage-heuristic.yaml
+```
+
+Verification: `bash scripts/lint.sh` should still be clean. `/digest` pre-flight will read `memory/digest_sources.md` and `memory/digest_state.md`. `/branch-out` pre-flight will read `memory/triage-heuristic.yaml`.
+
+### Configure digest sources
+
+Open `memory/digest_sources.md` (the file you just copied). Replace template entries with your actual sources.
 
 `source_type` enum (generic) maps to your actual tools:
 - `chat-platform` → Slack / Teams / Discord / etc.
@@ -77,6 +96,14 @@ Open `memory/digest-sources.template.md`, rename to `memory/digest-sources.md`, 
 - `documentation-platform` → Confluence / Notion / SharePoint / etc.
 
 **Discipline:** quality > quantity. 3-5 well-targeted sources beat 10 noisy ones. First-pass: configure 2-3 most-trafficked, iterate based on digest signal quality.
+
+### Configure triage heuristic
+
+Open `memory/triage-heuristic.yaml`. Default thresholds (3 active branch-outs/day soft cap, 15/25 shadow soft/hard caps, specificity gate ≥2 search terms + ≥1 channel) are reasonable starting points. Tune after first 30 days of digest runs.
+
+### Configure digest state
+
+`memory/digest_state.md` starts essentially empty. First `/digest --force` run will prompt for a manual seed `last_run_timestamp` (e.g. "start window 7 days ago") and populate the rest.
 
 **Time:** ~30 min initial config + tuning over first 2 weeks.
 

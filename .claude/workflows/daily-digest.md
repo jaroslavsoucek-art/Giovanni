@@ -229,7 +229,17 @@ For each pending shadow hypothesis:
 
 **Critical distinction (P1 fix 2026-05-21):** Bucket B (active contradiction) ≠ Bucket C (silence). Counting Bucket C as falsified would corrupt calibration by penalizing the framework for unfalsifiable predictions. Tighten specificity gate via `triage-heuristic.yaml` if Bucket C rate exceeds ~40% / month.
 
-4. Apply frontmatter updates to moved files: `status`, `resolved_date`, `resolved_reasoning`, `adversarial_check` (Bucket A only — empty for B/C).
+4. Apply frontmatter updates to moved files per schema (`memory/templates/shadow-hypothesis.template.md` + `prediction-runtime.md` § Step 2c rule "empty `adversarial_check` at resolution is a governance breach"):
+
+   | Bucket | Destination | `status` | `resolved_date` | `resolved_reasoning` | `adversarial_check` |
+   |---|---|---|---|---|---|
+   | **A — match** | `resolved/<YYYY-MM>/` | `resolved-yes` or `resolved-no` (per adversarial verdict) | today | required — verdict reasoning citing observed signal | required — "could match be coincidence/partial/wrong-interpretation?" reasoning |
+   | **B — contradiction** | `resolved/<YYYY-MM>/` | `resolved-no` (falsified) | today | required — verdict reasoning citing contradicting signal | required — "could contradicting signal be misread/partial/alternative-interpretation?" reasoning |
+   | **C — silent** | `expired/<YYYY-MM>/` | `expired` | today | required — "no signal observed in either direction by horizon" | optional/empty — no signal to audit (expired ≠ verdict resolution) |
+
+   **Binding:** Bucket B MUST populate `adversarial_check` same as A. Apparent contradictions can be misread (e.g. counterparty's negative action was about different topic, third-party signal was unrelated). Skipping adversarial discipline on falsified verdicts produces overconfident calibration in the opposite direction (under-counting matches that were actually right).
+
+   **Lint enforces:** `scripts/lint_rules/shadow_expired_pending.py` catches empty `adversarial_check` on any file in `resolved/`. Files in `expired/` are exempt.
 
 **Lookback runs silently.** Results appear in monthly `/calibration-report`, not in the rendered digest output.
 
