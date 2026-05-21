@@ -161,7 +161,29 @@ L3 is a set of sibling directories, each with its own purpose. Memory-architect 
 - `templates/brief.template.md` + `examples/brief.example.md`
 - `templates/archive.template.md`
 
-Stakeholder profile template lives in `templates/` but is owned by `stakeholder-architect`. Memory-architect only enforces the file-naming convention and the placement (`memory/stakeholders/<slug>.md`).
+### Stakeholder profile field schema — owned by stakeholder-architect
+
+The `memory/stakeholders/<slug>.md` file schema is owned by `stakeholder-architect`. Memory-architect provides the file-system placement convention; stakeholder-architect provides the field-level schema, body section structure, and lifecycle workflow.
+
+**Files:**
+- `memory/templates/stakeholder.template.md` — profile template with frontmatter schema and required body sections
+- `memory/templates/stakeholders-README.template.md` — directory README explaining when to create profiles and retention contract
+- `memory/examples/stakeholder-asymmetric-power.example.md` — worked example for an asymmetric-power-up relationship (VC / board director)
+- `memory/examples/stakeholder-peer.example.md` — worked example for a peer relationship (co-founder)
+- `memory/examples/stakeholder-customer-counterparty.example.md` — worked example for a customer relationship tipping toward counterparty
+- `docs/stakeholder-profiles.md` — bootstrap workflow + refresh cadence + retention policy + privacy considerations + anti-patterns
+
+**Key schema points:**
+- Frontmatter: `slug`, `display_name`, `org`, `role`, `relationship_type`, `first_touch`, `last_touch`, `status`, `related_topics` (required); `affiliation_secondary`, `primary_thread`, `touch_frequency`, `profile_depth` (optional).
+- `relationship_type` enum: `peer` | `asymmetric-power-up` | `asymmetric-power-down` | `customer` | `vendor` | `counterparty`.
+- `status` enum: `active` | `dormant` | `archived`.
+- Body required sections: Identity & context, Role & decision authority, Sentiment trajectory (append-only time-series — binding discipline), Communication style, Active threads, Hot topics in their head, Predicted reactions (THE differentiation point — specific predictions with observed-pattern reasoning), Watch points, Relationship history, Reasoning / source links.
+
+**Retention:** archived after default 90 days dormant. File moves to `memory/stakeholders/_archived/<slug>.md`. Configurable via `docs/governance.config.yaml`.
+
+**Cross-reference contract:** topic shards reference profile slugs in `key_stakeholders`. Lint validates via `scripts/lint_rules/stakeholder_slug_exists.py` (activates only once at least one profile file exists).
+
+**Privacy:** profiles contain operational predictions and pattern observations about real people. Decide privacy posture before first commit — see `docs/stakeholder-profiles.md` for options (private repo / `.gitignore` / `git-crypt`).
 
 ---
 
