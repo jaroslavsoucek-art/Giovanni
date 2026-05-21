@@ -8,9 +8,9 @@ Distilled from a working domain-specific implementation, then sanitized into a d
 
 ## Status
 
-**Setup1 framework complete.** 8/8 specialist architects shipped; all framework layers operational. Hobby project — no commercial support, no roadmap promises. Built part-time by extracting the system layer from a real high-stakes program (expansion of an e-commerce platform into 6 EU markets) and stripping out the domain content.
+**Setup1 architecture complete; runtime unvalidated.** 8/8 specialist architects shipped; all framework layers have templates, schemas, agents, workflows, and lint integration. **Not yet end-to-end runtime-tested** — no fork to actual operational domain, no independent cross-validation, no Setup2 fork-and-fill walkthrough yet (see `docs/setup1-complete.md` § "What Setup1 did NOT include"). Hobby project — no commercial support, no roadmap promises. Built part-time by extracting the system layer from a real high-stakes program (expansion of an e-commerce platform into 6 EU markets) and stripping out the domain content.
 
-Next stage (Setup2): fork Giovanni into a clean repo, fill with your own domain content, run actual workflows. See [`docs/setup1-complete.md`](docs/setup1-complete.md) for the bootstrap summary and what to do with this.
+Next stage (Setup2): fork Giovanni into a clean repo, fill with your own domain content, run actual workflows. **This is where the runtime gets validated.** See [`docs/setup1-complete.md`](docs/setup1-complete.md) for the bootstrap summary, [`docs/setup-guide.md`](docs/setup-guide.md) for the fork-and-fill walkthrough (WIP — iterates as Setup2 surfaces real-world friction).
 
 ## What's in scope
 

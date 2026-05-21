@@ -197,31 +197,39 @@ Read all files in `memory/shadow/pending/`.
 For each pending shadow hypothesis:
 
 1. Check whether `horizon_at` < today.
-2. **If past horizon:**
 
-   a. Search today's Step 4/5 output (plus prior 24 h if helpful) for matches to `expected_signal`:
-      - `description` semantic match
-      - `search_terms` keyword hit in any source bullet
+2. **If horizon not yet passed:** leave in `pending/`. (No action.)
+
+3. **If past horizon:** classify into exactly ONE of three buckets based on signal evidence in today's Step 4/5 output (plus prior 24 h if helpful):
+
+   **Bucket A — `expected_signal` MATCHED** (positive evidence for prediction):
+      - `description` semantic match, OR
+      - `search_terms` keyword hit in any source bullet, AND
       - `source_channels` correctly matched (don't accept a chat match for an email-channel prediction)
 
-   b. **If match found, apply adversarial evaluation** (binding rule from `docs/prediction.md` § Adversarial lookback):
+      Apply adversarial evaluation (binding rule from `docs/prediction.md` § Adversarial lookback):
 
       > "What are the STRONGEST arguments this hypothesis was NOT actually fulfilled by this signal? Consider: coincidence (signal would have appeared anyway), partial match (signal exists but lacks predicted specifics), alternative interpretations (signal could mean something else entirely), base rate (how often does this signal appear regardless of prediction)."
 
-      Score `matched` ONLY if adversarial arguments are weak. Default to `falsified` if uncertain. **Generosity in verdict = motivated reasoning = calibration corruption.**
+      Score `matched` ONLY if adversarial arguments are weak. **If adversarial arguments are strong, score `falsified` instead** (apparent match was coincidence / partial / wrong interpretation). Default to `falsified` if uncertain. **Generosity in verdict = motivated reasoning = calibration corruption.**
 
-   c. If no match found: score `falsified` (no evidence the predicted outcome materialized).
+      → Update `actor-scores.yaml` (`matched++` or `falsified++`). Move file to `memory/shadow/resolved/<YYYY-MM>/<file>.yaml`.
 
-   d. Update `memory/calibration/actor-scores.yaml` for the relevant actor (`matched++` or `falsified++`).
+   **Bucket B — CONTRADICTING signal present** (active negative evidence):
+      - Counterparty observably took the opposite action (e.g. prediction was "Karim signals openness", reality was "Karim explicitly declined"), OR
+      - Third-party / market signal directly contradicts predicted outcome
 
-   e. Move the file: `memory/shadow/pending/<file>.yaml` → `memory/shadow/resolved/<YYYY-MM>/<file>.yaml` with updated frontmatter (`status`, `resolved_date`, `resolved_reasoning`, `adversarial_check`).
+      → Score `falsified`. Update `actor-scores.yaml` (`falsified++`). Move file to `memory/shadow/resolved/<YYYY-MM>/<file>.yaml`.
 
-3. **If past horizon AND no expected_signal match AND no contradicting signal:**
-   - Move to `memory/shadow/expired/<YYYY-MM>/<file>.yaml`
-   - Do NOT count toward accuracy (no ground truth observable)
-   - Flag in Step 12 render: `⚠ <N> shadow hypotheses expired without ground truth — specificity gate may need tightening`
+   **Bucket C — SILENT (no positive match, no contradicting signal):**
+      - No expected_signal match AND no observable contradicting action
+      - True absence of ground truth (the predicted event neither happened nor demonstrably didn't happen)
 
-4. **If horizon not yet passed:** leave in `pending/`.
+      → Move file to `memory/shadow/expired/<YYYY-MM>/<file>.yaml`. **Do NOT count toward accuracy** (no ground truth observable). Flag in Step 12 render: `⚠ <N> shadow hypotheses expired without ground truth — specificity gate may need tightening`.
+
+**Critical distinction (P1 fix 2026-05-21):** Bucket B (active contradiction) ≠ Bucket C (silence). Counting Bucket C as falsified would corrupt calibration by penalizing the framework for unfalsifiable predictions. Tighten specificity gate via `triage-heuristic.yaml` if Bucket C rate exceeds ~40% / month.
+
+4. Apply frontmatter updates to moved files: `status`, `resolved_date`, `resolved_reasoning`, `adversarial_check` (Bucket A only — empty for B/C).
 
 **Lookback runs silently.** Results appear in monthly `/calibration-report`, not in the rendered digest output.
 
