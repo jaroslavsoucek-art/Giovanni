@@ -101,7 +101,7 @@ The orchestrator does NOT raise this cap.
 ## Cross-references
 
 - **Agent (executor):** `.claude/agents/consistency-checker.md`
-- **Triage workflow:** `/consistency-review <YYYY-MM-DD>` (defined by governance — TODO if not present)
+- **Triage workflow:** `/consistency-review <YYYY-MM-DD>` — **out of scope for Setup1**, owned by `governance-architect`'s domain. Defer to Setup2 when first real-world findings need triage. See `docs/setup1-complete.md` § "Cross-architect TODOs (unresolved, low priority)".
 - **State file:** `memory/audits/consistency/_state.md`
 - **Deterministic lint complement:** `scripts/lint.sh` (this command covers what regex/YAML parsing can't)
 - **Governance policy:** `docs/governance.md` § Consistency checks (shadow mode + promotion criteria)
