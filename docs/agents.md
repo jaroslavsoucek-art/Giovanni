@@ -15,7 +15,9 @@ Two populations live under `.claude/agents/`. They look identical structurally �
 - `stakeholder-architect` → per-stakeholder profile schema
 - `prediction-architect` → predictive-layer templates + 8 binding principles
 - `subagent-roster-architect` → operational agent definitions
-- `adversarial-architect` (pending) → adversarial review workflow
+- `adversarial-architect` → adversarial review workflow + adversarial-reviewer agent + SHIP/REWRITE/KILL verdict policy
+- `digest-architect` → daily digest workflow (12 steps) + state/sources templates + session-start hook
+- `slash-command-architect` → 8 finalized slash commands + design patterns
 
 After bootstrap, architects are frozen. You don't spawn `memory-architect` to do daily work; the templates and docs it produced are what daily work uses. Architects come back online only when the framework itself needs structural revision (rare).
 
@@ -100,7 +102,7 @@ Canonical example — research → adversarial review:
 
 1. `researcher` produces a memory note + proposed constitution patch
 2. Main thread reads the note, decides the patch is non-trivial
-3. Main thread spawns `adversarial-reviewer` (pending — adversarial-architect's domain) with the proposed patch as input
+3. Main thread spawns `adversarial-reviewer` (per [`.claude/agents/adversarial-reviewer.md`](../.claude/agents/adversarial-reviewer.md)) with the proposed patch as input
 4. Adversarial reviewer returns redline / kill / ship verdict
 5. Main thread applies the patch or rejects it
 
@@ -247,7 +249,7 @@ Slash command runtime implementation lives in `.claude/commands/*.md` (one file 
 
 ### Daily digest
 
-Daily digest workflow (digest-architect's domain, pending) orchestrates parallel fan-out to `source-puller` agents, then synthesizes and routes to:
+Daily digest workflow (per [`.claude/workflows/daily-digest.md`](../.claude/workflows/daily-digest.md)) orchestrates parallel fan-out to `source-puller` agents, then synthesizes and routes to:
 
 - Drift detection (main thread, against constitution + memory)
 - Stakeholder profile update triggers (spawning `profile-bootstrap` for stakeholders with signal)
