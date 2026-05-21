@@ -1,0 +1,119 @@
+# Giovanni governance configuration — fork-time customization.
+#
+# Copy to docs/governance.config.yaml and edit. All keys are optional —
+# omitting a key uses the default shown in the comment.
+#
+# Env vars (GIOVANNI_<KEY_UPPERCASE>) override file values. Useful for
+# one-off audits without committing config changes.
+
+# ----------------------------------------------------------------------
+# Layer paths — change only if your fork renames directories
+# ----------------------------------------------------------------------
+
+# Knowledge directory (relative to repo root). Default: knowledge
+knowledge_dir: knowledge
+
+# Memory directory (relative to repo root). Default: memory
+memory_dir: memory
+
+# Constitution filename inside knowledge_dir. Default: constitution.md
+# Examples: principles.md, lattice_charter.md, <domain>_charter.md
+constitution_file: constitution.md
+
+# Operational L1 filename inside memory_dir. Default: CLAUDE_MEMORY.md
+# Some forks prefer a domain-naming convention (e.g. lattice_memory.md).
+l1_file: CLAUDE_MEMORY.md
+
+# ----------------------------------------------------------------------
+# Hard limits — calibrate to your context-window + domain velocity
+# ----------------------------------------------------------------------
+
+# L1 line count warn threshold (high finding). Default: 300
+# At ~80 tokens/line: 300 ≈ 24k tokens ≈ 12 % of 200k context.
+# Smaller-context agents: drop to ~100.
+l1_limit: 300
+
+# L1 line count critical threshold (critical finding, STOP-and-audit).
+# Default: 400 (≈ 33 % overflow above warn).
+l1_limit_critical: 400
+
+# Strikethrough ratio in L1 (fraction). Default: 0.02 (= 2 %).
+# Below this is acceptable transient state. Above is drift signal.
+strike_ratio_max: 0.02
+
+# ----------------------------------------------------------------------
+# Audit cadence — calibrate to your working cycle
+# ----------------------------------------------------------------------
+
+# Full memory audit cadence (days). Default: 35
+# Section-by-section L1 review, shard graduation, archival.
+audit_full_cadence_days: 35
+
+# Light pruning cadence (days). Default: 14
+# Strip strikethroughs, archive resolved items, size check.
+audit_light_cadence_days: 14
+
+# Resolved-shard retirement window (days). Default: 60
+# How long a `status: resolved` shard sits in topics/ before moving
+# to topics/_resolved/.
+#
+# Recommended values by domain velocity:
+#   30  — high-velocity domains (startup pivots, sales lifecycle)
+#   60  — default (mixed weekly + monthly cadence)
+#   90  — quarterly-cycle domains (board, treasury, fundraising)
+#   180 — annual-cycle domains (compliance, audit, year-end planning)
+resolved_shard_retirement_days: 60
+
+# ----------------------------------------------------------------------
+# Constitution structural rules
+# ----------------------------------------------------------------------
+
+# Require {#anchor-id} on every H2/H3 in the constitution.
+# Default: true. Disable only if your domain genuinely doesn't need
+# cross-section references.
+require_anchor_ids: true
+
+# ----------------------------------------------------------------------
+# Domain-leak guard — fork-time activity
+# ----------------------------------------------------------------------
+
+# Strings forbidden in memory/ + knowledge/ + .claude/ — case-insensitive
+# substring match. Populated at fork time with proper nouns from the
+# PRIOR domain to catch carry-over during template filling.
+#
+# Default: [] (no check).
+#
+# Example shape (fictional fork from "Acme Corp" source):
+#   domain_leak_denylist:
+#     - Acme
+#     - Acme Corp
+#     - <prior_ceo_full_name>
+#     - <prior_company_codename>
+#     - <prior_country_or_region_codes>
+#     - <prior_proprietary_platform_names>
+#
+# Common pattern: list every proper noun that would identify the prior
+# domain. Personal names of stakeholders, company / product codenames,
+# country codes, internal platform names, partner brands.
+domain_leak_denylist: []
+
+# Files allowed to mention denylist strings (relative paths from repo root).
+# Use for docs that legitimately reference the source domain
+# (e.g. docs/origin.md documenting where Giovanni came from).
+domain_leak_allowlist:
+  - docs/origin.md
+  - docs/test-domain.md
+
+# ----------------------------------------------------------------------
+# Branch warning
+# ----------------------------------------------------------------------
+
+# Threshold for `check-unmerged-claude-branches.sh` warning.
+# Default: 1 (warn on any unmerged claude/* branch).
+# Increase if you tolerate a small backlog.
+# Override via env: GIOVANNI_BRANCH_WARN_THRESHOLD
+# branch_warn_threshold: 1
+
+# Main branch name. Default: main.
+# Override via env: GIOVANNI_MAIN_BRANCH
+# main_branch: main
