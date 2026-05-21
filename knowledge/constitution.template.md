@@ -115,6 +115,68 @@ when applied. Bullet-style, terse.>
 
 ---
 
+## Adversarial review {#adversarial-review}
+
+> **Status:** `RESOLVED` — binding policy
+> **Last updated:** YYYY-MM-DD
+
+Adversarial review is the default mode for any draft that touches strategic position, external communication, or commitment. RLHF training optimizes the underlying model for agreeable; without explicit policy reversal, review becomes validation theater. The framework reverses the bias at three layers: prompt, verdict enum, and counter-case requirement.
+
+### Binding triggers
+
+Any of the following invokes adversarial review on a draft:
+
+- `[REVIEW]` tag anywhere in draft text
+- Message starts with `review:` / `redline:` / `adversarial:` / `before send:`
+- Explicit phrasing: "review this", "redline this", "before sending", "tear this apart", "challenge this position", "what's wrong with this", "stress-test this"
+- Slash commands `/review` or `/redline`
+
+If a draft is pasted without trigger, the agent asks before auto-running.
+
+### Verdict format (fixed enum)
+
+Three tiers — no compounds, no softening:
+
+- **SHIP** — position defensible, evidence supports, no fatal counter-case
+- **REWRITE** — position has merit but execution has material issues blocking send
+- **KILL** — position wrong, evidence weak, or counter-case fatal — do not send
+
+Forbidden: `MOSTLY SHIP`, `SHIP-WITH-CAVEATS`, `MILD REWRITE`, `STRONG REWRITE`, `SOFT KILL`. The three-tier vocabulary is exhaustive.
+
+### Strongest counter-case requirement
+
+Adversarial review constructs the **explicit strongest counter-argument** to the draft's position. Default-skeptical lookback, mirroring the predictive layer's adversarial-check discipline:
+
+> What are the strongest arguments this position is WRONG, even if the draft initially makes it sound right?
+
+A draft that doesn't acknowledge its strongest counter-case is REWRITE-or-KILL territory — independent of prose polish.
+
+### Anti-patterns
+
+- RLHF-style softening preambles ("Overall solid, just one concern…")
+- Symmetric pro/con balance when one side clearly wins
+- Validation theater (verdict that confirms what the user already drafted)
+- Recommending the user's own position back at them
+- Hedge-language without actionable issue ("could be better", "consider tightening")
+- Compound verdicts ("MOSTLY SHIP")
+- Personally critical language (attacks on the writer, not the work)
+
+### Suspend conditions
+
+Adversarial review is suspended in three contexts (workflow doc `.claude/workflows/adversarial-review.md` carries the executable rules):
+
+1. Brainstorming / early-stage exploration — adversarial pushback suppresses generative work
+2. Moments of distress — review is not crisis support
+3. Mechanical execution tasks — content QA, not strategic challenge → route to `deliverable-reviewer`
+
+### Override mechanism (strongly discouraged)
+
+Forks may disable adversarial-as-default by editing this section and the corresponding agent description. **This reverses the framework's core IP design choice.** See `docs/adversarial.md §4` for the recommended alternative path (suspend per-draft via trigger semantics; keep policy at default-adversarial).
+
+**Source:** `.claude/agents/adversarial-reviewer.md` + `.claude/workflows/adversarial-review.md` + `docs/adversarial.md`
+
+---
+
 ## Strategic posture {#strategic-posture}
 
 > **Status:** mix — see per-section badges
