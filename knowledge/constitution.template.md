@@ -177,6 +177,64 @@ Forks may disable adversarial-as-default by editing this section and the corresp
 
 ---
 
+## Daily digest — operational tempo {#daily-digest}
+
+> **Status:** `RESOLVED` — binding policy
+> **Last updated:** YYYY-MM-DD
+
+### Cadence (binding)
+
+The daily digest is the **operational tempo** of this framework. The principal runs `/digest` once per business day. Cadence override (weekly for low-velocity domains) requires a decision record at `memory/decisions/<date>-digest-cadence-override.md`.
+
+The digest pulls from configured sources (`memory/digest_sources.md`), detects drift between canonical state and reality, auto-generates briefs for high-prep events within 48 h, and feeds the predictive layer with shadow lookback + new shadow hypotheses. Without daily cadence, drift accumulates uncaught and the predictive loop breaks.
+
+### Drift ack flow (binding)
+
+Drift flags surface as numbered items in the digest output. The principal responds with `confirm | ignore Nd | patch <text>`:
+
+- **`confirm`** → workflow proposes patch → principal commits manually with `decision:` or `docs(<canonical>):` prefix
+- **`ignore Nd`** → ack stored in `memory/digest_state.md` with `today + Nd` expiry (default 7 days)
+- **`patch <text>`** → principal supplies patch directly, behaves like `confirm` from step 3
+
+Permanent acks (`9999-12-31`) require explicit rationale in the ack source line — they're effectively a documentation gap acknowledgment, not a workaround.
+
+### Brief auto-gen scope (binding)
+
+Briefs auto-generate ONLY for high-prep events in the next 48 h:
+
+- 1:1 with a stakeholder whose profile has `profile_depth: partial` or deeper
+- Decision meetings (board, governance, vote)
+- External commercial conversations (renewal, negotiation)
+- Board / exec events
+- Counterparty conversations flagged in active topic shards
+
+NOT for internal stand-ups, daily syncs, recurring blocks, or 1:1 entries without a named counterparty. The fork's `memory/digest_sources.md` `calendar.brief_eligibility` tunes the boundary.
+
+### Anti-patterns (binding)
+
+The digest workflow MUST NOT:
+
+1. **Auto-commit.** State updates and brief files remain unstaged. Principal reviews + commits in batch.
+2. **Auto-spawn `profile-bootstrap`.** Digest flags refresh candidates; principal invokes.
+3. **Render shadow hypothesis content.** Shadow hypotheses are invisible at generation time (anti-self-fulfilling — see § Predictive layer governance).
+4. **Run more than once per 4 h** without explicit `--force` override.
+
+### Pre-flight (binding)
+
+Every `/digest` invocation verifies CWD is the Giovanni repo root, state file exists and is parseable, source config is non-empty, and cadence guard is not violated. Failure on any check STOPS with diagnostic — no graceful degradation.
+
+### Cross-references
+
+- Workflow: `.claude/workflows/daily-digest.md`
+- Policy: `docs/digest.md`
+- State template: `memory/digest-state.template.md`
+- Sources template: `memory/digest-sources.template.md`
+- Session-start hook: `.claude/hooks/session-start-digest.sh`
+- Lint rule: `scripts/lint_rules/digest_state_freshness.py`
+- Example: `memory/examples/digest.example.md`
+
+---
+
 ## Strategic posture {#strategic-posture}
 
 > **Status:** mix — see per-section badges

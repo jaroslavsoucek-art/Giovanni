@@ -1,0 +1,168 @@
+# Digest example — Lattice 2026-05-26 (Tuesday morning)
+
+<!--
+============================================================================
+This is the rendered output of `/digest` for Alex Park's Lattice context on
+2026-05-26 morning — one day before the DP1 renewal call with new CFO Karim
+Solanki (scheduled 2026-05-27 13:00), and four hours before Sarah Vyas's
+monthly 1:1 (scheduled 2026-05-26 16:00).
+
+Sources used (from memory/digest_sources.md):
+  - chat-platform     #strategy-private, #board-async, DMs:all
+  - email             soucek@lattice.io inbox
+  - calendar          Outlook calendar
+  - project-tracker   "Lattice 2026" Asana board (project_id 1209876543210000)
+  - version-control   lattice-finance/lattice-monorepo
+
+Window: 2026-05-25T07:12Z (yesterday's digest) → 2026-05-26T06:30Z (this run).
+30-hour window because Monday's run was a full weekend recap + week-ahead.
+
+What's NOT shown in this example (by design — binding rules):
+  - The shadow hypotheses generated during Step 11 (invisibility rule)
+  - Auto-spawned profile refresh edits (digest flags, principal invokes)
+  - Any auto-commits (digest never commits)
+
+Coherence: cross-references resolve against memory/examples/* — Sarah profile,
+DP1 topic shard, brief example, branch-out artifact.
+============================================================================
+-->
+
+```
+Daily digest — 2026-05-26 Tuesday
+
+Recap (since 2026-05-25T07:12Z)
+  Version control: lattice-monorepo  4 commits  (CHANGELOG match: clean)
+    9c4f1aa  feat(billing): per-entity meter wired into invoice generator (touched: services/billing/, tests/billing/)
+    b3e802d  fix(audit): bank-fee export missing UTF-8 BOM (touched: services/exports/)
+    7a1f29c  docs(decisions): 2026-05-15 dp1 tech ask scope cap — added rollback trigger (touched: memory/decisions/)
+    1e5dba4  chore(deps): bump pg driver 16.2 → 16.3 (touched: services/*)
+
+  Chat (3 key):
+    [#strategy-private 09:14 by morgan-chen] dp1 multi-entity reporting MVP — 70% done, on track for 2026-06-15 demo. No contractor needed.
+    [#board-async 17:42 by sarah-vyas] forwarded Tideway Treasury blog "Why mid-market CFOs are re-bundling vendors in 2026" — no commentary attached
+    [DM with priya-shah 22:08] Karim's EA Mira confirmed 2026-05-27 13:00 BST, agenda forwarded, called out "leadership team also dialing"
+    Other (12): #eng-weekly standup notes (suppress), #lattice-customers low-priority
+
+  Email (NEO-relevant, 4):
+    [from mira.kovac@helios-mfg.eu · "RE: 2026-05-27 call — leadership team also dialing"] Mira CC'd Helios's group CFO + treasury lead onto Karim's call invite — 3 attendees Helios-side, not the 1:1 we expected. Sent 2026-05-25 22:04.  (uri:…)
+    [from alina.crisan@protonmail.com · "Reference call 2 — Diane Martens"] Alina confirmed reference call 2 happened 2026-05-25 with Diane Martens as referee; "very positive, she vouched for tempo and decision discipline".  (uri:…)
+    [from compliance-vendor-x · "SOC 2 mid-audit — draft findings"] Draft findings shared 2026-05-25 18:11. Two low-severity, one medium (RBAC documentation gap in operator console). Full report due 2026-06-13.  (uri:…)
+    [from marcus.liu@meridian-observer.vc · "Tideway article"] forwarded same Tideway blog Sarah forwarded; asked "is this a real trend or content marketing?" Less freighted than Sarah's forward but same topic.  (uri:…)
+    Other (37): vendor outreach, conference invites, recruiter spam clusters
+
+  Project tracker (Lattice 2026 Asana, 6 deltas):
+    ✅  2026-05-25 14:02  "VP Eng reference call 1 — Alina Crisan"      assignee=alex-park   due=2026-05-23  parent="VP Engineering hire"
+    🔄  2026-05-25 16:38  "Draft DP1 renewal proposal v0.2"             assignee=alex-park   due=2026-06-04  parent="DP1 renewal Q3"
+    🔄  2026-05-25 19:11  "Pricing v2 board pre-read distribution"      assignee=alex-park   due=2026-05-26  parent="Pricing v2"
+    🆕  2026-05-26 06:02  "Helios group-CFO context dossier"            assignee=priya-shah  due=2026-05-26  parent="DP1 renewal Q3"   ← new task
+    ❗  2026-05-25 23:45  "Series B narrative v0.3 send to Sarah"       assignee=alex-park   due=2026-05-25  parent="Series B prep"    ← overdue 7h
+    ✅  2026-05-25 11:24  "Alina reference list — request to candidate" assignee=morgan-chen due=2026-05-22  parent="VP Engineering hire"
+
+Today (Tuesday 2026-05-26)
+  09:30  Morgan weekly sync — context from memory/topics/dp1-renewal.md (MVP demo discussion + contractor decision deferred); [no brief — internal recurring]
+  14:00  Pricing v2 board pre-read distribution deadline (no event; task) — context memory/topics/pricing-v2.md
+  16:00  Sarah Vyas monthly 1:1 — context memory/stakeholders/sarah-vyas.md + memory/topics/dp1-renewal.md
+                                 brief: memory/briefs/2026-05-26_sarah-monthly.md (REFRESHED — see below)
+
+Week ahead (through Friday 2026-05-29)
+  2026-05-27 13:00  DP1 renewal call (Karim Solanki + Helios leadership team)
+                    context: memory/topics/dp1-renewal.md + memory/branch-out/2026-05-21-dp1-renewal-call-2026-05-27.md
+                    brief: memory/briefs/2026-05-27_dp1-cfo-intro.md (REFRESHED — see below)
+  2026-05-28 11:00  VP Eng reference call 3 (peer reference, not yet named) — brief due in 2 days
+  2026-05-29 15:00  Compliance-vendor-x findings review (Morgan + Alex)    — brief due 2026-05-29
+
+Active blockers — delta since 2026-05-25
+  New: none
+  Resolved: none
+  Movement:
+    - VP Engineering hire: reference call 1 done (positive), call 2 done (Diane Martens, positive); 2 of 3 references in, on track for offer 2026-06-02
+    - DP1 renewal Q3: scope of 2026-05-27 call shifted from 1:1 with Karim to group call (3 attendees Helios-side) — re-evaluate framing
+  No change: 3 (SOC 2 Type II audit, Pricing v2, Series B narrative gap)
+
+Stakeholder updates
+  Touched this window: sarah-vyas, morgan-chen, priya-shah, lattice-design-partner-1 (via Mira EA), alina-crisan (pre-bootstrap)
+  ‼ Sentiment shift candidate: lattice-design-partner-1 — Mira's note "leadership team also dialing" changes call dynamics; profile says posture is "CFO-evaluation, not relationship-mode" but now also "group-call diligence frame". Action: refresh stakeholder profile after 2026-05-27.
+  Cooling >30d: david-tannen (last touch 2026-04-22 — quarterly board cadence, within normal); marcus-liu (last touch 2026-04-12 — quarterly board cadence, within normal); 2026-06 board agenda send-out will surface both.
+  Profile bootstrap pending: alina-crisan (3 signals: 2026-05-23 reference call 1, 2026-05-25 reference call 2 email, 2026-05-25 Asana update). Reaches threshold — recommend bootstrap before offer extension 2026-06-02. Run: profile-bootstrap with display_name="Alina Crisan", role_hint="VP Engineering finalist", org_hint="incoming"
+
+‼ Drift flags
+  #1 [source: email — mira.kovac@helios-mfg.eu] claims the 2026-05-27 call has Helios leadership team (group CFO + treasury lead + Karim) on the line — 3 Helios-side attendees, not 1:1.
+       memory/topics/dp1-renewal.md:64 says "first direct call set 2026-05-27" implying 1:1 (Alex + Priya / Karim).
+       memory/branch-out/2026-05-21-dp1-renewal-call-2026-05-27.md frames actor "Karim Solanki" as single counterparty for predictions.
+       The branch-out trade-off matrix may need re-running with 3-counterparty dynamic before the call — at minimum, predicted-actor-responses column for Karim doesn't model group-call posture.
+       action? confirm | ignore 7d | patch memory/topics/dp1-renewal.md (+ flag branch-out re-run)
+
+  #2 [source: chat #strategy-private — morgan-chen] claims "dp1 multi-entity reporting MVP 70% done, no contractor needed."
+       memory/decisions/2026-05-15-dp1-tech-ask-scope-cap.md says contractor is "available trigger if Morgan slips multi-entity reporting MVP date (2026-06-15)".
+       No contradiction — Morgan's update is "on track, contractor not triggered". But: decision record's trigger conditions never explicitly recorded what "on track" looks like at the 70% mark. Worth a one-line note in trigger_conditions for audit trail.
+       action? confirm | ignore 14d | patch memory/decisions/2026-05-15-dp1-tech-ask-scope-cap.md
+
+  #3 [source: project tracker — Asana] "Series B narrative v0.3 send to Sarah" overdue 7 hours (was due 2026-05-25 23:59).
+       Sarah's monthly 1:1 is 4 hours away. v0.3 was supposed to be in her hands before the meeting.
+       memory/stakeholders/sarah-vyas.md says her pattern is "pre-reads land better than verbal walkthroughs" — sending v0.3 within the next 2 hours preserves the pattern; later than that, this 1:1 becomes a verbal pre-walk-through (not her preferred frame).
+       action? confirm (will send by 09:00) | ignore (acknowledge slip; verbal walkthrough at 16:00) | patch <text>
+
+‼ Active branch-out candidates (max 3, per Step 6 triage — 1 candidate today)
+  - dp1-renewal-call-reframe-2026-05-27 — 2026-05-27 call shifted from 1:1 to group call (3 Helios attendees). Existing branch-out modeled single-counterparty dynamic; group dynamic introduces coalition behavior the matrix doesn't cover. · actors: lattice-design-partner-1, helios-group-cfo (new — no profile), sarah-vyas (downstream after t+2) · horizon: 2 days
+    launch: /branch-out dp1-renewal-call-reframe-2026-05-27
+    ⚠ NOTE: branch-out will hard-stop on actor depth check — helios-group-cfo has no profile. Either bootstrap (insufficient signal — first contact tomorrow) or accept that the simulation cannot run for the group-call dimension and re-use existing branch-out as Karim-only model.
+
+Briefs generated this cycle (≤48 h events)
+  2026-05-26_sarah-monthly.md — REFRESHED
+    TLDR: Lead with dp1 group-call reframe (yesterday's news she'll likely hear about) + VP Eng confidence read (Alina refs strong) + competitor / Tideway probe response. Open thread carry-over: v0.3 narrative status (overdue, see drift #3).
+  2026-05-27_dp1-cfo-intro.md — REFRESHED
+    TLDR: Group-call dynamics change framing materially — refactor talking points away from CFO-credibility-trust frame to leadership-team-due-diligence frame. Lead with quantified ROI for group consumption; defer relationship-rebuild moves until after the group call. Co-author: Priya needs Helios group-CFO context dossier by 14:00 today (new Asana task).
+
+Open follow-ups / awaiting reply
+  Awaiting from Sarah Vyas: redline on Series B narrative v0.2 (sent 2026-05-04, no response 22 days) — see drift #3, also pre-empt in 16:00 1:1 talking point #4
+  Awaiting from David Tannen: input on "2 highest-leverage things" memo — drafted, not sent (planned 16:00 1:1 input first)
+  Awaiting from Karim Solanki: agenda confirmation for 2026-05-27 (Priya sent 2026-05-22) — Mira ack'd, Karim direct no
+  Awaiting from compliance-vendor-x: final SOC 2 Type II report (due 2026-06-13)
+
+Active acks
+  none active
+
+System hygiene (flags only when applicable)
+  ⚠ 1 shadow hypothesis expired without ground truth in last 30 days (id: 2026-04-26-marcus-liu-board-observer-engagement-signal-7c1e — horizon 2026-05-26 passed today, no signal observed). Specificity gate may need review for board-observer-class predictions — search_terms were too generic ("board", "marcus") to be operationally testable. /shadow-review when convenient.
+  Brief stats: 2 refreshed, 0 generated, 1 skipped (Morgan weekly sync — internal recurring, no eligibility match)
+```
+
+<!--
+============================================================================
+COMMENTARY (not part of the digest output — illustrative of digest discipline)
+============================================================================
+
+### Coherence checks (proves the example isn't fabricated)
+
+1. **Sarah Vyas patterns referenced**: "pre-reads land better than verbal walkthroughs" sourced from memory/examples/stakeholder-asymmetric-power.example.md § Communication style. "Forwarded articles without commentary = soft probe" pattern — same source. The competitor-X / Tideway forward this week matches the pattern (silence-then-unprompted-forward).
+
+2. **DP1 topic shard sync**: Risk profile in shard (memory/examples/topic-shard.example.md) listed "2026-05-27 first Karim Solanki call" — the digest's drift #1 says new context shifts that to a group call. Drift is real, not invented.
+
+3. **Branch-out artifact sync**: memory/examples/branch-out.example.md modeled actors as [lattice-design-partner-1, sarah-vyas, morgan-chen]. The drift #1 surfaces that group-call dynamic introduces helios-group-cfo who isn't in the actor set — the active branch-out candidate flags the hard-stop on missing profile depth, which is the binding rule from docs/prediction.md.
+
+4. **Operational memory sync**: memory/examples/operational-memory.example.md says VP Eng hire is finalist Alina Crisan, target offer 2026-06-02. The digest confirms reference call 1 done + call 2 done positive. Alina is at 3 signals threshold for profile bootstrap — exactly the heuristic from Step 9.
+
+5. **Shadow lookback example**: the expired Marcus Liu hypothesis is plausible context — Marcus is the board observer with quarterly cadence; a passive shadow about his engagement signals would naturally lack specificity. The system-hygiene flag is the binding rule from Step 8: "if no expected_signal match AND no contradicting signal → expired, do NOT count toward accuracy".
+
+### What this example does NOT include (by binding rule)
+
+- **No shadow hypothesis content surfaced.** Step 11 generated some today (passive signals from morgan-chen reassurance and sarah-vyas Tideway forward), but the digest output never quotes them. Binding rule 6 from docs/prediction.md.
+- **No auto-spawned profile-bootstrap for Alina Crisan.** Step 9 flags her but the principal decides. Rule from docs/digest.md § Profile refresh trigger.
+- **No auto-commits.** State updates + brief refreshes sit unstaged. Alex reviews + commits in batch.
+- **No "recommended" verb on the dp1-renewal-call-reframe candidate.** The digest surfaces; the principal decides. Rule from docs/prediction.md § No-recommendation principle.
+
+### What pickup work this digest enables
+
+Alex's likely next actions reading this digest at 06:35:
+
+1. Send v0.3 to Sarah by 09:00 (drift #3 confirm path).
+2. Decide on group-call branch-out (likely accept "cannot run as group-call sim" + re-use Karim-only branch-out + refactor briefs).
+3. Tell Priya to spin up Helios group-CFO context dossier (new Asana task already created automatically? No — it was created by Priya at 06:02 per the digest. So actually Alex's job is to review the dossier scope, not create it).
+4. Decide on Alina bootstrap timing.
+5. Walk into 16:00 1:1 with refreshed brief.
+6. Walk into 2026-05-27 13:00 call with refactored brief.
+
+The digest's job is done at "render the morning state". From here, the principal owns.
+
+============================================================================
+-->
