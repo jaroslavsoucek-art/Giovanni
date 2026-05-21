@@ -2,15 +2,95 @@
 
 > Extended hand and second brain.
 
-Generic AI Chief of Staff methodology — memory architecture, daily digest, predictive layer, governance discipline, custom subagents, slash commands, living constitution, per-stakeholder modeling, adversarial-default review.
+A **methodology framework** for running an AI Chief of Staff inside Claude Code
+— memory architecture, daily digest, predictive layer, governance discipline,
+custom subagents, slash commands, living constitution, per-stakeholder modeling,
+adversarial-default review.
 
-Distilled from a working domain-specific implementation, then sanitized into a domain-agnostic framework you can fork and fill with your own context.
+Distilled from a working domain-specific implementation, then sanitized into a
+domain-agnostic framework you can fork and fill with your own context.
+
+## In 10 seconds
+
+Most "AI assistant" repos hand you prompts. Giovanni hands you the **system layer**
+underneath the prompts: how to structure memory so it doesn't drift, how to run a
+daily digest that survives weeks of compounding context, how to model
+stakeholders as time-series (not snapshots), how to predict reactions without
+fooling yourself, how to enforce honesty via lint and adversarial review.
+
+The runtime lives in your **fork**, not here. This repo is templates, schemas,
+agents, workflows, and governance — domain-agnostic on purpose.
+
+## Architecture
+
+```mermaid
+flowchart TB
+    P[Principal / you] --> Commands["Slash commands<br/>/digest · /branch-out · /review · /shadow-review · ..."]
+    Commands --> Workers["Worker agents<br/>isolated context, tool-scoped<br/>(source-puller, researcher, adversarial-reviewer, prediction-runtime, ...)"]
+    Workers --> State
+    subgraph State["Framework state — commit-tracked"]
+      direction LR
+      M["Memory<br/>4-layer:<br/>MAP → shortcut → shards → deep"]
+      K["Living constitution<br/>knowledge/<br/>anchored, supersedes-pointer"]
+      ST["Stakeholder profiles<br/>per-actor time-series"]
+    end
+    State --> Workflows["Workflows<br/>daily digest · branch-out · shadow lookback · calibration"]
+    Workflows -.feeds back.-> State
+    Governance["Governance<br/>lint · hooks · INDEX/MAP auto-regen<br/>hard limits · audit cadence"] -.governs.- State
+    Governance -.governs.- Workers
+```
+
+## Who this is for
+
+- Anyone running a **high-context, multi-stakeholder program** (founders,
+  chiefs of staff, heads of strategy / legal / operations) who needs an
+  assistant that *remembers across weeks* without rotting into noise.
+- People who already use Claude Code and want **schema-level discipline**
+  instead of stitching together yet another prompt library.
+- Builders who want to study **one worked architecture** of memory +
+  governance + predictive simulation before designing their own.
+
+Not for: people looking for an out-of-the-box assistant. The work is in
+filling Giovanni with your domain context and running it for months.
+
+## Quick start
+
+```bash
+# Option A — "Use this template" button on GitHub (top-right) for a clean fork.
+# Option B — manual clone:
+git clone https://github.com/jaroslavsoucek-art/Giovanni.git my-chief-of-staff
+cd my-chief-of-staff
+
+# Validate framework lint passes on the vanilla repo:
+./scripts/lint.sh
+
+# Read the fork-and-fill walkthrough:
+$EDITOR docs/setup-guide.md
+```
+
+For the synthetic test domain (Alex Park / Lattice Finance — used to
+stress-test every template), see [`docs/test-domain.md`](docs/test-domain.md)
+and the `memory/examples/*.example.md` files.
 
 ## Status
 
-**Setup1 architecture complete; runtime unvalidated.** 8/8 specialist architects shipped; all framework layers have templates, schemas, agents, workflows, and lint integration. **Not yet end-to-end runtime-tested** — no fork to actual operational domain, no independent cross-validation, no Setup2 fork-and-fill walkthrough yet (see `docs/setup1-complete.md` § "What Setup1 did NOT include"). Hobby project — no commercial support, no roadmap promises. Built part-time by extracting the system layer from a real high-stakes program (expansion of an e-commerce platform into 6 EU markets) and stripping out the domain content.
+**Setup1 architecture complete; runtime unvalidated.** 8/8 specialist
+architects shipped; all framework layers have templates, schemas, agents,
+workflows, and lint integration. **Not yet end-to-end runtime-tested** —
+no fork to actual operational domain, no independent cross-validation, no
+Setup2 fork-and-fill walkthrough yet (see
+[`docs/setup1-complete.md`](docs/setup1-complete.md) § "What Setup1 did NOT
+include"). Hobby project — no commercial support, no roadmap promises.
+Built part-time by extracting the system layer from a real high-stakes
+program (expansion of an e-commerce platform into 6 EU markets) and
+stripping out the domain content.
 
-Next stage (Setup2): fork Giovanni into a clean repo, fill with your own domain content, run actual workflows. **This is where the runtime gets validated.** See [`docs/setup1-complete.md`](docs/setup1-complete.md) for the bootstrap summary, [`docs/setup-guide.md`](docs/setup-guide.md) for the fork-and-fill walkthrough (WIP — iterates as Setup2 surfaces real-world friction).
+Next stage (Setup2): fork Giovanni into a clean repo, fill with your own
+domain content, run actual workflows. **This is where the runtime gets
+validated.** See [`docs/setup1-complete.md`](docs/setup1-complete.md) for
+the bootstrap summary, [`docs/setup-guide.md`](docs/setup-guide.md) for the
+fork-and-fill walkthrough (WIP — iterates as Setup2 surfaces real-world
+friction).
 
 ## What's in scope
 
@@ -35,7 +115,11 @@ Next stage (Setup2): fork Giovanni into a clean repo, fill with your own domain 
 
 ## Test domain
 
-`docs/test-domain.md` defines a synthetic 2nd domain (Alex Park / Lattice Finance — Series A B2B treasury automation SaaS) used to validate every template + workflow is genuinely generic. Every architect's output is stress-tested against this domain. See `memory/examples/*.example.md` for filled artifacts.
+`docs/test-domain.md` defines a synthetic 2nd domain (Alex Park / Lattice
+Finance — Series A B2B treasury automation SaaS) used to validate every
+template + workflow is genuinely generic. Every architect's output is
+stress-tested against this domain. See `memory/examples/*.example.md` for
+filled artifacts.
 
 ## Stats (post-Setup1)
 
@@ -46,10 +130,19 @@ Next stage (Setup2): fork Giovanni into a clean repo, fill with your own domain 
 - 10 workflow/policy/design docs
 - ~104 files, ~17K lines, 19 commits
 
+## Contributing
+
+See [CONTRIBUTING.md](CONTRIBUTING.md). Hard "no domain content" rule,
+generic-first check before opening a PR, critical-mode default review.
+Hobby project — PRs may sit. Read the realistic-expectations section
+before opening anything bigger than a typo.
+
 ## License
 
-MIT.
+MIT — see [`LICENSE`](LICENSE).
 
 ## Origin
 
-See [`docs/origin.md`](docs/origin.md). Sanitized clean-room extraction from a private domain-specific implementation; no proprietary content carried over.
+See [`docs/origin.md`](docs/origin.md). Sanitized clean-room extraction from
+a private domain-specific implementation; no proprietary content carried
+over.
