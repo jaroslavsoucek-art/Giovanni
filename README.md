@@ -15,11 +15,66 @@ domain-agnostic framework you can fork and fill with your own context.
 Most "AI assistant" repos hand you prompts. Giovanni hands you the **system layer**
 underneath the prompts: how to structure memory so it doesn't drift, how to run a
 daily digest that survives weeks of compounding context, how to model
-stakeholders as time-series (not snapshots), how to predict reactions without
-fooling yourself, how to enforce honesty via lint and adversarial review.
+stakeholders as time-series (not snapshots), how to predict reactions
+**without contaminating the prediction** (shadow hypotheses invisible to the
+principal — see [The moat](#the-moat--predictive-layer-with-invisible-shadow-hypotheses)
+below), how to enforce honesty via lint and adversarial review.
 
 The runtime lives in your **fork**, not here. This repo is templates, schemas,
 agents, workflows, and governance — domain-agnostic on purpose.
+
+## The moat — predictive layer with invisible shadow hypotheses
+
+Most AI assistants either don't predict counterparty behavior, or predict it
+**in plain sight** — which contaminates the prediction. The moment you read
+"the model expects Sarah to push back on Series B timing", you walk into the
+1:1 framing the conversation around it. The prediction becomes self-fulfilling
+or self-preventing; either way, the loop is broken. The model's "track record"
+becomes a record of *how surfaced predictions changed your behavior*, not
+*how well it reads your stakeholders*.
+
+Giovanni's predictive layer is three pieces, designed against this trap:
+
+```mermaid
+flowchart LR
+    digest["Daily digest +<br/>stakeholder updates"] -->|"writes silently"| shadow["📦 Shadow hypotheses<br/>memory/shadow/pending/<br/><br/>Invisible to principal.<br/>Not in digest, not in briefing, not in chat."]
+    shadow -->|"+90 days"| review["🔍 /shadow-review<br/>quarterly adversarial lookback<br/>'where did the model miss?'<br/>default-skeptical on uncertainty"]
+    review -->|"per-actor verdict"| calibration["📊 /calibration-report<br/>monthly · per-actor · per-tier<br/>healthy: 60–80 / 20–40 / 5–15 %"]
+    calibration -.tunes.-> branchout["🔮 /branch-out<br/>3 tiers (no percentages)<br/>max t+2 horizon<br/>hard-stop on shallow actors"]
+    situation["High-stakes situation"] -->|"active query"| branchout
+    branchout -->|"visible to principal"| principal["👤 Principal acts on<br/>3-tier scenario tree"]
+```
+
+1. **Branch-out** *(visible)* — active simulation for a specific situation.
+   Three likelihood tiers, **no fake percentages** (numeric probabilities on
+   small-N stakeholder predictions are vibes with arithmetic decoration). Max
+   `t+2` horizon (further is fiction). **Hard-stop on shallow actors**: if
+   2+ key actors have <5 observed touches, `/branch-out` refuses to run rather
+   than emit caveat-degraded "best effort" predictions.
+
+2. **Shadow hypotheses** *(invisible — the moat)* — predictions the principal
+   **never sees** during the prediction window. Stored in
+   `memory/shadow/pending/`. Not rendered in digests. Not in 1:1 briefs. Not in
+   chat. They become visible only at `/shadow-review`, after the horizon date
+   has passed and the outcome is structurally determined. The quarterly review
+   runs an **adversarial lookback**: *"what are the strongest arguments this
+   hypothesis was NOT fulfilled?"* — default-skeptical on uncertainty, because
+   generous verdicts inflate accuracy and corrupt calibration. `>80 %` accuracy
+   triggers an immediate re-audit because it usually means tier labels have
+   drifted.
+
+3. **Per-actor calibration** *(monthly)* — `/calibration-report` aggregates
+   hit rates per actor, per tier. Framework-level accuracy is meaningless;
+   what matters is *which specific stakeholders the model reads well and
+   which it doesn't*. The score is per-relationship, and it tunes the
+   triage heuristic that gates branch-out runs.
+
+The shadow piece is what lets you measure whether the model actually *sees*
+your stakeholders, or just generates plausible-sounding narrative. You can't
+fake your way through 6 months of invisible predictions and adversarial
+review. See [`docs/prediction.md`](docs/prediction.md) for the full binding
+rationale (anti-self-fulfilling rule, no-recommendation principle, canonical-
+moves discipline, calibration healthy-range bands).
 
 ## Architecture
 
@@ -100,7 +155,7 @@ friction).
 | **Living constitution** | `knowledge/constitution.template.md`, `knowledge/README.md`, `knowledge/INDEX.template.md` | Single source of truth, commit-traceable, anchor IDs, supersedes-pointer, auto-INDEX. |
 | **Per-stakeholder profiles** | `memory/templates/stakeholder.template.md`, 3 Lattice examples, `docs/stakeholder-profiles.md` | Sentiment trajectory time-series, communication style, predicted reactions, 6-value relationship-type enum. |
 | **Daily digest workflow** | `.claude/workflows/daily-digest.md`, `memory/digest-{state,sources}.template.md`, `docs/digest.md` | 12-step procedure, parallel source-puller fan-out, drift detection with 7d ack expiry, brief auto-gen ≤48h, predictive integration. |
-| **Predictive layer** | `memory/templates/branch-out.template.md`, `shadow-hypothesis.template.md`, `calibration-actor-score.template.md`, `memory/branch-out/canonical-moves.md`, `docs/prediction.md` | Branch-out simulation (3-tier no-percentages, max t+2, hard-stop shallow actors), shadow hypotheses (invisible at generation, quarterly review, adversarial lookback), calibration scoring (per-actor monthly). |
+| **Predictive layer** — *the moat* | `memory/templates/branch-out.template.md`, `shadow-hypothesis.template.md`, `calibration-actor-score.template.md`, `memory/branch-out/canonical-moves.md`, `docs/prediction.md` | **Branch-out** (3-tier no-percentages, max t+2, hard-stop shallow actors). **Shadow hypotheses** — *invisible to the principal at generation* (anti-self-fulfilling rule, the binding constraint of the layer), reviewed quarterly with **adversarial lookback** (default-skeptical on uncertainty). **Calibration** scoring per-actor monthly with healthy-range bands. See the dedicated section above. |
 | **Custom subagents** | `.claude/agents/` (8 architects + 8 workers) | 7 operational worker agents + 8 framework architects. Generic, model-tagged, tool-scoped, isolated context. |
 | **Slash commands** | `.claude/commands/` (8 commands + registry + design doc) | `/digest`, `/branch-out`, `/shadow-review`, `/calibration-report`, `/consistency-check`, `/market-radar`, `/review`, `/redline`. |
 | **Adversarial-review-as-default** | `.claude/agents/adversarial-reviewer.md`, `.claude/workflows/adversarial-review.md`, `docs/adversarial.md` | SHIP/REWRITE/KILL verdict (no compounds), strongest-counter-case requirement, default-critical, suspend conditions documented. |
