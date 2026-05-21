@@ -82,7 +82,7 @@ time — Step 4 source-puller emits all messages; Step 5 synthesizes; Step 12
 renders top-relevant + cluster-other.
 
 The "relevance criteria" lives in the synthesis logic. Reasonable default:
-NEO-relevant messages (mentioning topic shards, named stakeholders, key
+domain-relevant messages (mentioning topic shards, named stakeholders, key
 keywords) at top of render; other messages clustered into a single trailing
 bullet.
 -->

@@ -30,8 +30,8 @@ Key sources:
 - `.claude/commands/calibration-report.md` — `/calibration-report` monthly aggregation
 
 **Constitution section:**
-- `knowledge/NEO_ustava.md` — find "Branch-out governance" section, read fully (this is the binding rules layer)
-- `CLAUDE.md` — find "BRANCH-OUT PREDIKČNÍ VRSTVA" section
+- `knowledge/<source-constitution>.md` — find "Branch-out governance" section, read fully (this is the binding rules layer)
+- `CLAUDE.md` — find the source's branch-out / predictive-layer section
 
 **Cross-architect inputs (read for coordination):**
 - `/Users/soucek/dev/Giovanni/memory/templates/stakeholder.template.md` — "Predicted reactions" section, your branch-out artifacts consume these

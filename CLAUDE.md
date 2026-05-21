@@ -8,7 +8,7 @@ The reference implementation lives in `~/dev/giovanni-source-snapshot/` (read-on
 
 ## Critical rules
 
-1. **No domain content carry-over.** No stakeholder names, no project codenames, no business specifics from the source. If you find a `Hospodka` / `Shoptet` / `NEO` / `MH` / `SOFA` / specific person name / specific country reference in source → translate to schema placeholder (`<stakeholder_slug>`, `<project_name>`, `<market>`, etc.).
+1. **No domain content carry-over.** No stakeholder names, no project codenames, no business specifics from the source. Any source-domain codename, person name, integration partner, or country reference → translate to schema placeholder (`<stakeholder_slug>`, `<project_name>`, `<integration_partner>`, `<market>`, etc.).
 2. **Schema over content.** Output templates, not filled examples. One worked example per artifact is fine to show shape — use a synthetic domain (default: solo fintech founder, see `docs/test-domain.md`).
 3. **Critical mode is default.** No flattery. No RLHF. Pushback is default. Source has good ideas and bad ideas — flag both. If a pattern in source is over-engineered or domain-specific masquerading as generic, say so and propose a leaner version.
 4. **Generic-first thinking.** Every template question: "would this work for a portfolio CEO? a solo founder? a consultant? a head of legal?" If only fits one domain shape, redesign.

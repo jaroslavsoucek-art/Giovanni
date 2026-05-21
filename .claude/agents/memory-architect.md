@@ -48,7 +48,7 @@ Write to `~/dev/Giovanni/memory/`:
 
 ## Rules (binding)
 
-1. **No domain content carry-over.** No `Shoptet`, `NEO`, `MH`, `SOFA`, `Hospodka`, `Pavel Kácha`, country names from source, etc. If you find these in source → translate to placeholder (`<stakeholder_slug>`, `<project_name>`, `<integration_partner>`). For examples, use the test domain (Lattice Finance / Alex Park).
+1. **No domain content carry-over.** No source-domain codenames, person names, integration partners, or country references. If you find these in source → translate to placeholder (`<stakeholder_slug>`, `<project_name>`, `<integration_partner>`). For examples, use the test domain (Lattice Finance / Alex Park).
 
 2. **Schema over content.** Templates are blank scaffolds with comments explaining each field. Examples are filled scaffolds using the test domain. Do not mix.
 

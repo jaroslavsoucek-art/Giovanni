@@ -9,7 +9,7 @@ monthly 1:1 (scheduled 2026-05-26 16:00).
 
 Sources used (from memory/digest_sources.md):
   - chat-platform     #strategy-private, #board-async, DMs:all
-  - email             soucek@lattice.io inbox
+  - email             alex@lattice.io inbox
   - calendar          Outlook calendar
   - project-tracker   "Lattice 2026" Asana board (project_id 1209876543210000)
   - version-control   lattice-finance/lattice-monorepo
@@ -43,7 +43,7 @@ Recap (since 2026-05-25T07:12Z)
     [DM with priya-shah 22:08] Karim's EA Mira confirmed 2026-05-27 13:00 BST, agenda forwarded, called out "leadership team also dialing"
     Other (12): #eng-weekly standup notes (suppress), #lattice-customers low-priority
 
-  Email (NEO-relevant, 4):
+  Email (domain-relevant, 4):
     [from mira.kovac@helios-mfg.eu · "RE: 2026-05-27 call — leadership team also dialing"] Mira CC'd Helios's group CFO + treasury lead onto Karim's call invite — 3 attendees Helios-side, not the 1:1 we expected. Sent 2026-05-25 22:04.  (uri:…)
     [from alina.crisan@protonmail.com · "Reference call 2 — Diane Martens"] Alina confirmed reference call 2 happened 2026-05-25 with Diane Martens as referee; "very positive, she vouched for tempo and decision discipline".  (uri:…)
     [from compliance-vendor-x · "SOC 2 mid-audit — draft findings"] Draft findings shared 2026-05-25 18:11. Two low-severity, one medium (RBAC documentation gap in operator console). Full report due 2026-06-13.  (uri:…)

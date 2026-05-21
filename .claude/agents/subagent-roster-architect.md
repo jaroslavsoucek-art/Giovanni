@@ -85,7 +85,7 @@ Write to `~/dev/Giovanni/.claude/agents/`:
 
 ## Rules (binding)
 
-1. **No domain content carry-over.** Generic versions only. No NEO/Shoptet/Asana-specific assumptions. Agents reference sources abstractly (`<source_type>` like "chat platform" / "email" / "calendar" / "project tracker" / "version control") with examples in inline comments.
+1. **No domain content carry-over.** Generic versions only. No source-domain codenames or vendor-specific assumptions. Agents reference sources abstractly (`<source_type>` like "chat platform" / "email" / "calendar" / "project tracker" / "version control") with examples in inline comments.
 
 2. **Frontmatter convention consistent.** Same format as architect agents you've seen: `name`, `description`, `tools`, `model`. Description includes trigger conditions.
 

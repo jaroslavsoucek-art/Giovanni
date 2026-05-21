@@ -16,7 +16,7 @@ Read-only snapshot at `~/dev/giovanni-source-snapshot/`. **Never write to this p
 Key sources to study:
 
 **Constitution pattern** (read structure, NOT content):
-- `knowledge/NEO_ustava.md` — 1327-line living constitution. Read first 200 lines + last 100 lines + scan section headers throughout. Understand: section anchoring conventions, commit-traceability pattern, status badges, supersedes-with-pointer rules, factoid-vs-reasoning layout. Do NOT extract domain content.
+- `knowledge/<source-constitution>.md` — the source's living constitution file (~1000+ lines). Read first 200 lines + last 100 lines + scan section headers throughout. Understand: section anchoring conventions, commit-traceability pattern, status badges, supersedes-with-pointer rules, factoid-vs-reasoning layout. Do NOT extract domain content.
 - `knowledge/INDEX.md` — auto-generated index. Read full to understand schema (one-liner + last commit + size per entry).
 - `knowledge/README.md` — read if exists.
 
@@ -58,7 +58,7 @@ Write to `~/dev/Giovanni/`:
 
 ### `scripts/` — generic regenerators + lint
 
-4. **`scripts/build-knowledge-index.sh`** — generic version. Reads `knowledge/*.md`, generates `knowledge/INDEX.md` with one-liner (from frontmatter or first heading), last commit, size. Portable bash, no source-domain assumptions (no hardcoded NEO/Shoptet paths).
+4. **`scripts/build-knowledge-index.sh`** — generic version. Reads `knowledge/*.md`, generates `knowledge/INDEX.md` with one-liner (from frontmatter or first heading), last commit, size. Portable bash, no source-domain assumptions (no hardcoded source-codename paths).
 
 5. **`scripts/build-memory-map.sh`** — generic version. Reads `memory/topics/`, `memory/decisions/`, `memory/briefs/`, `memory/stakeholders/`, `memory/archive/`, regenerates `memory/MAP.md` per template shape from memory-architect. Honors optional L3 subdirs (branch-out, shadow, calibration, intel, watch, audits) — render section only if subdir non-empty.
 
@@ -108,7 +108,7 @@ Write to `~/dev/Giovanni/`:
 
 ## Rules (binding)
 
-1. **No domain content carry-over.** No `Shoptet`, `NEO`, `MH`, `SOFA`, `Hospodka`, country names, etc. If you find these in source scripts/hooks → translate to placeholder or remove. For constitution template: structure only, no NEO-specific principles.
+1. **No domain content carry-over.** No source-domain codenames, person names, integration partners, or country references. If you find these in source scripts/hooks → translate to placeholder or remove. For constitution template: structure only, no source-specific principles.
 
 2. **Generic by default.** Scripts must run on any repo with `knowledge/` and `memory/` subtrees. No hardcoded paths beyond standard Giovanni structure.
 

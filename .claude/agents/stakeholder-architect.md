@@ -80,7 +80,7 @@ Write to `~/dev/Giovanni/`:
 
 ## Rules (binding)
 
-1. **No domain content carry-over.** No `Hospodka`, `Pavel Kácha`, `Tim Barker`, etc. Template fields use `<placeholder>` markers. Examples use Lattice Finance stakeholders only (Sarah Vyas, Morgan Chen, DP1 from test-domain.md).
+1. **No domain content carry-over.** No source-domain stakeholders, integration partners, or codenames. Template fields use `<placeholder>` markers. Examples use Lattice Finance stakeholders only (Sarah Vyas, Morgan Chen, DP1 from test-domain.md).
 
 2. **Schema must support relationship asymmetry.** Source's strongest move is the `asymmetric-power-up` framing — the relationship between Alex (founder) and Sarah (VC who can affect Series B vote) is structurally different from Alex–Morgan (50/50 co-founder). Template must make this explicit via the `relationship_type` field with documented enum and behavioral implications.
 
