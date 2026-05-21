@@ -1,6 +1,6 @@
 # Origin
 
-Giovanni was extracted from a working implementation of an AI Chief of Staff system built for a specific high-stakes operational program with multiple stakeholders and significant strategic stakes. The source implementation accumulated nine months of operational use, hundreds of decisions tracked, daily digest runs, predictive simulations, and adversarial reviews.
+Giovanni was extracted from a working implementation of an AI Chief of Staff system built for a specific high-stakes program (multi-market e-commerce platform expansion). The source implementation accumulated nine months of operational use, multiple stakeholders, hundreds of decisions tracked, daily digest runs, predictive simulations, and adversarial reviews.
 
 The extraction goal: keep the **structure** (memory architecture, governance discipline, predictive layer, agent roster, adversarial-default workflow), drop all **content** (specific stakeholders, decisions, project context, domain-specific compliance maps).
 

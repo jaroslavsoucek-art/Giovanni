@@ -137,8 +137,8 @@ Setup2 fork-and-fill walkthrough yet (see
 [`docs/setup1-complete.md`](docs/setup1-complete.md) § "What Setup1 did NOT
 include"). Hobby project — no commercial support, no roadmap promises.
 Built part-time by extracting the system layer from a real high-stakes
-operational program with significant strategic stakes, and stripping
-out all domain content.
+program (expansion of an e-commerce platform into 6 EU markets) and
+stripping out the domain content.
 
 Next stage (Setup2): fork Giovanni into a clean repo, fill with your own
 domain content, run actual workflows. **This is where the runtime gets
