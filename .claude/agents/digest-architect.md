@@ -16,8 +16,8 @@ Read-only snapshot at `~/dev/giovanni-source-snapshot/`. **Never write to this p
 Key sources:
 
 **Workflow:**
-- `.claude/workflows/neo-digest.md` — 12-step procedure (read fully)
-- `.claude/commands/neo-digest.md` — slash command spec
+- `.claude/workflows/<domain>-digest.md` — 12-step procedure (read fully; source files carry a domain prefix)
+- `.claude/commands/<domain>-digest.md` — slash command spec
 - `memory/digest_state.md` — state file format (acks, last run, expiry tracking)
 - `memory/digest_sources.md` — configured sources
 

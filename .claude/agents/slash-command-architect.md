@@ -17,7 +17,7 @@ Read-only snapshot at `~/dev/giovanni-source-snapshot/`. **Never write to this p
 
 Key sources:
 - `.claude/commands/*.md` — all source slash commands (read fully):
-  - `neo-digest.md` — daily digest invocation
+  - `<domain>-digest.md` — daily digest invocation
   - `branch-out.md` — predictive simulation
   - `shadow-review.md` — quarterly shadow audit
   - `calibration-report.md` — monthly accuracy aggregation

@@ -29,7 +29,7 @@ Key sources to study:
 **Hooks (in scope):**
 - `.claude/hooks/post-knowledge-edit.sh` — regen INDEX on knowledge writes
 - `.claude/hooks/post-memory-edit.sh` — regen MAP on memory writes
-- `.claude/hooks/post-ustava-edit-check.sh` — constitution edit guardrails (commit signature check, supersedes-pointer presence)
+- `.claude/hooks/post-<constitution>-edit-check.sh` — constitution edit guardrails (source hook name carries the domain term for its constitution) (commit signature check, supersedes-pointer presence)
 - `.claude/hooks/session-start-audit-check.sh` — cadence warnings (light 14d, full 35d)
 - `.claude/hooks/check-decision-records.sh` — lint decision records (trigger_conditions non-empty, status enum)
 - `.claude/hooks/check-unmerged-claude-branches.sh` — git hygiene (Claude-created branches not merged)

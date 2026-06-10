@@ -23,7 +23,7 @@ Key sources:
 - `.claude/workflows/stakeholder-profile.md` — bootstrap + refresh workflow (how to seed new profile, when to refresh, what signals trigger update)
 
 **Source profiler agent (read for capability shape only, do NOT carry over):**
-- `.claude/agents/neo-stakeholder-profiler.md` — agent definition for bootstrap/refresh. Note its capabilities (Slack + email + calendar + Asana + Git source-pulling). Your job is the **schema**, not the agent — generic profiler agent lives in `subagent-roster-architect`'s domain.
+- `.claude/agents/<domain>-stakeholder-profiler.md` — agent definition for bootstrap/refresh. Note its capabilities (Slack + email + calendar + Asana + Git source-pulling). Your job is the **schema**, not the agent — generic profiler agent lives in `subagent-roster-architect`'s domain.
 
 **Cross-reference reads:**
 - `~/dev/Giovanni/memory/README.md` — memory-architect explicitly handed off field-level schema to you

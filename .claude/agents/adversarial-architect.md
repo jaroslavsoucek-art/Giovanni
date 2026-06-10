@@ -18,7 +18,7 @@ Read-only snapshot at `~/dev/giovanni-source-snapshot/`. **Never write to this p
 Key sources:
 
 **Agent + workflow:**
-- `.claude/agents/neo-adversarial.md` — agent definition
+- `.claude/agents/<domain>-adversarial.md` — agent definition (source files carry a domain prefix)
 - `.claude/workflows/adversarial-review.md` — workflow steps + trigger conditions + verdict format
 
 **Policy:**
@@ -43,7 +43,7 @@ Write to `~/dev/Giovanni/`:
 2. **`.claude/workflows/adversarial-review.md`** — full workflow:
    - **Triggers** (binding list): `[REVIEW]` tag, "review tohle/this", "redline this", "before sending", "tear this apart", "challenge this position"
    - **Scope** — what gets adversarial review (decisions, position papers, fundraise narratives, board materials, public communications, predictive forecasts). What does NOT (status reports, scheduling, mechanical content QA — those route to deliverable-reviewer).
-   - **Default mode is adversarial, not advisory** — no softening, no "celkově dobrý draft, jen..." preamble. Direct attack on weakest claim, position, or assumption.
+   - **Default mode is adversarial, not advisory** — no softening, no "overall a good draft, just..." preamble. Direct attack on weakest claim, position, or assumption.
    - **Verdict format** — SHIP / REWRITE / KILL with explicit criteria for each tier:
      - SHIP: position is defensible, evidence supports, no fatal counter-case
      - REWRITE: position has merit but execution has fixable issues

@@ -18,16 +18,16 @@ Read-only snapshot at `~/dev/giovanni-source-snapshot/`. **Never write to this p
 Key sources:
 
 **Source agent definitions:**
-- `.claude/agents/neo-source-puller.md` — single-source pull pattern (Slack/email/calendar/Asana/git), parallel fan-out usage
-- `.claude/agents/neo-research.md` — external research workflow, memory note output, ústava patch proposal
-- `.claude/agents/neo-stakeholder-profiler.md` — bootstrap/refresh profile from cross-source signals
-- `.claude/agents/neo-deliverable-reviewer.md` — pre-share QA pass
-- `.claude/agents/neo-consistency-checker.md` — cross-doc semantic drift checks
-- `.claude/agents/neo-market-radar.md` — external competitive intelligence scan
+- `.claude/agents/<domain>-source-puller.md` — single-source pull pattern (Slack/email/calendar/Asana/git), parallel fan-out usage
+- `.claude/agents/<domain>-research.md` — external research workflow, memory note output, constitution patch proposal
+- `.claude/agents/<domain>-stakeholder-profiler.md` — bootstrap/refresh profile from cross-source signals
+- `.claude/agents/<domain>-deliverable-reviewer.md` — pre-share QA pass
+- `.claude/agents/<domain>-consistency-checker.md` — cross-doc semantic drift checks
+- `.claude/agents/<domain>-market-radar.md` — external competitive intelligence scan
 
 **SKIP these** (not your scope):
-- `.claude/agents/neo-architect.md` — domain-specific systems architect, NOT generic
-- `.claude/agents/neo-adversarial.md` — adversarial-architect's domain
+- `.claude/agents/<domain>-architect.md` — domain-specific systems architect, NOT generic
+- `.claude/agents/<domain>-adversarial.md` — adversarial-architect's domain
 
 **Workflow integration:**
 - `CLAUDE.md` — find AGENTY section (parallel/sequential patterns)

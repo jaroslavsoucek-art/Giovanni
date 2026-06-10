@@ -65,7 +65,7 @@ Write to `~/dev/Giovanni/memory/`:
 ## What you do NOT own
 
 - **Stakeholder profile schema** (sentiment trajectory, active threads, communication style fields) → `stakeholder-architect`
-- **Constitution / ústava pattern** → `governance-architect`
+- **Constitution pattern** → `governance-architect`
 - **Daily digest mechanics** → `digest-architect`
 - **Predictive layer (branch-out / shadow / calibration)** → `prediction-architect`
 - **Adversarial review workflow** → `adversarial-architect`
