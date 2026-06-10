@@ -151,6 +151,23 @@ adversarial_check: >-
 
   Default rule: "if uncertain, falsified". Generosity in verdict =
   motivated reasoning = calibration corruption.>
+
+caveat: >-
+  <OPTIONAL — matched-with-caveat marker. Filled at /shadow-review time;
+  leave null at generation and for strict matches or falsified verdicts.
+
+  Use when the SUBSTANCE of the prediction matched but the channel or
+  timing missed — e.g. predicted "morgan-chen confirms the VP Eng finalist
+  on the chat-platform within 48h", and Morgan confirmed the finalist, but
+  in the weekly 1:1 and two days late. Status stays resolved-yes and the
+  hypothesis counts as matched in actor scores — but calibration reports
+  split strict vs caveat matches, so the caveat MUST be recorded here,
+  not buried in resolved_reasoning.
+
+  Symmetry principle (binding): generosity on substance corrupts
+  calibration one way; strictness on channel/timing corrupts it the
+  other. A channel/timing miss alone is NOT grounds for falsified —
+  but an undocumented caveat is motivated reasoning by omission.>
 ```
 
 <!--

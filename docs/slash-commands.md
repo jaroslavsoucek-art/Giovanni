@@ -1,11 +1,11 @@
 # Slash commands — design patterns + conventions
 
-Giovanni's invokable surface is eight slash commands. Each is a **thin shell** that wires pre-flight checks + argument parsing + routing to an agent (or to a workflow procedure with parallel agent fan-out). This doc is the **why** companion to [`.claude/commands/README.md`](../.claude/commands/README.md) (the registry).
+Giovanni's invokable surface is nine slash commands. Each is a **thin shell** that wires pre-flight checks + argument parsing + routing to an agent (or to a workflow procedure). This doc is the **why** companion to [`.claude/commands/README.md`](../.claude/commands/README.md) (the registry).
 
 Two audiences:
 
 1. **Forking principals** customizing Giovanni for a new domain — read the conventions and decide which ones to keep / adapt
-2. **Future architects** adding a ninth command — read the patterns and follow them, or document why you're deviating
+2. **Future architects** adding a tenth command — read the patterns and follow them, or document why you're deviating
 
 ---
 
@@ -37,7 +37,7 @@ If a command file grows past ~250 lines of body content, that's a smell. The mec
 
 Drift compounds. If the command file embeds 200 lines of business logic, that logic gets out of sync with the agent file's logic — and now there are two sources of truth for "what does `/branch-out` actually do". The thin-shell discipline keeps the agent definition as the single source of truth.
 
-The seven non-workflow commands route to a single agent each. `/digest` is the exception — it routes to a workflow procedure (`.claude/workflows/daily-digest.md`) that internally fans out to `source-puller` agents. Even there, the command file doesn't embed the 12-step procedure; it points at the workflow.
+The seven non-workflow commands route to a single agent each. `/digest` and `/consistency-review` are the exceptions — they route to workflow procedures. `/digest` routes to `.claude/workflows/daily-digest.md`, which internally fans out to `source-puller` agents; `/consistency-review` routes to `.claude/workflows/consistency-review.md`, an interactive main-thread triage with no agent spawn. Even there, the command files don't embed the procedures; they point at the workflows.
 
 ### Anti-pattern catalogue
 
@@ -50,7 +50,7 @@ The seven non-workflow commands route to a single agent each. `/digest` is the e
 
 ## 2. Argument syntax conventions
 
-Consistency across the eight commands keeps the muscle memory cheap.
+Consistency across the nine commands keeps the muscle memory cheap.
 
 ### The three forms
 
@@ -162,7 +162,7 @@ If pre-flight is too restrictive, the principal sees a clear "fix this precondit
 
 ## 4. Agent routing pattern
 
-Seven of the eight commands route to a single agent via `Task`. `/digest` is the exception — it routes to a workflow with parallel agent fan-out.
+Seven of the nine commands route to a single agent via `Task`. The exceptions route to workflow procedures: `/digest` (workflow with parallel agent fan-out) and `/consistency-review` (interactive main-thread triage, no agent spawn).
 
 ### Single-agent routing (canonical)
 
@@ -206,6 +206,8 @@ The orchestrator MAY:
 
 The workflow file (`.claude/workflows/daily-digest.md`) defines the 12 steps. The command file points at the workflow and handles orchestration concerns (parallel fan-out, state update, hand-off to drift response sub-flow). The workflow file is the procedural spec; the command file is the runtime contract.
 
+`/consistency-review` follows the same shape minus the fan-out: the command file (`.claude/commands/consistency-review.md`) handles pre-flight + argument resolution, then runs the interactive triage procedure from `.claude/workflows/consistency-review.md` in the main thread — per-finding verdicts come from the principal, so there's no agent to spawn.
+
 ### Parallel fan-out (binding pattern in `/digest` Step 4)
 
 **Single message, N agent calls.** All `source-puller` invocations happen in one orchestrator message. Each agent runs in isolated context. Failure isolation: one source failing doesn't block the others.
@@ -229,7 +231,7 @@ Three output modes:
 | Mode | Use for | Examples |
 |---|---|---|
 | **Chat-only** (ephemeral) | Output that doesn't merit persistence — verdicts, summaries, briefings | `/review`, `/redline`, `/digest` (the digest body itself) |
-| **Persistent artifact (unstaged)** | Output that becomes canonical state | `/branch-out` (artifact + decision draft + shadow), `/shadow-review` (audit log + moved YAMLs), `/calibration-report` (report + actor-scores), `/consistency-check` (audit report), `/market-radar` (memo) |
+| **Persistent artifact (unstaged)** | Output that becomes canonical state | `/branch-out` (artifact + decision draft + shadow), `/shadow-review` (audit log + moved YAMLs), `/calibration-report` (report + actor-scores), `/consistency-check` (audit report + state), `/consistency-review` (state update + accepted diffs), `/market-radar` (memo) |
 | **Both** | Render summary to chat + write artifact | All persistent-artifact commands also relay a summary |
 
 **No command auto-commits.** This is the binding rule that keeps the git log honest.
@@ -259,6 +261,7 @@ The orchestrator surfaces what was written; the principal decides commit groupin
 | `/shadow-review` | `memory/calibration/audit-log.md` (append), `memory/shadow/{resolved,expired}/<YYYY-MM>/` (moves) |
 | `/calibration-report` | `memory/calibration/monthly/<YYYY-MM>.md`, `memory/calibration/actor-scores.yaml` |
 | `/consistency-check` | `memory/audits/consistency/<YYYY-MM-DD>.md`, `memory/audits/consistency/_state.md` (append) |
+| `/consistency-review` | `memory/audits/consistency/_state.md` (run entry completed + aggregate precision), accepted diffs applied to target files |
 | `/market-radar` | `memory/intel/market-radar/<YYYY-WW>.md` or `memory/intel/market-radar/focused/<YYYY-MM-DD>_<slug>.md` |
 | `/review`, `/redline` | none by default (optional `memory/intel/adversarial/` if fork opted in) |
 
@@ -290,7 +293,7 @@ The agent returns a structured error. The orchestrator surfaces it verbatim.
 
 ### Cadence guard hit
 
-`/digest` `--force` overrides; `/calibration-report` and `/consistency-check` don't have hard cadence guards (only advisories).
+`/digest` `--force` overrides; `/shadow-review` `--force-review-now` overrides the COI guard (by excluding recent resolutions from the cohort, not by reviewing them); `/calibration-report` and `/consistency-check` don't have hard cadence guards (only advisories).
 
 When a cadence guard is hit:
 
@@ -306,9 +309,11 @@ When a cadence guard is hit:
 | `/digest` | hard | 4 h since last run | `--force` |
 | `/branch-out` | soft warning | stale draft for today exists | confirm at prompt (`y/N`) |
 | `/shadow-review` | advisory | last run < 60 days ago | continue with advisory |
+| `/shadow-review` | hard (COI guard) | any cohort hypothesis `resolved_date` < 48 h ago | `--force-review-now` (excludes recent resolutions from the cohort instead of reviewing them) |
 | `/calibration-report` | hard | month boundary (no future / current) | none — can't aggregate incomplete months |
 | `/calibration-report` | soft warning | report for `<YYYY-MM>` already exists | confirm at prompt (`y/N`) |
 | `/consistency-check` | none (manual cadence) | — | — |
+| `/consistency-review` | none (run after each `/consistency-check` during shadow mode) | — | — |
 | `/market-radar` | advisory | scope file > 90d stale | continue with advisory |
 | `/review`, `/redline` | none | — | — |
 
@@ -338,6 +343,7 @@ What slash commands must NOT do.
 - **`/shadow-review`:** no skipping adversarial-check; no defaulting to matched when uncertain; no auto-modify of `actor-scores.yaml` (that's `/calibration-report`)
 - **`/calibration-report`:** no cherry-picking cohort; no generous mixed-verdict aggregation; no auto-applying triage suggestions
 - **`/consistency-check`:** no auto-applying proposed diffs; no running on every session-start during shadow mode; no raising the 10-findings cap
+- **`/consistency-review`:** no "accept all" without reading findings; no skipping the state-file update; no conflating reject (right finding, wrong diff) with false-positive (wrong finding)
 - **`/market-radar`:** no "switch to X" framing for drift candidates; no padding empty memos; no daily cadence
 - **`/review`, `/redline`:** no softening verdicts; no RLHF preambles; no language switching in relay
 

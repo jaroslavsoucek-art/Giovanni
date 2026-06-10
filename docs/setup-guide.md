@@ -114,6 +114,8 @@ Open `memory/triage-heuristic.yaml`. Default thresholds (3 active branch-outs/da
 1. Edit `.claude/agents/source-puller.md` frontmatter `tools:` list, append your MCP tool identifiers (e.g. `mcp__<your-slack-id>__slack_read_channel`, etc.)
 2. Update body's "Tool routing per source_type" section to map your `source_type` enum values to actual MCP tool calls
 
+**Write gate:** wire **read-only** tools first. Wire write-capable tools (post / send / publish / update) only after adopting the external write gate — reads are free, writes require per-action confirmation, and an ambiguous instruction is never publish authorization. See [`docs/governance.md`](governance.md) § "External write gate" and the constitution template's `{#external-write-gate}` section (enumerate your gated destinations there before the first write-capable tool goes live).
+
 **Time:** ~15-30 min if your MCP tools are already configured. Hours if not.
 
 ## Step 6 — Install hooks + verify lint
@@ -175,6 +177,36 @@ After 90 days:
 ```
 
 Manual audit of resolved shadow hypotheses with adversarial lookback. **Default to skeptical** — see [`docs/prediction.md`](prediction.md) § "Adversarial lookback".
+
+## Running in cloud / ephemeral sessions
+
+If your fork also runs in cloud or CI agent sessions (web/mobile Claude Code, ephemeral containers) alongside a local dev machine, the two environments have different capabilities. Codify the split once, in your fork's `CLAUDE.md`, so the agent doesn't report missing local conveniences as errors.
+
+### Detection
+
+Use an **explicit signal the fork configures** — an environment variable (e.g. `GIOVANNI_ENV=ephemeral` exported in the container image) or a hostname check against your known machines. Don't rely on incidental heuristics like OS name or home-directory paths; they break the first time you change machines.
+
+### Silently-skip list (local-only mechanisms)
+
+Enumerate the mechanisms that only exist on the local machine, and instruct the agent to **silently skip** them in ephemeral sessions — skip, don't flag as failure:
+
+- **Output mirrors** — local folders where final artifacts get copied for the principal's file browser. Cloud output channel = git commit + push, nothing else.
+- **Sibling code repositories** used for code research — typically not cloned in the container. The agent flags such tasks as "requires local session" rather than guessing repo contents.
+- **Local-only scripts** — `install-hooks.sh`, private-repo sync scripts, OS-specific workarounds.
+
+### Cloud-mandatory rules
+
+1. **Unshallow before regenerating.** Cloud clones are often shallow; the INDEX/MAP generators need git history for last-commit dates. Run `git fetch --unshallow origin` before any regeneration. The generators refuse non-dry writes on shallow clones and lint SKIPs staleness checks — those guards prevent corruption, but unshallowing is the correct fix, not ignoring the skip. (See [`docs/governance.md`](governance.md) § "Environment awareness".)
+2. **Commit and push everything valuable before session end.** The container is ephemeral — unpushed work is lost work.
+
+## Importing an external skill library
+
+Some forks inherit a skill/convention library from an employer or upstream engineering org alongside the framework. The pattern that keeps the two ecosystems from fighting:
+
+1. **Read-only mirror, distinct namespace.** Import the upstream library into its own clearly-named subtree (e.g. a shared prefix on skill directory names). Never edit mirrored skills in place — fixes go upstream.
+2. **Gate contention-prone skills.** Imported skills that collide with framework workflows (PRD writers, issue writers, review workflows) get `disable-model-invocation: true` so they are manual-only — auto-triggering them would bypass your fork's own templates and target systems. Low-contention skills may keep auto-trigger.
+3. **Re-apply gating on every sync.** If a script pulls upstream updates, it must re-apply the gating flags after each pull — otherwise the next sync silently re-enables auto-invocation.
+4. **Conflict rule (binding):** when an imported skill's output conflicts with the fork's own governance docs, **the fork's docs win**. The mirror is reference material, not authority.
 
 ## What to expect month-by-month
 

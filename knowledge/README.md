@@ -38,7 +38,7 @@ This document explains the layer's contract, when to add a knowledge doc, how to
 
 ## The living constitution pattern
 
-One file per fork holds the canonical operating principles, architecture decisions, organizational facts, and decision audit trail back-links. Source convention is `<DOMAIN>_ustava.md` (Czech for "constitution"); Giovanni's generic template is `knowledge/constitution.template.md`.
+One file per fork holds the canonical operating principles, architecture decisions, organizational facts, and decision audit trail back-links. Naming is fork-time configurable (`constitution_file` in `governance.config.yaml` — e.g. `<domain>_charter.md`); Giovanni's generic template is `knowledge/constitution.template.md`.
 
 ### Structural conventions
 
@@ -82,12 +82,23 @@ When you're about to edit the constitution:
 4. **Update last-touch date.** Add a date marker (e.g. `_Last updated 2026-05-21._`) so age can be tracked.
 5. **Commit with `docs(constitution):` prefix.** Body should explain what + why.
 
+### Current-state only — no in-artifact tombstones (binding)
+
+Canonical documents state **current truth only**. When a decision changes canon, rewrite the affected section to its current state — do not weave inline edit trails like `[changed 2026-05-12 per decision X]` or `(was: per-seat, updated after board call)` through the prose. Supersession history has three sanctioned homes, and inline trails are not one of them:
+
+1. **Git history** — every amendment is a commit with a `docs(constitution):` / `decision:` prefix.
+2. **Decision records** (`memory/decisions/`) — the *why*, linked via the section's `Source:` back-link.
+3. **Supersession stubs** — a replaced section becomes a `(SUPERSEDED → §<new-anchor>)` stub; the new section just states the new position.
+
+The section's last-updated date and `Source:` line are the only inline provenance. Anything more creates a second, competing history inside the artifact that drifts from git and makes sections progressively unreadable — a reader six months out needs the answer, not the archaeology.
+
 ### Anti-patterns
 
 - **Editing the constitution to reflect ambition rather than reality.** The constitution is a record of what *is* and what is *decided*, not what you hope. If a position isn't decided yet, leave it `OPEN`.
 - **Deleting superseded content.** Always preserve the old section as a stub with a pointer. Future readers need the trail.
 - **Cramming current operational state into the constitution.** That's memory's job. Constitution is canonical; memory is current.
 - **Adding sections without anchor IDs.** Anchors enable inbound pointers from memory and other constitution sections. No anchor = unlinkable = lost.
+- **Inline decision-trails inside live sections.** `[changed YYYY-MM-DD per decision X]` markers accumulate into tombstone archaeology. Rewrite to current state; history belongs in git, the decision record, and the supersession stub (see "Current-state only" above).
 
 ---
 

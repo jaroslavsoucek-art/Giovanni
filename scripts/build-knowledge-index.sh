@@ -39,6 +39,14 @@ fi
 
 cd "${REPO_ROOT}"
 
+# Shallow clone → `git log -1 -- <file>` attributes pre-boundary files to the
+# graft commit = wrong dates. Never overwrite the committed INDEX from such a
+# state (cloud / ephemeral / CI sessions); --dry is still allowed for inspection.
+if [ "${DRY}" -eq 0 ] && [ "$(git rev-parse --is-shallow-repository 2>/dev/null)" = "true" ]; then
+    echo "build-knowledge-index: shallow clone — refusing to write INDEX.md (git dates unreliable). Run 'git fetch --unshallow' first." >&2
+    exit 0
+fi
+
 # ----- helpers -----
 
 human_size() {
@@ -69,7 +77,18 @@ first_h1() {
 }
 
 last_commit_date() {
-    git log -1 --format='%ad' --date=short -- "$1" 2>/dev/null || echo "-"
+    # Race fix: if the file has uncommitted changes (staged or working-tree)
+    # or is untracked, it is about to be committed → report TODAY so the
+    # freshly-generated index matches what `git log` will return AFTER the
+    # imminent commit. Without this, a pre-commit regen runs one commit
+    # behind and the committed index goes stale the instant the commit
+    # lands — failing the index-stale lint check on the very commit that
+    # wrote it.
+    if [ -n "$(git status --porcelain -- "$1" 2>/dev/null)" ]; then
+        date +%F
+    else
+        git log -1 --format='%ad' --date=short -- "$1" 2>/dev/null || echo "-"
+    fi
 }
 
 # ----- output -----

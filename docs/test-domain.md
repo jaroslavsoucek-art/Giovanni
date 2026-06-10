@@ -26,6 +26,7 @@
 | `marcus-liu` | Board observer (smaller fund) | Quarterly board, occasional intros |
 | `priya-shah` | Head of Sales (hired 6 months ago) | First commercial leader, direct report |
 | `lattice-design-partner-1` | Design partner (one of 3) | Largest customer, €180K ARR, churn risk |
+| `karim-solanki` | CFO at design partner 1, new buyer-of-record | Took over after the original champion departed; evaluating renewal — tracked inside the `lattice-design-partner-1` profile |
 | `lattice-design-partner-2` | Design partner | €120K ARR, healthy |
 | `lattice-design-partner-3` | Design partner | €60K ARR, scaling slowly |
 | `compliance-vendor-x` | SOC 2 audit firm | Active engagement, mid-audit |
@@ -55,7 +56,7 @@
 - **Predictive layer:** what does Sarah (VC) do if SOC 2 slips? What does Morgan do if VP Eng hire fails to close?
 - **Calibration:** Alex's prediction track record on board reactions, customer renewals
 - **Adversarial review:** every fundraise narrative draft, every pricing change announcement
-- **Ústava equivalent:** Lattice's own operating principles (e.g. "we don't sell to companies without finance team", "we charge platform + entity, never per-seat")
+- **Constitution equivalent:** Lattice's own operating principles (e.g. "we don't sell to companies without finance team", "we charge platform + entity, never per-seat")
 
 ## How to use this doc
 

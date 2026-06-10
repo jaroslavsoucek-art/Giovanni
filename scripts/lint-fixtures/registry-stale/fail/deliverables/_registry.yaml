@@ -1,0 +1,13 @@
+# Deliverables lifecycle registry — fixture whose committed REGISTRY.md is
+# deliberately stale (an entry was added without regenerating).
+entries:
+  - file: 2026-05-20_board-deck-q2.md
+    status: draft
+    type: board-deck
+    date: 2026-05-20
+    note: Q2 board meeting — pending Alex review
+  - file: 2026-04-12_design-partner-one-pager.md
+    status: sent
+    type: one-pager
+    date: 2026-04-12
+    note: sent to design partner 2 buying group

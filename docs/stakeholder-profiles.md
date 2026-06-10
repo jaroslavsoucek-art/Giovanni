@@ -111,6 +111,14 @@ A `relationship_type: asymmetric-power-up` with `profile_depth: shallow`
 is a red flag — high-stakes counterparty with thin signal. Plan a
 targeted bootstrap session.
 
+`asymmetric-power-up` profiles often hold board / sponsor seats in the
+initiative's operating model. If your fork fills the optional role matrix
+(see `knowledge/constitution.template.md` § Stakeholder model → "Operating
+model / role boundaries"), cross-check it: every seat-holder there deserves
+at least a `partial`-depth profile, and the lane-separation rules
+(`docs/governance.md` § "Role boundaries") depend on knowing which seat a
+person holds.
+
 ### Step 5 — Draft + assumption flagging
 
 Fill the template. For any claim not directly supported by observed

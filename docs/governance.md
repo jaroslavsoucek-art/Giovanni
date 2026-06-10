@@ -111,6 +111,74 @@ Conventional Commits with Giovanni-specific scopes. Pre-commit lint enforces som
 
 ---
 
+## External write gate (binding) {#external-write-gate}
+
+Giovanni's "never auto-commit" rule covers git. This section covers everything else an agent can write to: shared wikis (`documentation-platform`), chat (`chat-platform`), trackers (`project-tracker`), email, calendar — any destination other people see before the principal reviews it.
+
+**Two-tier rule:**
+
+- **Reads are free.** Pulling signal from any configured source requires no confirmation — that is what the digest does.
+- **Writes are gated per action.** Any create / update / delete / post / send / publish to an external or shared system requires explicit confirmation of *that specific action*. Repo-local writes (git working tree, `deliverables/` drafts) follow the normal rules (commit only on request).
+
+**Ambiguous instruction ≠ publish authorization.** "Process X", "handle this", "do item 1" do not authorize publishing. The agent produces a local draft (typically in `deliverables/`) and asks for confirmation of the specific write — "publish to <documentation-platform> page <name>?", "send to <stakeholder_slug>?". The confirmation must name the destination and the action; approving "the task" is not approving the write.
+
+Both halves of this rule guard against the same failure shape: an ambiguous instruction read as write authorization. A terse "do item 1" gets read as "publish item 1 to the wiki"; a "confirm the meeting" gets read as "send the confirmation" when the principal wanted a confirmation *draft*. Neither reading is malicious — both are plausible. That is exactly why the gate is per-action and explicit: plausibility is not authorization.
+
+### Channel demotion — the escalation pattern
+
+When a destination accumulates write misfires, demote it to **absolute read-only**. After demotion:
+
+- The agent never writes there — no send, no draft-in-platform, no scheduled message, no canvas/page edit — even when the instruction *sounds* like a send ("reply to him", "confirm the meeting").
+- Agent output for that channel is **copy-paste text in chat only**. The principal posts it themselves.
+- Re-promotion requires an explicit decision record, not gradual relaxation.
+
+Demotion is deliberately asymmetric: one misfire on a gated channel is enough to demote, because the cost of a wrong external write (confidentiality leak, wrong commitment in the principal's name) is far higher than the cost of copy-pasting.
+
+### Provenance-in-rule convention
+
+Binding safety rules cite the decision record that created them — e.g. `Source: memory/decisions/<date>-external-write-gate.md`. A safety rule without provenance invites future relaxation ("why do we even have this?"); the decision record preserves the incident context that justifies the strictness.
+
+Fork-time: enumerate your gated destinations in the constitution's external-write-gate section (see `knowledge/constitution.template.md`) and wire write-capable MCP tools only after adopting the gate (see `docs/setup-guide.md` § Step 5).
+
+---
+
+## Role boundaries — principal vs project-manager lane (pattern) {#role-boundaries}
+
+Many domains pair the principal (product / strategy / vision owner) with a peer **project-manager seat** that owns delivery: status reporting, scheduling, cross-team coordination, RAID logs. When both seats exist, the agent must respect the lane split:
+
+1. **Flag, don't absorb.** When incoming work is delivery / status / RAID / scheduling / cross-functional coordination, the agent flags it as the PM seat's lane — it does not map it onto the principal or silently do the PM's artifacts.
+2. **Slice, don't duplicate, shared forums.** For recurring status meetings the PM owns, the agent generates only the principal's slice (e.g. the product slide), never a full project status.
+3. **Escalation routing.** Cross-functional blocker → PM seat. Strategic / scope / budget / go-no-go / pricing → sponsor or board seat. The agent routes; it does not collapse everything onto the principal.
+4. **Consume PM artifacts as inputs.** The PM's agendas, minutes, decision log, and RAID feed the digest as sources; the principal's decisions and product-side risks feed back into the PM's log. Two systems, deliberate sync — not one system pretending to be both.
+5. **Open comment threads ≠ settled canon.** Unresolved comments in a governance document are not canon. Don't treat a doc with live disagreement as RESOLVED.
+
+The fork-time role matrix (who holds which seat) lives in the constitution — see `knowledge/constitution.template.md` § Stakeholder model → "Operating model / role boundaries". Solo-founder forks without a PM seat delete the block; the pattern only binds where the seats actually exist.
+
+---
+
+## Deliverables lifecycle registry (opt-in) {#deliverables-registry}
+
+`deliverables/` is the landing zone for outbound artifacts — drafts, decks, one-pagers, exports. Past a certain volume, a flat output directory rots: nobody knows what is current, sent, or superseded, and renaming files to encode status breaks every inbound reference. The registry fixes both.
+
+**Schema** (`deliverables/_registry.yaml`, template at `deliverables/_registry.template.yaml`): a single `entries:` list, one entry per file — `{file, status, type, date, note}`, with `status ∈ {live, draft, sent, superseded}`.
+
+**Binding rules once activated:**
+
+- **New file in `deliverables/` ⇒ registry entry.** No orphans in either direction — the `deliverables-registry` lint rule checks bidirectional completeness.
+- **Status flip = edit the yaml, NEVER rename or move the file.** Status lives in metadata, not in the path. This is the anti-link-rot rule: memory shards, knowledge docs, and decision records point at deliverable paths; a rename to encode "final" or "sent" silently breaks every one of those pointers.
+- **`_archive/` and dotfiles are outside the registry.** Archive is historical record, not lifecycle state.
+- **`date` = creation/send date of the artifact, not last edit.**
+- **`REGISTRY.md` is auto-generated** by `scripts/build-deliverables-registry.py` from the yaml (regen-and-diff pattern, same as INDEX and MAP). Never hand-edit; after a yaml change, regenerate.
+- **Archive sweep at full-audit cadence:** at each full memory audit (`audit_full_cadence_days`, default 35), `superseded` entries whose files have zero inbound references move to `deliverables/_archive/`.
+
+**Activation trigger:** this is an opt-in layer — the lint rules no-op while `_registry.yaml` is absent. Defer activation until your flat deliverables directory exceeds **~50 files**; below that, the maintenance cost outweighs the link-rot risk. When you activate, backfill every existing file in one commit.
+
+**Config:** `deliverables_dir` in `governance.config.yaml` (default `deliverables`, env override `GIOVANNI_DELIVERABLES_DIR`).
+
+See `deliverables/README.md` for the full contract and a worked example.
+
+---
+
 ## State file placement (resolved memory-architect open question #1)
 
 **Decision: flat at `memory/<name>_state.md`.**
@@ -172,6 +240,7 @@ resolved_shard_retirement_days: 90
 | `.claude/hooks/post-memory-edit.sh` | After Edit/Write to `memory/{topics,decisions,briefs,stakeholders,archive}/*` (except MAP.md) | Regenerates `memory/MAP.md` via `scripts/build-memory-map.sh`. Inline echo confirms refresh. |
 | `.claude/hooks/post-constitution-edit-check.sh` | After Edit/Write to `knowledge/<constitution>.md` | Surfaces amendment checklist: supersedes-pointer convention, commit prefix expectation, decision-record back-link reminder. Detects unattached "SUPERSEDED" headers. |
 | `.claude/hooks/session-start-audit-check.sh` | At Claude Code session start | Warns if cadence overdue, L1 over size, strikethrough creep. Silent if state file missing (fresh fork). |
+| `.claude/hooks/session-start-digest.sh` | At Claude Code session start | Soft reminders from `memory/digest_state.md`: digest overdue (default 12h, `GIOVANNI_DIGEST_THRESHOLD_HOURS`), expired drift acks, shadow-review cadence overdue. Never blocks; silent on missing/malformed state. |
 | `.claude/hooks/check-decision-records.sh` | Pre-tool-use of `git commit` (configure in `.claude/settings.json`) | Blocks commit if any staged `memory/decisions/*.md` has empty `trigger_conditions`. Override: `GIOVANNI_SKIP_DECISION_CHECK=1`. |
 | `.claude/hooks/check-unmerged-claude-branches.sh` | Session start / stop | Warns if `claude/*` branches exist that aren't merged to `main`. Threshold configurable via `GIOVANNI_BRANCH_WARN_THRESHOLD` (default 1). |
 
@@ -183,23 +252,42 @@ resolved_shard_retirement_days: 90
 
 Two-layer lint (`scripts/lint.sh` + `scripts/lint.py` + `scripts/lint_rules/`):
 
-- **Bash side** (`scripts/lint.sh`): INDEX/MAP staleness checks (cheap diff against `--dry` output) + `bash -n` syntax checks for hooks + scripts.
+- **Bash side** (`scripts/lint.sh`): INDEX/MAP/REGISTRY staleness checks (cheap diff against `--dry` output) + `bash -n` syntax checks for hooks + scripts.
 - **Python side** (`scripts/lint.py`): pluggable rules in `scripts/lint_rules/*.py`. One rule per file. Each rule exposes `CHECK_ID` constant + `run(ctx)` function.
 
-### Built-in rules
+### Built-in checks
+
+Bash-side (in `scripts/lint.sh`, all critical):
+
+| Check | What it checks |
+|---|---|
+| `index-stale` | `knowledge/INDEX.md` matches `build-knowledge-index.sh --dry` ([SKIP] on shallow clones) |
+| `map-stale` | `memory/MAP.md` matches `build-memory-map.sh --dry` ([SKIP] on shallow clones) |
+| `registry-stale` | `deliverables/REGISTRY.md` matches `build-deliverables-registry.py --dry` (opt-in — only when `_registry.yaml` exists) |
+| `hook-syntax` | All `.claude/hooks/*.sh` pass `bash -n` |
+| `script-syntax` | All `scripts/*.sh` pass `bash -n` |
+
+Python-side pluggable rules (`scripts/lint_rules/*.py`):
 
 | Rule | Severity | What it checks |
 |---|---|---|
-| `index-stale` | critical | `knowledge/INDEX.md` matches `build-knowledge-index.sh --dry` |
-| `map-stale` | critical | `memory/MAP.md` matches `build-memory-map.sh --dry` |
-| `hook-syntax` | critical | All `.claude/hooks/*.sh` pass `bash -n` |
-| `script-syntax` | critical | All `scripts/*.sh` pass `bash -n` |
+| `adversarial-verdict-format` | low | Persisted adversarial reviews use the SHIP/REWRITE/KILL enum + count fields (no-op without `memory/intel/adversarial/`) |
+| `branch-out-no-recommendation` | medium / critical | Branch-out artifacts stay generative — no recommendation prose or structure |
+| `constitution-anchors` | medium | Every constitution H2/H3 has `{#anchor-id}` |
+| `decision-trigger-conditions` | critical | Decision records have non-empty trigger conditions |
+| `deliverables-registry` | high | Deliverables ↔ `_registry.yaml` bidirectional completeness, schema + status enum (no-op without `_registry.yaml`) |
+| `digest-state-freshness` | low / medium | Digest state `last_run_timestamp` is recent (operational tempo signal) |
+| `domain-leak` | high | Configurable denylist matches caught (fork-time activity) |
 | `l1-size` | high / critical | L1 line count vs warn/critical thresholds |
 | `l1-strikethrough-ratio` | medium / critical | Strikethrough ratio vs threshold |
-| `decision-trigger-conditions` | critical | Decision records have non-empty trigger conditions |
-| `topic-shard-frontmatter` | medium | Required fields present |
-| `constitution-anchors` | medium | Every H2/H3 has `{#anchor-id}` |
-| `domain-leak` | high | Configurable denylist matches caught (fork-time activity) |
+| `no-percentages-in-predictions` | high | Predictive artifacts use the three-tier enum, never numeric probabilities |
+| `shadow-expired-pending` | medium / high | Pending shadow hypotheses not past `horizon_at`; resolved ones carry a filled `adversarial_check` |
+| `slash-command-registry` | low | `.claude/commands/README.md` registry table in sync with command files |
+| `stakeholder-frontmatter` | medium | Stakeholder profiles match the documented frontmatter schema (required fields, enums, slug ↔ filename) |
+| `stakeholder-slug-exists` | medium | `key_stakeholders` slugs resolve to profile files |
+| `topic-shard-frontmatter` | medium | Topic shards have required frontmatter fields |
+
+The live list is always `bash scripts/lint.sh --list`; per-rule details in `scripts/lint_rules/README.md`.
 
 ### Adding a rule
 
@@ -218,13 +306,20 @@ def run(ctx):
 
 See `scripts/lint_rules/README.md` for the helper API.
 
+Every rule ships with a self-test: **new rule ⇒ new fixture suite** in `scripts/lint-fixtures/<check-id>/{pass,fail}/`. `pass/` holds a minimal mock repo subset that satisfies the invariant; `fail/` holds one that violates it. The harness (`scripts/run-lint-fixtures.sh`) runs `scripts/lint.sh --check <check-id>` against each directory and asserts `pass/` → exit 0, `fail/` → exit 1. Some suites run with `GIOVANNI_*` env overrides to keep fixtures compact (e.g. a 7-line `l1-size` limit). Fixture content uses the synthetic test domain only (Lattice Finance — see [`docs/test-domain.md`](test-domain.md)). Layout, override table, and the current suite list: `scripts/lint-fixtures/README.md`.
+
 ### Running
 
 ```bash
 bash scripts/lint.sh                       # all checks
 bash scripts/lint.sh --list                # list check ids
 bash scripts/lint.sh --check l1-size       # one check
+bash scripts/run-lint-fixtures.sh          # self-test rules against pass/fail fixtures
 ```
+
+### Environment awareness (shallow clones, ephemeral sessions)
+
+Staleness checks and the regen scripts depend on full git history (last-commit dates per file). On a **shallow clone** — typical in CI and cloud/ephemeral agent sessions — that history is missing: generators refuse non-dry writes, and staleness checks SKIP rather than report false drift. The correct fix is `git fetch --unshallow origin` before regenerating, not ignoring the skip. See [`docs/setup-guide.md`](setup-guide.md) § "Running in cloud / ephemeral sessions" for the full environment-partitioning policy.
 
 ### Pre-commit integration
 
@@ -232,7 +327,22 @@ bash scripts/lint.sh --check l1-size       # one check
 
 ---
 
-## Anti-patterns (CO NIKDY)
+## Consistency checks (shadow mode + promotion criteria) {#consistency-checks}
+
+Deterministic lint catches what regex and YAML parsing can reach. Semantic drift — memory contradicting the constitution, decisions not propagated, rosters out of sync, superseded terms resurfacing — needs LLM judgment. That lives in `/consistency-check` (6 semantic checks, executed by the consistency-checker agent) with `/consistency-review` as the per-finding triage workflow.
+
+**Shadow mode (mandatory on adoption).** A new semantic check ships in shadow: every run is reviewed manually via `/consistency-review`, findings are scored (accept / reject / defer / false-positive), and precision accumulates in `memory/audits/consistency/_state.md`. During shadow, findings are recorded only — never surfaced in session-start hooks or digests. Typical shadow window: 4 weeks from adoption (`shadow_mode_end_date` in `_state.md`).
+
+**Promotion criteria.** After the shadow window ends, a check graduates to surfaced status only if **both** gates pass:
+
+- rolling precision ≥ `promotion_gate_precision_min` (default **0.70**), and
+- at least `promotion_gate_min_reviewed_runs` reviewed runs (default **3**).
+
+Promotion is a governance decision by the principal — the agent proposes the integration (e.g. session-start surfacing of unreviewed high-severity findings), never auto-implements it. A check that misses the precision gate gets tightened or killed, not promoted.
+
+---
+
+## Anti-patterns (the never-do list)
 
 **Never:**
 
@@ -251,6 +361,10 @@ bash scripts/lint.sh --check l1-size       # one check
 7. **Add a section without anchor ID.** No anchor = unlinkable.
 
 8. **Skip the classification step** when adding content to memory. Memory authoring rules are binding for a reason — they prevent the four-week decay pattern.
+
+9. **Write to an external / shared system without explicit per-action confirmation.** Reads are free; writes (create / update / delete / post / send / publish) are gated. A generic task instruction is not publish authorization — draft locally, then ask for the specific write. See [External write gate](#external-write-gate).
+
+10. **Rename or move a deliverable to encode its status.** Status lives in `deliverables/_registry.yaml` metadata, never in the path — renames break every inbound pointer. See [Deliverables lifecycle registry](#deliverables-registry).
 
 ---
 

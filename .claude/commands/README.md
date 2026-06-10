@@ -10,9 +10,10 @@ Design patterns + argument syntax conventions: see [`docs/slash-commands.md`](..
 |---|---|---|---|---|
 | [`/digest`](digest.md) | Daily digest — parallel source pull, drift detection, brief gen, shadow lookback, render | `[--force] [--source <name>]` | `.claude/workflows/daily-digest.md` + N × `source-puller` (parallel) | daily |
 | [`/branch-out`](branch-out.md) | Active predictive simulation on a situation. Hard-stops on shallow actors. | `<situation-slug> [--from-digest]` | `prediction-runtime` (mode: branch-out) | ad hoc (triggered by digest active candidates) |
-| [`/shadow-review`](shadow-review.md) | Quarterly audit of shadow hypotheses with adversarial lookback discipline | `[--sample N] [--actor <slug>] [--window <YYYY-MM>] [--horizon <YYYY-MM-DD>]` | `prediction-runtime` (mode: shadow-review) | quarterly |
+| [`/shadow-review`](shadow-review.md) | Quarterly audit of shadow hypotheses with adversarial lookback discipline. COI guard stops self-review of <48h resolutions. | `[--sample N] [--actor <slug>] [--window <YYYY-MM>] [--horizon <YYYY-MM-DD>] [--force-review-now]` | `prediction-runtime` (mode: shadow-review) | quarterly |
 | [`/calibration-report`](calibration-report.md) | Monthly per-actor + per-tier accuracy aggregation. Updates `actor-scores.yaml`. | `[--month <YYYY-MM>]` | `prediction-runtime` (mode: calibration-report) | monthly (1st of month) |
-| [`/consistency-check`](consistency-check.md) | Semantic drift checks across memory + constitution + agent roster + decisions | `[--check <id>] [--since <YYYY-MM-DD>] [--write]` | `consistency-checker` | weekly (recommended) |
+| [`/consistency-check`](consistency-check.md) | Semantic drift checks across memory + constitution + agent roster + decisions + decided-terms registry | `[--check <id>] [--since <YYYY-MM-DD>] [--write]` | `consistency-checker` | weekly (recommended) |
+| [`/consistency-review`](consistency-review.md) | Per-finding triage of a consistency report — accept-diff / reject / defer / false-positive, precision tally | `[<YYYY-MM-DD>]` | `.claude/workflows/consistency-review.md` (interactive main-thread) | after each `/consistency-check` during shadow mode |
 | [`/market-radar`](market-radar.md) | External competitive / market intelligence scan. Constraint-aware (settled decisions = drift flag). | `[--focus <topic>] [--market <code>] [--competitor <slug>] [--horizon <Nd>] [--depth surface\|deep]` | `market-radar` | weekly default; focused ad hoc |
 | [`/review`](review.md) | Adversarial review of a draft — SHIP / REWRITE / KILL verdict + strongest counter-case | `<draft-path> [--position "..."] [--audience internal\|external\|mixed]` | `adversarial-reviewer` | ad hoc (high-stakes drafts only) |
 | [`/redline`](redline.md) | Adversarial review alias emphasizing verbatim-strike list | `<draft-path> [--position "..."] [--audience internal\|external\|mixed]` | `adversarial-reviewer` (emphasis: redline) | ad hoc |
@@ -45,7 +46,7 @@ Pre-flight failure → STOP with explicit diagnostic. No graceful degradation.
 | Behavior | Commands |
 |---|---|
 | Render to chat only (no persistent artifact) | `/digest` (the digest body), `/review`, `/redline` |
-| Render to chat + write persistent artifact | `/digest` (state + briefs + shadow), `/branch-out` (branch-out artifact + decision draft + shadow), `/shadow-review` (audit log + moved YAMLs), `/calibration-report` (report + actor-scores), `/consistency-check` (audit report + state), `/market-radar` (memo) |
+| Render to chat + write persistent artifact | `/digest` (state + briefs + shadow), `/branch-out` (branch-out artifact + decision draft + shadow), `/shadow-review` (audit log + moved YAMLs), `/calibration-report` (report + actor-scores), `/consistency-check` (audit report + state), `/consistency-review` (state update + accepted diffs), `/market-radar` (memo) |
 | Mutate `actor-scores.yaml` | only `/calibration-report` |
 
 **No command auto-commits.** Principal reviews + commits in batch. This is the binding rule that keeps the git log audit-trail honest.
@@ -55,7 +56,7 @@ Pre-flight failure → STOP with explicit diagnostic. No graceful degradation.
 Commands route to either:
 
 - **A single agent** via `Task` (`/branch-out`, `/shadow-review`, `/calibration-report`, `/consistency-check`, `/market-radar`, `/review`, `/redline`)
-- **A workflow procedure** with embedded parallel agent fan-out (`/digest`)
+- **A workflow procedure** — with embedded parallel agent fan-out (`/digest`), or interactive main-thread triage with no agent spawn (`/consistency-review`)
 
 No command embeds business logic. If a command file grows past ~250 lines of body content, that's a smell — the mechanics belong in the agent or workflow, not the invocation shell.
 

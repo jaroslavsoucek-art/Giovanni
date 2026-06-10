@@ -205,21 +205,27 @@ For each pending shadow hypothesis:
    **Bucket A — `expected_signal` MATCHED** (positive evidence for prediction):
       - `description` semantic match, OR
       - `search_terms` keyword hit in any source bullet, AND
-      - `source_channels` correctly matched (don't accept a chat match for an email-channel prediction)
+      - `source_channels` matched — or mismatched while the substance matched (a substance match on the wrong channel stays in Bucket A and resolves as `matched-with-caveat` below; it does not fall out of the bucket)
 
       Apply adversarial evaluation (binding rule from `docs/prediction.md` § Adversarial lookback):
 
       > "What are the STRONGEST arguments this hypothesis was NOT actually fulfilled by this signal? Consider: coincidence (signal would have appeared anyway), partial match (signal exists but lacks predicted specifics), alternative interpretations (signal could mean something else entirely), base rate (how often does this signal appear regardless of prediction)."
 
-      Score `matched` ONLY if adversarial arguments are weak. **If adversarial arguments are strong, score `falsified` instead** (apparent match was coincidence / partial / wrong interpretation). Default to `falsified` if uncertain. **Generosity in verdict = motivated reasoning = calibration corruption.**
+      Score `matched` (strict) ONLY if adversarial arguments are weak AND the substantive direction matched AND the channel/timing matched.
 
-      → Update `actor-scores.yaml` (`matched++` or `falsified++`). Move file to `memory/shadow/resolved/<YYYY-MM>/<file>.yaml`.
+      Score `matched-with-caveat` if the **substantive direction matched but the channel or timing missed** (e.g. predicted that `morgan-chen` would raise the VP Eng finalist concern on the chat platform, and the concern arrived in a meeting instead; predicted email arrived 1 day past horizon). Status stays `resolved-yes` and it **counts as matched** for scoring — record the miss in the optional `caveat:` field of the resolution block (per `memory/templates/shadow-hypothesis.template.md`) and note it in `adversarial_check`, so calibration can distinguish strict from caveat matches. **A channel/timing miss alone is NOT grounds for `falsified`** — the substantive prediction takes precedence.
+
+      Score `falsified` only if the adversarial arguments are strong — the apparent match was coincidence, content-shallow, mis-interpreted, or noise. Default to `falsified` if uncertain **on substance**, not on channel/timing pedantry.
+
+      **Symmetry principle (binding):** generosity on substance corrupts calibration one way (motivated reasoning inflates accuracy); strictness on channel/timing corrupts it the other (false negatives deflate it). Default-skeptical applies to substance; channel/timing misses are caveats, not falsifications.
+
+      → Record the verdict in the hypothesis file (`status`, `resolved_date`, `resolved_reasoning`, `adversarial_check`, optional `caveat:`). Move file to `memory/shadow/resolved/<YYYY-MM>/<file>.yaml`. **Do NOT touch `actor-scores.yaml`** — aggregation happens exclusively in `/calibration-report`.
 
    **Bucket B — CONTRADICTING signal present** (active negative evidence):
       - Counterparty observably took the opposite action (e.g. prediction was "Karim signals openness", reality was "Karim explicitly declined"), OR
       - Third-party / market signal directly contradicts predicted outcome
 
-      → Score `falsified`. Update `actor-scores.yaml` (`falsified++`). Move file to `memory/shadow/resolved/<YYYY-MM>/<file>.yaml`.
+      → Score `falsified`. Record the verdict in the hypothesis file. Move file to `memory/shadow/resolved/<YYYY-MM>/<file>.yaml`. (`actor-scores.yaml` mutation stays in `/calibration-report`.)
 
    **Bucket C — SILENT (no positive match, no contradicting signal):**
       - No expected_signal match AND no observable contradicting action
@@ -233,15 +239,15 @@ For each pending shadow hypothesis:
 
    | Bucket | Destination | `status` | `resolved_date` | `resolved_reasoning` | `adversarial_check` |
    |---|---|---|---|---|---|
-   | **A — match** | `resolved/<YYYY-MM>/` | `resolved-yes` or `resolved-no` (per adversarial verdict) | today | required — verdict reasoning citing observed signal | required — "could match be coincidence/partial/wrong-interpretation?" reasoning |
+   | **A — match** | `resolved/<YYYY-MM>/` | `resolved-yes` or `resolved-no` (per adversarial verdict) | today | required — verdict reasoning citing observed signal | required — "could match be coincidence/partial/wrong-interpretation?" reasoning; for matched-with-caveat MUST note the channel/timing miss (also recorded in the optional `caveat:` field) |
    | **B — contradiction** | `resolved/<YYYY-MM>/` | `resolved-no` (falsified) | today | required — verdict reasoning citing contradicting signal | required — "could contradicting signal be misread/partial/alternative-interpretation?" reasoning |
    | **C — silent** | `expired/<YYYY-MM>/` | `expired` | today | required — "no signal observed in either direction by horizon" | optional/empty — no signal to audit (expired ≠ verdict resolution) |
 
    **Binding:** Bucket B MUST populate `adversarial_check` same as A. Apparent contradictions can be misread (e.g. counterparty's negative action was about different topic, third-party signal was unrelated). Skipping adversarial discipline on falsified verdicts produces overconfident calibration in the opposite direction (under-counting matches that were actually right).
 
-   **Lint enforces:** `scripts/lint_rules/shadow_expired_pending.py` catches empty `adversarial_check` on any file in `resolved/`. Files in `expired/` are exempt.
+   **Lint enforces:** `scripts/lint_rules/shadow_expired_pending.py` flags empty `adversarial_check` on files under `resolved/` (medium severity), alongside its pending-past-horizon check. Files under `expired/` are exempt.
 
-**Lookback runs silently.** Results appear in monthly `/calibration-report`, not in the rendered digest output.
+**Lookback runs silently.** Verdicts live in the hypothesis files; `actor-scores.yaml` aggregation happens exclusively in monthly `/calibration-report`, and results surface there — not in the rendered digest output.
 
 ---
 
@@ -382,6 +388,7 @@ System hygiene (flags only when applicable)
   ⚠ Shadow volume hard-fail (>25) — triage heuristics need review
   ⚠ Source pull failed: <source> — <error>
   ⚠ Degraded mode: source-puller fallback used (sequential pull)
+  ⚠ Mirrored external tool/skill library sync >7d stale (optional — only if the fork mirrors one)
 ```
 
 Drift items are numbered so the principal can reference `#N` in their response.

@@ -32,7 +32,7 @@ You execute the three predictive-layer commands in isolated context. The framewo
 Caller specifies one of three modes:
 
 - `mode: branch-out` — active simulation. Requires `situation_slug`.
-- `mode: shadow-review` — quarterly verdict pass. Optional `sample`, `actor`, `window`.
+- `mode: shadow-review` — quarterly verdict pass. Optional `sample`, `actor`, `window`, `exclude_resolved_after` (COI cohort filter — drop files with `resolved_date` after this timestamp from the sample; they're deferred, not reviewed).
 - `mode: calibration-report` — monthly aggregation. Optional `month` (default = previous month).
 
 If `mode` missing → fail fast: `ERROR: missing mode`.
@@ -242,11 +242,14 @@ For each hypothesis:
    > What are the STRONGEST arguments this hypothesis was NOT fulfilled, even if the agent initially read the signal as a match?
 
 4. **Apply the verdict rule:**
-   - Adversarial case weak + clean signal matched → `resolved-yes` (matched)
-   - Adversarial case has merit + signal directionally matched → `resolved-mixed`
+   - Adversarial case weak + clean signal matched (substance AND channel/timing) → `resolved-yes` (matched, strict)
+   - Adversarial case weak + **substance matched but channel/timing missed** → `resolved-yes` (matched-with-caveat) — record the miss in the optional `caveat:` field of the resolution block (per `memory/templates/shadow-hypothesis.template.md`) and note it in `adversarial_check`. Counts as matched in calibration; the caveat lets `/calibration-report` split strict vs caveat matches. **A channel/timing miss alone is never grounds for `resolved-no`.**
+   - Adversarial case has merit + signal only directionally / partially matched **on substance** → `resolved-mixed` (counts as falsified in aggregation — distinct from matched-with-caveat, where substance matched fully)
    - No signal observed OR adversarial case strong → `resolved-no` (falsified)
    - Signal ambiguous, no time for further verification → `resolved-no` (default-skeptical)
    - Horizon passed, reviewer can't verify either way after reasonable effort → `expired`
+
+   **Symmetry principle (binding):** generosity on substance corrupts calibration one way (motivated reasoning inflates accuracy); strictness on channel/timing corrupts it the other (false negatives deflate it). Default-skeptical applies to substance verdicts; channel/timing misses are caveats, not falsifications.
 
 5. **Fill `adversarial_check` field** in the YAML with the falsification reasoning. **Empty `adversarial_check` at resolution time is a governance breach.**
 
@@ -293,11 +296,11 @@ Append to `memory/calibration/audit-log.md`:
 
 ### Verdict summary
 
-| Tier | n | Matched | Falsified | Mixed | Expired |
-|------|---|---------|-----------|-------|---------|
-| likely | <n> | <n> | <n> | <n> | <n> |
-| possible-but-surprising | <n> | <n> | <n> | <n> | <n> |
-| unlikely-but-impactful | <n> | <n> | <n> | <n> | <n> |
+| Tier | n | Matched (strict) | Matched (caveat) | Falsified | Mixed | Expired |
+|------|---|------------------|------------------|-----------|-------|---------|
+| likely | <n> | <n> | <n> | <n> | <n> | <n> |
+| possible-but-surprising | <n> | <n> | <n> | <n> | <n> | <n> |
+| unlikely-but-impactful | <n> | <n> | <n> | <n> | <n> | <n> |
 
 ### Discrepancies (agent pre-adversarial vs final verdict)
 
@@ -343,6 +346,7 @@ Pull all shadow hypotheses with relevant dates in the cohort:
 | Shadow hypotheses generated this month | <N> |
 | Rejected at generation by specificity_gate | <N> |
 | With testable outcome (matched + falsified) | <N> |
+| Matched with caveat (substance matched, channel/timing missed — non-empty `caveat:` field) | <N> |
 | Resolved-mixed (partial match) | <N> |
 | Expired without ground truth | <N> |
 | Awaiting resolution (horizon spills into next month) | <N> |
@@ -361,7 +365,7 @@ Track triage volume health vs. `memory/triage-heuristic.yaml` thresholds:
 overall_accuracy = matched / (matched + falsified)
 ```
 
-(Mixed counts as falsified per discipline rule.)
+(Mixed counts as falsified per discipline rule. Matched includes both strict and caveat matches — `resolved-yes` with a non-empty `caveat:` field counts as matched.)
 
 **Per-actor:** for each actor with ≥1 resolved hypothesis this month, compute the same ratio over their resolved cohort.
 
@@ -372,6 +376,8 @@ tier_hit_rate_likely = sum(matched where tier=likely) / sum(resolved where tier=
 tier_hit_rate_possible_but_surprising = sum(matched where tier=possible-but-surprising) / sum(resolved where tier=possible-but-surprising)
 tier_hit_rate_unlikely_but_impactful = sum(matched where tier=unlikely-but-impactful) / sum(resolved where tier=unlikely-but-impactful)
 ```
+
+For each per-tier table, also report the **strict vs caveat split** (caveat = `resolved-yes` with non-empty `caveat:` field). The monthly report template (`memory/templates/calibration-monthly-report.template.md`) carries a strict/caveat breakdown row. A climbing caveat share is a signal in itself: substance prediction is healthy but `expected_signal.source_channels` guesses are drifting — tighten per-actor channel expectations rather than the substance gate.
 
 ### Step 4 — Guard rail check
 
@@ -425,6 +431,7 @@ Tell the principal:
 
 - **Carry the 8 binding principles verbatim** — never relax them
 - **No commits.** Ever. Principal commits via git workflow.
+- **Regenerate the memory MAP before reporting.** Every mode writes under `memory/` (branch-out artifacts, shadow YAMLs, decision drafts, calibration reports). PostToolUse hooks don't fire for subagent writes — run `bash scripts/build-memory-map.sh` as your final step (shared hook-gap rule in `.claude/agents/README.md`).
 - **No coverage faking.** If a hypothesis is malformed, surface and skip. Don't synthesize.
 - **No recursive agent spawning.** If you need a deeper actor profile, surface that the principal should run profile-bootstrap first.
 

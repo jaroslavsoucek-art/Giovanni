@@ -1,0 +1,105 @@
+# ============================================================================
+# Decided-terms registry — input for the consistency-checker's
+# "decided-terms-completeness" check.
+#
+# Runtime path: memory/audits/consistency/decided-terms.yaml
+# (copy this template there when you activate the check; the check no-ops
+# with an INFO while the runtime file is absent).
+# ============================================================================
+#
+# WHY: a decision can supersede a named term or value (a dropped vendor, a
+# retired pricing-model name, an old count that got finalized differently).
+# The decision usually gets propagated to forward-looking scope sections —
+# but secondary references in narrative docs, hub documents, and the
+# constitution get missed (the propagation-miss failure mode). This registry
+# lets the checker grep live artifacts for superseded terms and flag any
+# occurrence that is NOT framed as dropped / superseded / out-of-scope.
+#
+# HOW TO MAINTAIN:
+#   - When a decision in memory/decisions/* drops or supersedes a named term
+#     or value, add an entry under `terms:`.
+#   - Keep `ok_framing` tight — only the words that legitimately accompany the
+#     term post-decision. Prefer specific tokens over generic ones.
+#   - Precision > recall. False positives erode trust in the check faster
+#     than misses erode canon. When a match pattern is too broad, park it
+#     under `candidates:` until you can scope it.
+#   - Retire an entry once all live artifacts are clean AND the decision is
+#     >90 days old (the drift risk is gone; keep the registry small).
+# ============================================================================
+
+config:
+  # Directories the checker greps for superseded terms.
+  scan_paths:
+    - knowledge/
+    - deliverables/
+
+  # Directories whose contents are intentionally historical — never flagged.
+  exclude_dirs:
+    - _archive/
+    - archive/
+    - memory/decisions/
+    - memory/briefs/
+
+  # Specific dated / sent artifacts that legitimately carry pre-decision state
+  # (frozen snapshots, sent deliverables). NOT live — never flagged.
+  frozen_artifacts: []
+  # Example:
+  #   - deliverables/2026-05-18_design-partner-renewal-onepager.pdf
+
+  # A hit PASSES (no finding) if its line, or the file's first ~15 lines,
+  # matches this banner regex — the artifact already declares itself stale.
+  banner_exempt_regex: 'SUPERSEDED|\bfrozen\b|as-of [0-9]{4}-[0-9]{2}-[0-9]{2}|historical|STALE'
+
+  # A hit matching this is a legitimate cross-reference (analogy /
+  # illustrative example) — a reference TO the term, not a claim that it is
+  # in scope. Downgrade to low or skip.
+  analogy_guard_regex: 'analog|example|\be\.g\.\b|legacy|illustrat|for comparison|market context|equivalent'
+
+  # Phrases meaning "this term has no implementation / exists only in
+  # comments" — factual codebase observations, not forward scope claims.
+  # Treated like ok_framing globally.
+  code_reality_regex: 'zero references|\bgreenfield\b|only in comments|not implemented'
+
+# ── Active terms ─────────────────────────────────────────────────────────────
+# Each: term/regex the checker greps; status; the decision that superseded it;
+# the date; and ok_framing = keywords that, if present near the hit, mean the
+# reference is correctly framed (the term is being described as superseded,
+# not asserted as current).
+#
+# severity_default applies to hits in ordinary live artifacts;
+# severity_in_constitution escalates hits inside the constitution — a stale
+# term surviving in canon is worse than one in a narrative doc.
+#
+# The single entry below is a worked example from the synthetic Lattice
+# Finance test domain (docs/test-domain.md). Replace with your own terms.
+
+terms:
+  - id: per-seat-pricing-superseded
+    match: 'per[ -]seat pricing|per[ -]seat model'
+    status: superseded
+    supersedes_with: 'platform fee + per-entity pricing'
+    decision: memory/decisions/2026-03-15-pricing-platform-entity.md
+    decided: 2026-03-15
+    summary: 'Pricing model reworked: platform fee + per-entity layer; per-seat pricing superseded (treasury-team buyers do not scale with seats).'
+    ok_framing: [superseded, dropped, drop, OUT, retired, former, previous, 'moved away from', 'no longer', 'never per-seat', removed, stale, STALE]
+    severity_default: medium
+    severity_in_constitution: high
+
+# ── Candidate terms (NOT active — need term-scoping before enabling) ────────
+# Document the growth path; enable a candidate only after validating that the
+# match pattern is specific enough to avoid false-positive noise.
+
+candidates: []
+# Example shape:
+#   - match_idea: '<ambiguous term that also has legitimate generic uses>'
+#     decision: memory/decisions/<YYYY-MM-DD>-<slug>.md
+#     why_not_active: 'Bare match collides with legitimate uses — scope the
+#       regex to the superseded phrase before activating.'
+
+# ============================================================================
+# Self-test guidance: once your fork has lived through a real propagation-miss
+# incident (a superseded term found surviving unframed in a live artifact),
+# pin a self-test to that repo state — "run the check against commit <sha>;
+# it must find <term> in <file>". A check that has never caught anything is
+# unverified, not trustworthy.
+# ============================================================================

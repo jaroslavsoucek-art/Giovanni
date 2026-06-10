@@ -20,6 +20,11 @@ total_hypotheses_generated: <integer>
 resolved: <integer>
 # Status resolved-yes + resolved-no + resolved-mixed.
 
+matched_with_caveat: <integer>
+# Subset of resolved-yes whose `caveat:` field is non-empty — substance
+# matched, channel/timing missed. Counts as matched in accuracy, tracked
+# separately to keep verdict generosity visible.
+
 expired_without_verdict: <integer>
 # Status expired (past horizon_at, no signal, no human verdict).
 
@@ -71,9 +76,21 @@ memory/calibration/actor-scores.yaml and per-shadow-hypothesis verdict files.
 | Shadow hypotheses generated this month | <N> |
 | Rejected at generation by specificity_gate | <N> |
 | With testable outcome (matched + falsified) | <N> |
+| Matched strict (substance + channel + timing) | <N> |
+| Matched with caveat (substance hit; channel/timing missed) | <N> |
 | Resolved-mixed (partial match) | <N> |
 | Expired without ground truth | <N> |
 | Awaiting resolution (horizon spills into next month) | <N> |
+
+<!--
+Strict vs caveat split: matched-with-caveat counts as matched in
+overall_accuracy and actor scores (channel/timing miss alone is not
+falsified), but the split is reported so a creeping caveat share is
+visible. If caveat matches exceed ~1/3 of all matches, expected_signal
+channel specificity is drifting — tighten the templates rather than
+keep absorbing the misses.
+-->
+
 
 **Triage volume health:**
 - Active branch-out runs this month: <N> (against `triage-heuristic.yaml` `branch_out_eligibility.daily_max`)

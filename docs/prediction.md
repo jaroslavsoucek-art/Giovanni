@@ -194,7 +194,7 @@ If the same actor behavior gets logged as `escalate-up` in one branch-out, `kick
 
 The canonical-moves registry (`memory/branch-out/canonical-moves.md`) is the **join key between predictions and resolved outcomes**. Reuse > coin. New names enter only via decision record with explicit user confirmation. Lint can warn on unregistered names, but the rule is fundamentally about discipline, not enforcement.
 
-The registry includes 30+ moves across 5 relationship types (asymmetric-power-up, peer, asymmetric-power-down, customer, vendor, counterparty) plus cross-relationship general moves. The taxonomy is observation-derived: these are moves observed across multiple domains, not abstract categories.
+The registry includes 50+ moves across 6 relationship types (asymmetric-power-up, peer, asymmetric-power-down, customer, vendor, counterparty) plus cross-relationship general moves. The taxonomy is observation-derived: these are moves observed across multiple domains, not abstract categories.
 
 **Enforcement.**
 
@@ -224,12 +224,13 @@ The four components chain into one prediction loop:
      ├─ pulls 10-20 resolved + past-horizon hypotheses
      ├─ runs adversarial lookback per hypothesis → verdict (matched/falsified/mixed/expired)
      ├─ moves files: pending → resolved/<YYYY-MM>/ or expired/<YYYY-MM>/
-     ├─ updates memory/calibration/actor-scores.yaml
+     ├─ appends to memory/calibration/audit-log.md (does NOT touch actor-scores.yaml)
      └─ output: shadow review audit log
 
 5. /calibration-report (monthly)
      ├─ aggregates the month's resolved hypotheses
      ├─ computes per-actor + per-tier accuracy
+     ├─ updates memory/calibration/actor-scores.yaml (sole writer of the YAML)
      ├─ identifies bias patterns + threshold suggestions
      ├─ writes monthly report to memory/calibration/monthly/<YYYY-MM>.md
      └─ output: monthly calibration report

@@ -21,7 +21,7 @@ Design philosophy + invocation patterns: see [`docs/agents.md`](../../docs/agent
 | [`consistency-checker`](consistency-checker.md) | Semantic drift checks across memory + constitution + agent roster + decision records. Surfaces contradictions that deterministic lint can't catch. | sonnet | Via `/consistency-check` slash command — NOT auto. Cadence is configurable per fork. |
 | [`market-radar`](market-radar.md) | Proactive external competitive / market intelligence scan. Default = periodic sweep; focused = topic / market / competitor deep-dive | opus | Via `/market-radar` slash command. Manual cadence; weekly default. |
 | [`prediction-runtime`](prediction-runtime.md) | Executes `/branch-out` (active simulation), `/shadow-review` (quarterly verdict pass), `/calibration-report` (monthly aggregation). Carries the 8 binding principles. | opus | Via slash commands — never invoked directly by user. |
-| [`adversarial-reviewer`](adversarial-reviewer.md) | Adversarial review of strategic drafts — SHIP / REWRITE / KILL verdict with strongest counter-case construction. Default-critical mode, no flattery. | sonnet | Via `/review` or `/redline` slash commands; or when draft contains `[REVIEW]` tag or message starts with `review:` / `redline:` / `before send:` |
+| [`adversarial-reviewer`](adversarial-reviewer.md) | Adversarial review of strategic drafts — SHIP / REWRITE / KILL verdict with strongest counter-case construction. Default-critical mode, no flattery. | opus | Via `/review` or `/redline` slash commands; or when draft contains `[REVIEW]` tag or message starts with `review:` / `redline:` / `before send:` |
 
 ## When to spawn (rules of thumb)
 
@@ -31,6 +31,14 @@ Design philosophy + invocation patterns: see [`docs/agents.md`](../../docs/agent
 - **Trivial work** (single grep, single read, single bullet response) → do it inline, don't spawn
 
 Detailed criteria in [`docs/agents.md`](../../docs/agents.md).
+
+## Hook-gap rule (binding)
+
+**PostToolUse hooks fire only for main-thread writes.** The `post-memory-edit` hook that regenerates `memory/MAP.md` does NOT fire when a subagent writes a file. Consequence:
+
+> Any agent that writes under `memory/` MUST run `bash scripts/build-memory-map.sh` as its final step before reporting, or the map-stale lint check fails on the next commit.
+
+Currently applies to: `profile-bootstrap` (stakeholder profiles), `consistency-checker` (audit reports + state), `market-radar` (intel memos), `prediction-runtime` (branch-out artifacts, shadow YAMLs, decision drafts, calibration reports). Each of these agents carries a one-line post-write step referencing this rule. When adding a new writing agent, add the step — don't rediscover the gap.
 
 ## Architect agents (reference — not spawned in daily ops)
 
@@ -45,7 +53,7 @@ These ran during Giovanni bootstrap. They produced the templates, docs, scripts,
 | [`subagent-roster-architect`](subagent-roster-architect.md) | Operational agent definitions (this directory's worker agents) | done |
 | [`adversarial-architect`](adversarial-architect.md) | Adversarial review workflow + adversarial-reviewer operational agent + SHIP/REWRITE/KILL verdict enum + default-critical-mode policy | done |
 | [`digest-architect`](digest-architect.md) | Daily digest workflow (12 steps), state + sources templates, drift ack flow, briefs auto-gen, predictive integration (shadow gen + lookback) | done |
-| [`slash-command-architect`](slash-command-architect.md) | All 8 slash command implementations (/digest, /branch-out, /shadow-review, /calibration-report, /consistency-check, /market-radar, /review, /redline) | done |
+| [`slash-command-architect`](slash-command-architect.md) | The 8 bootstrap slash command implementations (/digest, /branch-out, /shadow-review, /calibration-report, /consistency-check, /market-radar, /review, /redline) — `/consistency-review` was added post-bootstrap | done |
 
 ## Frontmatter convention (all agents)
 

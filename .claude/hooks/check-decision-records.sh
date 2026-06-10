@@ -23,6 +23,44 @@ if [ "${GIOVANNI_SKIP_DECISION_CHECK:-0}" = "1" ]; then
     exit 0
 fi
 
+# ---------------------------------------------------------------------------
+# Self-filter: when wired as a Claude Code PreToolUse hook, the matcher
+# ("Bash") fires on EVERY Bash tool call — not just on `git commit`. Without
+# this guard a staged invalid decision record blocks unrelated commands
+# (ls, grep, ...), not just the commit. Parse the hook JSON from stdin
+# (python3 — no jq dependency, consistent with post-knowledge-edit.sh) and
+# exit 0 unless the command is actually a git commit invocation.
+#
+# If stdin is a TTY, empty, or not hook JSON (direct execution / pre-commit
+# path), fall through to the staged-file check unchanged.
+INPUT=""
+if [ ! -t 0 ]; then
+    INPUT=$(cat 2>/dev/null || true)
+fi
+if [ -n "${INPUT}" ] && command -v python3 >/dev/null 2>&1; then
+    VERDICT=$(printf '%s' "${INPUT}" | python3 -c "
+import json, re, sys
+raw = sys.stdin.read()
+try:
+    d = json.loads(raw)
+except Exception:
+    print('fallthrough'); sys.exit(0)
+if not isinstance(d, dict):
+    print('fallthrough'); sys.exit(0)
+cmd = (d.get('tool_input') or {}).get('command') or ''
+# Tolerant of flags / paths / compound commands:
+#   git commit -m ...; git -C <path> commit; cd x && git commit
+if re.search(r'(^|[;&|]\s*)git(\s+-C\s+\S+)?\s+commit\b', cmd):
+    print('gate')
+else:
+    print('skip')
+" 2>/dev/null)
+    if [ "${VERDICT}" = "skip" ]; then
+        exit 0
+    fi
+    # 'gate', 'fallthrough', or empty (python failed) → run the check below.
+fi
+
 SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 REPO_ROOT="$( cd "${SCRIPT_DIR}/../.." && pwd )"
 

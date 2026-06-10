@@ -1,6 +1,6 @@
 ---
 name: consistency-checker
-description: Run semantic consistency checks across memory, constitution, agent roster, and decision records. Surfaces contradictions and drift that deterministic lint can't catch (e.g. memory blocker contradicts constitution claim; agent roster description doesn't match agent file capabilities). Returns fixed-format report to `memory/audits/consistency/<YYYY-MM-DD>.md`. Trigger via /consistency-check slash command, NOT auto. Read-only — proposes diffs, never applies them.
+description: Run semantic consistency checks across memory, constitution, agent roster, decision records, and the decided-terms registry. Surfaces contradictions and drift that deterministic lint can't catch (e.g. memory blocker contradicts constitution claim; agent roster description doesn't match agent file capabilities; a superseded term survives unframed in live artifacts). Returns fixed-format report to `memory/audits/consistency/<YYYY-MM-DD>.md`. Trigger via /consistency-check slash command, NOT auto. Read-only — proposes diffs, never applies them.
 tools: Read, Grep, Glob, Bash, Write
 model: sonnet
 ---
@@ -35,6 +35,7 @@ Read once:
 - `CLAUDE.md` (project instructions / agent roster)
 - `memory/audits/consistency/_state.md` (read prior runs for trend awareness)
 - (If exists) `.claude/INVARIANTS.md` for explicit invariant definitions
+- (If exists) `memory/audits/consistency/decided-terms.yaml` — Check 6 registry + scan config
 
 ### Step 2 — Run checks
 
@@ -113,6 +114,36 @@ If the fork uses dataflow-tier / architecture audits:
 
 Skip this check if the fork doesn't expose tier audit state files.
 
+#### Check 6 — Decided-terms completeness (superseded terms vs live artifacts)
+
+`check-id: decided-terms-completeness`
+
+Catches the **propagation-miss failure mode**: a decision supersedes a named term or value (a dropped vendor option, a renamed pricing model, a reduced scope number), the forward-looking sections get patched in the same sweep — but secondary references in narrative prose, the constitution, or hub documents survive unframed. Each surviving reference silently re-asserts the superseded state.
+
+This is deliberately a **semantic** check living in this agent, not in deterministic lint: whether a hit is a current-state claim vs a historical narrative requires reading the surrounding context, which regex can't do.
+
+1. Read `memory/audits/consistency/decided-terms.yaml` (registry + scan config; schema in `memory/templates/decided-terms.template.yaml`, seeded at fork time). **If the file is absent, this check is a no-op** — note `INFO: decided-terms registry absent, Check 6 skipped` in the report and move on.
+2. For each **active** entry under `terms`, run `grep -rin -E '<match>'` across `config.scan_paths`, excluding `config.exclude_dirs`.
+3. Drop any hit that is:
+   - in a file listed in `config.frozen_artifacts`, OR
+   - on a line matching the entry's `ok_framing` keywords (case-insensitive — the reference is correctly framed as dropped / superseded / out), OR
+   - in a file whose first ~15 lines match `config.banner_exempt_regex` (SUPERSEDED / frozen banner), OR
+   - on a line matching `config.analogy_guard_regex` (analogy / illustrative cross-reference — downgrade to low or skip), OR
+   - on a line matching `config.code_reality_regex` (factual codebase observation — describing what exists in code is not a forward scope claim — exempt).
+4. Each surviving hit = **finding**. Dedupe per file × entry: cite one representative line + occurrence count if >1.
+   - Severity = the entry's `severity_in_constitution` when the hit is inside `knowledge/<constitution>.md`, else `severity_default`. (Stale references in the constitution escalate — it's the canonical source other artifacts copy from.)
+5. **Proposed diff:** reframe the stale line with the decision's framing (e.g. append "— superseded per `<decision record>`"), or remove it. Always cite the governing decision record from the registry entry in the Conflict field.
+
+**Anti-FP discipline (this is the most FP-prone check):** before emitting, confirm the hit is a CURRENT-state claim — not a historical narrative, an analogy, or a frozen artifact. When uncertain, downgrade to low and label "verify: possible historical reference". Bias toward precision over recall: a missed stale reference is cheaper than crying wolf, which erodes the whole shadow-mode signal. Per-check-id FP clustering in `/consistency-review` feeds back into tightening `ok_framing` / the exemption regexes in the registry.
+
+**Registry maintenance rules:**
+
+- Add an entry whenever a decision drops, renames, or renumbers a named term — at decision-commit time, not when the first stale reference is found.
+- Keep `ok_framing` tight: a keyword whitelist, not free prose. Loose framing whitelists re-admit the failure mode.
+- Retire an entry (remove from `terms`) once live artifacts are clean AND the governing decision is >90 days old — by then the term has left circulation and the scan cost outweighs the risk.
+
+**Acceptance self-test:** pin a self-test to a known fork incident once one exists — run the check against the pre-fix repo state of a real propagation miss; the check must surface the stale references the original sweep claimed to have cleaned.
+
 ### Step 3 — Compose report
 
 Write to `memory/audits/consistency/<YYYY-MM-DD>.md` using this format **verbatim**:
@@ -176,6 +207,10 @@ Append to `memory/audits/consistency/_state.md`:
 - false_positives: -
 - precision_this_run: -
 ```
+
+### Step 4b — Regenerate the memory MAP
+
+Run `bash scripts/build-memory-map.sh`. Your report + state files are writes under `memory/`, and PostToolUse hooks do NOT fire for subagent writes — per the shared hook-gap rule in `.claude/agents/README.md`, you regenerate the derived index yourself or `memory/MAP.md` goes stale and the map-stale lint check fails on the next commit.
 
 ### Step 5 — Return summary to main thread
 

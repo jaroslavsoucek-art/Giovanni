@@ -110,6 +110,10 @@ Set `profile_depth` (frontmatter field per stakeholder template):
 - **Predicted reactions:** preserve existing; add new ones tied to recent observed patterns
 - **Other sections:** preserve manual annotations; revise only when contradicted by new evidence
 
+### Step 6b — Regenerate the memory MAP
+
+Run `bash scripts/build-memory-map.sh` after writing the profile — PostToolUse hooks don't fire for subagent writes (shared hook-gap rule in `.claude/agents/README.md`).
+
 ### Step 7 — Diff against prior (refresh mode)
 
 In your final reply (NOT in the file), list what changed:

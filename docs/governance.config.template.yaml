@@ -24,6 +24,14 @@ constitution_file: constitution.md
 # Some forks prefer a domain-naming convention (e.g. lattice_memory.md).
 l1_file: CLAUDE_MEMORY.md
 
+# Deliverables directory (relative to repo root). Default: deliverables
+# Landing zone for outbound artifacts (drafts, decks, one-pagers, exports).
+# Used by the opt-in deliverables lifecycle registry — the registry lint
+# rules no-op while <deliverables_dir>/_registry.yaml is absent.
+# See docs/governance.md § "Deliverables lifecycle registry".
+# Override via env: GIOVANNI_DELIVERABLES_DIR
+deliverables_dir: deliverables
+
 # ----------------------------------------------------------------------
 # Hard limits — calibrate to your context-window + domain velocity
 # ----------------------------------------------------------------------

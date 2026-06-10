@@ -15,6 +15,7 @@ Process unresolved past-horizon shadow hypotheses and audit a sample of recently
 /shadow-review --actor <slug>           # focus on hypotheses touching one actor
 /shadow-review --window <YYYY-MM>       # focus on one month's resolved cohort
 /shadow-review --horizon <YYYY-MM-DD>   # review hypotheses with horizon_at <= date
+/shadow-review --force-review-now       # override COI guard — recent resolutions excluded from cohort
 ```
 
 ## Argument syntax
@@ -25,6 +26,7 @@ Process unresolved past-horizon shadow hypotheses and audit a sample of recently
 | `--actor <slug>` | parameterized string | none | Filter the cohort to hypotheses whose `actor` field matches `<slug>`. Useful when calibration-report flagged an actor with concerning patterns. |
 | `--window <YYYY-MM>` | parameterized | last 90 days | Focus on a single calendar month's resolved cohort instead of rolling 90-day window. |
 | `--horizon <YYYY-MM-DD>` | parameterized date | today | Review hypotheses whose `horizon_at <= <date>`. Default = today. Useful for pre-audit dry runs ("what would shadow-review have closed if I'd run it last week?"). |
+| `--force-review-now` | boolean flag | off | Override the COI guard. Hypotheses with `resolved_date` < 48 h ago are **excluded from the cohort** rather than reviewed — the override unblocks the run, it does not admit the conflicted files. |
 
 All three filter args (`--actor`, `--window`, `--horizon`) can combine.
 
@@ -38,7 +40,10 @@ Before spawning `prediction-runtime`:
 4. **Cadence reminder (advisory, not STOP).** If the last entry in `memory/calibration/audit-log.md` is < 60 days ago, surface advisory:
    `INFO: Last /shadow-review was <N> days ago. Quarterly cadence is the policy; running this often is fine but inflates the cohort.`
    Continue anyway.
-5. **Empty cohort check.** If no past-horizon pending AND no resolved hypotheses match the filter → STOP: `INFO: nothing to review (no past-horizon pending + filter matches 0 resolved). Skip this cycle.`
+5. **COI guard (binding).** Scan the candidate cohort (`memory/shadow/resolved/**/*.yaml` matching the filters) for any file with `resolved_date` within the last **48 hours**. If ≥1 exists, **STOP**:
+   `⚠ COI guard: <N> hypotheses resolved <48h ago by the same agent. Self-review in temporal proximity risks motivated reasoning. Defer until +48h after the last resolution, or override with --force-review-now.`
+   With `--force-review-now`, the run proceeds but the recent-resolution files are **excluded from the cohort** — they are not reviewed, only deferred to the next cycle.
+6. **Empty cohort check.** If no past-horizon pending AND no resolved hypotheses match the filter (after COI exclusion, if applied) → STOP: `INFO: nothing to review (no past-horizon pending + filter matches 0 resolved). Skip this cycle.`
 
 ## Execution flow
 
@@ -51,7 +56,9 @@ Before spawning `prediction-runtime`:
    actor: <slug or null>
    window: <YYYY-MM or null>
    horizon: <YYYY-MM-DD or null>
+   exclude_resolved_after: <ISO timestamp now-48h, only when --force-review-now was used; else null>
    ```
+   The `exclude_resolved_after` cohort filter carries the COI exclusion into the agent: files with `resolved_date` after that timestamp are dropped from the sample, not reviewed.
 3. **Wait for agent return.** The agent processes the cohort: applies adversarial lookback per hypothesis, fills `adversarial_check` + `resolved_reasoning` + `resolved_date` in each YAML, moves files to `resolved/<YYYY-MM>/` or `expired/<YYYY-MM>/`, builds the comparison table, identifies concerning patterns, appends to audit log.
 4. **Relay agent output verbatim** to chat. Include the audit log pointer and the principal-action hint.
 5. **Do NOT commit.** Principal reviews comparison table + concerning patterns, decides whether to dispute any verdicts, and commits the audit log + moved YAMLs in batch.

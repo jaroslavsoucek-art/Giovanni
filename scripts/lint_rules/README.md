@@ -61,18 +61,37 @@ bash scripts/lint.sh --check <CHECK_ID>
 
 | CHECK_ID | Severity (default) | Purpose |
 |---|---|---|
+| `adversarial-verdict-format` | low | Persisted adversarial reviews use the SHIP/REWRITE/KILL enum + count fields (no-op without `memory/intel/adversarial/`) |
+| `branch-out-no-recommendation` | medium / critical | Branch-out artifacts stay generative — no recommendation prose or structure |
+| `constitution-anchors` | medium | Constitution headers have `{#anchor-id}` |
+| `decision-trigger-conditions` | critical | Decision records have non-empty `trigger_conditions` |
+| `deliverables-registry` | high | Deliverables ↔ `_registry.yaml` bidirectional completeness, schema + status enum (no-op without `_registry.yaml`) |
+| `digest-state-freshness` | low / medium | Digest state `last_run_timestamp` is recent (operational tempo signal) |
+| `domain-leak` | high | Configurable denylist for prior-domain content carry-over |
 | `l1-size` | high / critical | L1 operational memory line count (warn 300, fail 400) |
 | `l1-strikethrough-ratio` | medium / critical | Strikethrough ratio in L1 (warn 2 %, fail 5 %) |
-| `decision-trigger-conditions` | critical | Decision records have non-empty `trigger_conditions` |
+| `no-percentages-in-predictions` | high | Predictive artifacts use the three-tier enum, never numeric probabilities |
+| `shadow-expired-pending` | medium / high | Pending shadow hypotheses not past `horizon_at`; resolved ones carry a filled `adversarial_check` |
+| `slash-command-registry` | low | `.claude/commands/README.md` registry table in sync with command files |
+| `stakeholder-frontmatter` | medium | Stakeholder profiles match the documented frontmatter schema (required fields, enums, slug ↔ filename) |
+| `stakeholder-slug-exists` | medium | `key_stakeholders` slugs resolve to profile files |
 | `topic-shard-frontmatter` | medium | Topic shards have required frontmatter fields |
-| `constitution-anchors` | medium | Constitution headers have `{#anchor-id}` |
-| `domain-leak` | high | Configurable denylist for prior-domain content carry-over |
 
 Plus bash-side checks (in `scripts/lint.sh`, not Python plugins):
 
 | CHECK_ID | Purpose |
 |---|---|
-| `index-stale` | `knowledge/INDEX.md` matches `build-knowledge-index.sh --dry` |
-| `map-stale` | `memory/MAP.md` matches `build-memory-map.sh --dry` |
+| `index-stale` | `knowledge/INDEX.md` matches `build-knowledge-index.sh --dry` ([SKIP] on shallow clones) |
+| `map-stale` | `memory/MAP.md` matches `build-memory-map.sh --dry` ([SKIP] on shallow clones) |
+| `registry-stale` | `deliverables/REGISTRY.md` matches `build-deliverables-registry.py --dry` (opt-in — only when `_registry.yaml` exists) |
 | `hook-syntax` | Every `.claude/hooks/*.sh` passes `bash -n` |
 | `script-syntax` | Every `scripts/*.sh` passes `bash -n` |
+
+## Self-test fixtures
+
+New rule ⇒ new fixture suite in `scripts/lint-fixtures/<check-id>/{pass,fail}/`
+(see `scripts/lint-fixtures/README.md`). Run the harness:
+
+```
+bash scripts/run-lint-fixtures.sh
+```

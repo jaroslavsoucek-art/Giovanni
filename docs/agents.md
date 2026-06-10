@@ -17,7 +17,7 @@ Two populations live under `.claude/agents/`. They look identical structurally �
 - `subagent-roster-architect` → operational agent definitions
 - `adversarial-architect` → adversarial review workflow + adversarial-reviewer agent + SHIP/REWRITE/KILL verdict policy
 - `digest-architect` → daily digest workflow (12 steps) + state/sources templates + session-start hook
-- `slash-command-architect` → 8 finalized slash commands + design patterns
+- `slash-command-architect` → the 8 bootstrap slash commands + design patterns (`/consistency-review` was added post-bootstrap)
 
 After bootstrap, architects are frozen. You don't spawn `memory-architect` to do daily work; the templates and docs it produced are what daily work uses. Architects come back online only when the framework itself needs structural revision (rare).
 
@@ -32,6 +32,7 @@ After bootstrap, architects are frozen. You don't spawn `memory-architect` to do
 | `consistency-checker` | `/consistency-check` semantic drift sweep |
 | `market-radar` | `/market-radar` external competitive scan |
 | `prediction-runtime` | `/branch-out`, `/shadow-review`, `/calibration-report` |
+| `adversarial-reviewer` | `/review`, `/redline`; `[REVIEW]` tag or "review this" / "redline" / "before sending" |
 
 The framing matters because confusing the two leads to either over-spawning (treating a one-time framework task as a daily agent) or under-spawning (forgetting an operational agent exists because it's buried alongside frozen architects).
 
@@ -137,8 +138,8 @@ The flip side: an agent that produces bad final output is opaque to main. Mitiga
 
 | Model | When to use | Rationale |
 |---|---|---|
-| `opus` | Multi-actor reasoning, deep adversarial analysis, generative synthesis | Branch-out simulation, research with cross-source synthesis, deliverable QA where judgment matters |
-| `sonnet` | Structured execution with clear protocol, lower-stakes drift detection, source pulling | Source-puller (mechanical extraction), consistency-checker (rule-based drift), shadow-review + calibration-report (aggregation over schema) |
+| `opus` | Multi-actor reasoning, deep adversarial analysis, generative synthesis | Prediction-runtime (branch-out simulation, shadow-review verdicts, calibration), researcher / market-radar cross-source synthesis, adversarial-reviewer + deliverable-reviewer QA where judgment matters |
+| `sonnet` | Structured execution with clear protocol, lower-stakes drift detection, source pulling | Source-puller (mechanical extraction), consistency-checker (rule-based drift) |
 | `haiku` | High-volume / simple tasks (none currently in Giovanni roster) | Future use: per-message classification, simple lookups, mechanical formatting |
 
 **Tradeoffs:**
@@ -166,8 +167,9 @@ Document the model choice per agent. If you find yourself switching mid-developm
 | `consistency-checker` | Read, Grep, Glob, Bash, Write | Writes only to `memory/audits/consistency/` |
 | `market-radar` | WebFetch, WebSearch, Read, Grep, Glob, Bash, Write | Web scan + writes to `memory/intel/market-radar/` only |
 | `prediction-runtime` | Read, Write, Edit, Glob, Grep, Bash | Reads templates / profiles, writes branch-out + shadow + decision draft + calibration |
+| `adversarial-reviewer` | Read, Grep, Glob, Bash | Read-only — verdicts a draft, never modifies the artifact |
 
-**Reality check on tool-list portability:** in this snapshot of agent definitions, tool names are kept generic (`Bash`, `Read`, etc.). Source pullers in the source-domain implementation hardcoded specific MCP tool identifiers (`mcp__edead074-c9ff-4f68-936f-5f0071b68cc3__asana_*`, `mcp__e5c99758-3627-406a-b17c-dc1459809b75__slack_*`, etc.). **Fork-time:** when a fork wires their actual chat platform / project tracker, the frontmatter `tools:` list extends with the specific MCP identifiers. This generic version of `source-puller` documents the source_type enum but doesn't pre-wire — that's a fork concern.
+**Reality check on tool-list portability:** in this snapshot of agent definitions, tool names are kept generic (`Bash`, `Read`, etc.). Source pullers in the source-domain implementation hardcoded specific MCP tool identifiers (`mcp__<server-id>__<project-tracker>_*`, `mcp__<server-id>__<chat-platform>_*`, etc.). **Fork-time:** when a fork wires their actual chat platform / project tracker, the frontmatter `tools:` list extends with the specific MCP identifiers. This generic version of `source-puller` documents the source_type enum but doesn't pre-wire — that's a fork concern.
 
 ## 8. Reporting format
 
@@ -243,7 +245,7 @@ Agent runs once, output is treated as final. No adversarial review. No spot-chec
 
 ### Slash commands
 
-Slash commands route through `prediction-runtime` (for `/branch-out`, `/shadow-review`, `/calibration-report`) or directly invoke other agents (`/market-radar` → `market-radar`; `/consistency-check` → `consistency-checker`).
+Slash commands route through `prediction-runtime` (for `/branch-out`, `/shadow-review`, `/calibration-report`) or directly invoke other agents (`/market-radar` → `market-radar`; `/consistency-check` → `consistency-checker`; `/review` and `/redline` → `adversarial-reviewer`). `/consistency-review` is the agent-free exception — it routes to an interactive main-thread workflow (`.claude/workflows/consistency-review.md`), because per-finding verdicts come from the principal.
 
 Slash command runtime implementation lives in `.claude/commands/*.md` (one file per command). Each file is a thin invocation shell — pre-flight, argument parsing, agent routing. The mechanics live in the agents and workflows. See [`docs/slash-commands.md`](slash-commands.md) for design patterns + argument conventions and [`.claude/commands/README.md`](../.claude/commands/README.md) for the registry.
 
@@ -265,6 +267,8 @@ Most hooks are governance plumbing (INDEX/MAP regen, audit cadence warnings). So
 - Memory-edit hook regenerates MAP (doesn't spawn agent — it's a script)
 
 Agents are not the primary hook actors; scripts are. Agents enter when judgment is needed.
+
+**Hook-gap rule (binding design rule):** PostToolUse hooks fire only for main-thread writes — they do NOT fire for subagent writes. Any agent that writes under `memory/` must run `scripts/build-memory-map.sh` as its final step before reporting, or `memory/MAP.md` strands stale and the map-stale lint check fails on the next commit. This is a shared rule stated once in [`.claude/agents/README.md`](../.claude/agents/README.md) and referenced by a one-line post-write step in each writing agent (`profile-bootstrap`, `consistency-checker`, `market-radar`, `prediction-runtime`) — not duplicated as per-agent boilerplate.
 
 ## 11. Adding a new agent
 

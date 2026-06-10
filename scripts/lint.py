@@ -79,6 +79,9 @@ DEFAULT_CONFIG: dict[str, Any] = {
     "resolved_shard_retirement_days": 60,
     # Constitution / structural
     "require_anchor_ids": True,
+    # Deliverables lifecycle registry (opt-in — checks activate only when
+    # <deliverables_dir>/_registry.yaml exists)
+    "deliverables_dir": "deliverables",
     # Domain-leak guard — list of strings forbidden in memory + knowledge.
     # Fork-time: populate with prior-domain proper nouns to catch carry-over
     # during template filling. Default empty = no check.
@@ -147,6 +150,9 @@ class LintContext:
 
     def l1_path(self) -> Path:
         return self.memory_dir() / self.config["l1_file"]
+
+    def deliverables_dir(self) -> Path:
+        return self.repo / self.config["deliverables_dir"]
 
 
 # ---------------------------------------------------------------------------

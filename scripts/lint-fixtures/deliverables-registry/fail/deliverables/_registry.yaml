@@ -1,0 +1,15 @@
+# Deliverables lifecycle registry — deliberately broken fixture:
+#   - first entry uses an invalid status ('final')
+#   - second entry points to a file that does not exist
+#   - 2026-06-01_pricing-v2-faq.md exists on disk but has no entry
+entries:
+  - file: 2026-05-20_board-deck-q2.md
+    status: final
+    type: board-deck
+    date: 2026-05-20
+    note: invalid status — not in the enum
+  - file: 2026-03-01_deleted-memo.md
+    status: sent
+    type: memo
+    date: 2026-03-01
+    note: orphan entry — file removed instead of archived

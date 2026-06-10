@@ -1,0 +1,23 @@
+id: 2099-01-01-morgan-chen-vp-eng-a1b2
+created: 2099-01-01
+generated_by: "digest:2099-01-01"
+topic: Morgan VP Eng finalist confidence
+actor: morgan-chen
+source_signal: >-
+  Morgan said at the 2098-12-30 leadership sync that reference checks on the
+  finalist were "basically clean" and he wanted to move before year-end.
+prediction: >-
+  Morgan will name the finalist as his preferred VP Eng candidate in the next
+  leadership sync.
+prediction_tier: likely
+expected_signal:
+  description: >-
+    Explicit naming of the finalist in the leadership sync notes or a
+    follow-up message proposing an offer package.
+  search_terms: [finalist, offer, "VP Eng"]
+  source_channels: [chat-platform, calendar]
+horizon_days: 7
+horizon_at: 2099-01-08
+source: "digest:2099-01-01"
+status: pending
+resolved_date: null

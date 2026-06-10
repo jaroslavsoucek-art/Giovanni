@@ -16,6 +16,10 @@ else in the repo (memory, briefs, drafts), this file wins.
      bottom of any section established by a decision.
   4. Update the section's last-touch date.
   5. Update the table of contents if section IDs changed.
+  6. Sections state CURRENT truth only — no inline "[changed YYYY-MM-DD per
+     decision X]" trails. When a decision changes canon, rewrite the section
+     to current state; history lives in git, the decision record, and the
+     Superseded-positions stub (see knowledge/README.md "Current-state only").
 
 The `post-constitution-edit-check.sh` hook flags missing supersedes-pointers,
 missing commit-message prefix, and detected domain-leak patterns.
@@ -235,6 +239,37 @@ Every `/digest` invocation verifies CWD is the Giovanni repo root, state file ex
 
 ---
 
+## External write gate {#external-write-gate}
+
+> **Status:** `RESOLVED` — binding policy
+> **Last updated:** YYYY-MM-DD
+
+**FACT (source: `docs/governance.md` § External write gate):** Reads of external / shared systems are free. Writes (create / update / delete / post / send / publish) to any destination other people see — `documentation-platform`, `chat-platform`, `project-tracker`, email, calendar — require explicit confirmation of the specific write action. A generic task instruction ("process X", "do item 1") is not publish authorization.
+
+**REASONING:** The cost asymmetry is extreme: a wrong external write leaks confidential content or makes a commitment in the principal's name; a deferred write costs one confirmation round-trip. Typical adoption trigger: an ambiguous instruction read as publish authorization, or a "confirm it" read as a send when a draft was wanted. — Source: `memory/decisions/<YYYY-MM-DD>-external-write-gate.md` <!-- TODO: create this decision record when adopting the gate, or back-link your own incident -->
+
+**IMPLIES:**
+
+- Draft-first: agent output destined for an external system lands in `deliverables/` (or chat as copy-paste text), then the principal confirms the specific action: "publish to `<documentation-platform>` page `<name>`", "send to `<stakeholder_slug>`".
+- The confirmation names destination + action. Approving "the task" is not approving the write.
+- Channels with repeated misfires get demoted to **absolute read-only** — agent emits copy-paste text only, even when the instruction sounds like a send ("reply to him", "confirm it"). Re-promotion requires a decision record.
+
+**GATED DESTINATIONS:** <!-- TODO for fork: enumerate your own. One line each: destination, gate level (per-action confirm | absolute read-only), provenance. -->
+
+| Destination | Gate level | Provenance |
+|---|---|---|
+| `<documentation-platform>` | per-action confirm | `memory/decisions/<file>` |
+| `<chat-platform>` | `<per-action confirm \| absolute read-only>` | `memory/decisions/<file>` |
+| `<project-tracker>` | per-action confirm | `memory/decisions/<file>` |
+
+**ANTI-PATTERNS:**
+
+- Treating "handle this" / "process X" as authorization to publish or send.
+- Writing to a demoted channel because *this particular* instruction sounded explicit.
+- Relaxing the gate without a decision record superseding the one that created it.
+
+---
+
 ## Strategic posture {#strategic-posture}
 
 > **Status:** mix — see per-section badges
@@ -302,6 +337,34 @@ Every `/digest` invocation verifies CWD is the Giovanni repo root, state file ex
 | `<slug>` | Weekly | 30-min 1:1 |
 | `<slug>` | Monthly | Board session |
 | `<slug>` | Ad-hoc | As triggered |
+
+### Operating model / role boundaries (OPTIONAL)
+
+<!--
+Use this block when the initiative has a formal operating model with
+separate seats (sponsor/board, principal, project manager, engineering,
+commercial). Solo-founder forks: delete the block — the lane-separation
+rules only bind where the seats actually exist.
+Pattern reference: docs/governance.md § "Role boundaries".
+-->
+
+**Role matrix** <!-- TODO for fork: fill seats; leave out seats your domain doesn't have -->
+
+| Seat | Who | Owns |
+|---|---|---|
+| Sponsor / board | `<stakeholder_slug(s)>` | Final scope, budget, go/no-go, sequencing; escalation arbitration |
+| Principal (product / strategy owner) | `<principal>` | Vision, roadmap, launch scope, acceptance criteria, product outcome |
+| Project manager | `<stakeholder_slug>` | Integrated plan, cross-functional coordination, RAID + decision log, status reporting, change control |
+| Engineering lead | `<stakeholder_slug>` | Build, architecture, technical feasibility |
+| Commercial lead | `<stakeholder_slug>` | GTM, pricing execution, revenue |
+
+**Behavioral rules (binding once seats are filled):**
+
+1. **Lane separation.** Delivery / status / RAID / scheduling / cross-team coordination work belongs to the project-manager seat. The agent flags it as such — it never maps it onto the principal.
+2. **Shared status forums:** generate only the principal's slice (e.g. the product slide), never the full project status — that is the PM's artifact.
+3. **Escalation routing:** cross-functional blocker → project manager; strategic / scope / budget / go-no-go / pricing → sponsor/board.
+4. **Two-way artifact flow:** the PM's agendas, minutes, decision log, and RAID are digest inputs; the principal's decisions and product-side risks feed back into the PM's log.
+5. **Open comment threads ≠ settled canon.** A governance doc with unresolved comments is not `RESOLVED` — track the open threads explicitly.
 
 ---
 

@@ -156,10 +156,10 @@ friction).
 | **Per-stakeholder profiles** | `memory/templates/stakeholder.template.md`, 3 Lattice examples, `docs/stakeholder-profiles.md` | Sentiment trajectory time-series, communication style, predicted reactions, 6-value relationship-type enum. |
 | **Daily digest workflow** | `.claude/workflows/daily-digest.md`, `memory/digest-{state,sources}.template.md`, `docs/digest.md` | 12-step procedure, parallel source-puller fan-out, drift detection with 7d ack expiry, brief auto-gen ≤48h, predictive integration. |
 | **Predictive layer** — *the moat* | `memory/templates/branch-out.template.md`, `shadow-hypothesis.template.md`, `calibration-actor-score.template.md`, `memory/branch-out/canonical-moves.md`, `docs/prediction.md` | **Branch-out** (3-tier no-percentages, max t+2, hard-stop shallow actors). **Shadow hypotheses** — *invisible to the principal at generation* (anti-self-fulfilling rule, the binding constraint of the layer), reviewed quarterly with **adversarial lookback** (default-skeptical on uncertainty). **Calibration** scoring per-actor monthly with healthy-range bands. See the dedicated section above. |
-| **Custom subagents** | `.claude/agents/` (8 architects + 8 workers) | 7 operational worker agents + 8 framework architects. Generic, model-tagged, tool-scoped, isolated context. |
-| **Slash commands** | `.claude/commands/` (8 commands + registry + design doc) | `/digest`, `/branch-out`, `/shadow-review`, `/calibration-report`, `/consistency-check`, `/market-radar`, `/review`, `/redline`. |
+| **Custom subagents** | `.claude/agents/` (8 architects + 8 workers) | 8 operational worker agents + 8 framework architects. Generic, model-tagged, tool-scoped, isolated context. |
+| **Slash commands** | `.claude/commands/` (9 commands + registry + design doc) | `/digest`, `/branch-out`, `/shadow-review`, `/calibration-report`, `/consistency-check`, `/consistency-review`, `/market-radar`, `/review`, `/redline`. |
 | **Adversarial-review-as-default** | `.claude/agents/adversarial-reviewer.md`, `.claude/workflows/adversarial-review.md`, `docs/adversarial.md` | SHIP/REWRITE/KILL verdict (no compounds), strongest-counter-case requirement, default-critical, suspend conditions documented. |
-| **Governance + lint** | `scripts/lint.{sh,py}`, `scripts/lint_rules/` (11 rules), `scripts/build-{knowledge-index,memory-map}.sh`, `.claude/hooks/` (8 hooks), `docs/governance.md` | Pluggable Python lint framework, INDEX/MAP auto-regen, hard-limit enforcement (300-line, 2% strikethrough), audit cadence (14d light / 35d full), classification rules. |
+| **Governance + lint** | `scripts/lint.{sh,py}`, `scripts/lint_rules/` (15+ pluggable rules — `scripts/lint.sh --list`), regen scripts (`scripts/build-*`), `.claude/hooks/` (7 hooks), `docs/governance.md` | Pluggable Python lint framework + bash staleness checks, INDEX/MAP/REGISTRY auto-regen, hard-limit enforcement (300-line, 2% strikethrough), audit cadence (14d light / 35d full), classification rules. |
 
 ## What's NOT in scope
 
@@ -176,14 +176,15 @@ template + workflow is genuinely generic. Every architect's output is
 stress-tested against this domain. See `memory/examples/*.example.md` for
 filled artifacts.
 
-## Stats (post-Setup1)
+## Stats
+
+Loose by design — exact counts drift; the live lists are one command away.
 
 - 8 architect agents + 8 operational agents = 16 total
-- 8 slash commands + 11 lint rules + 8 hooks + 8 generic scripts
-- 13 memory templates + 14 Lattice examples
+- 9 slash commands · 15+ pluggable lint rules + 5 bash checks (`bash scripts/lint.sh --list`) · 7 hooks
+- 13 memory templates + 12 Lattice examples
 - 1 living constitution template + 1 INDEX template + 1 governance config template
-- 10 workflow/policy/design docs
-- ~104 files, ~17K lines, 19 commits
+- 11 workflow/policy/design docs in `docs/` + 3 workflows in `.claude/workflows/`
 
 ## Contributing
 

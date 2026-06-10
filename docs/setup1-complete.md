@@ -56,7 +56,7 @@ When you decide to actually use Giovanni for a domain:
 1. **Fork Giovanni into a new private repo** (`<domain>-cos` or similar)
 2. **Fill `knowledge/constitution.md`** with your actual operating principles, strategic posture, stakeholder model, architecture, commercial model, compliance posture
 3. **Bootstrap stakeholder profiles** — pick 5-10 key people, run `profile-bootstrap` for each (or write manually)
-4. **Configure `memory/digest_sources.md`** with your actual sources (Slack workspace, Outlook calendar, project tracker, etc.)
+4. **Configure `memory/digest_sources.md`** with your actual sources (chat platform, email, calendar, project tracker, etc.)
 5. **Wire MCP tools** to source-puller — fork-time mapping from generic `source_type` to actual MCP server identifiers
 6. **Run `/digest`** for the first time. Iterate sources config based on signal quality.
 7. **Run `/branch-out`** on first high-stakes situation
@@ -69,7 +69,7 @@ These were noted in architect reports but not resolved during Setup1. Address if
 
 - **memory-architect ↔ subagent-roster-architect:** `researcher` writes to `memory/intel/` — confirm canonical (vs `memory/research/`)
 - **governance-architect:** add `stakeholder_dormant_threshold_days` and `stakeholder_archive_threshold_days` to `docs/governance.config.template.yaml`; consider lint rule for agent frontmatter/body consistency
-- **slash-command-architect:** `/consistency-review <YYYY-MM-DD>` workflow referenced in `/consistency-check` but not implemented — likely governance domain
+- **slash-command-architect:** `/consistency-review <YYYY-MM-DD>` workflow referenced in `/consistency-check` but not implemented — likely governance domain. **Resolved 2026-06-10:** shipped as `.claude/commands/consistency-review.md` + `.claude/workflows/consistency-review.md`.
 - **stakeholder-architect:** `predicted_reactions` schema may want explicit `prediction_index` for shadow-hypothesis traceability
 - **digest-architect:** brief retention policy (auto-archive after N days past event?) — currently no retirement mechanism
 

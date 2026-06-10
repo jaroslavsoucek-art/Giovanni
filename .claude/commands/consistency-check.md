@@ -1,11 +1,11 @@
 ---
-description: Run semantic consistency checks across memory, constitution, agent roster, and decision records. Routes to consistency-checker agent. Read-only — proposes diffs, never applies them.
+description: Run semantic consistency checks across memory, constitution, agent roster, decision records, and the decided-terms registry. Routes to consistency-checker agent. Read-only — proposes diffs, never applies them.
 allowed-tools: Task, Read, Write, Bash
 ---
 
 # /consistency-check
 
-Run the semantic invariants that deterministic `scripts/lint.sh` cannot reach (memory↔constitution drift, decisions↔constitution drift, agent roster description mismatch, topic shard cross-reference breakage, optional architecture audit staleness). This command is a **thin shell** — checks and report format live in the `consistency-checker` agent. This file is the invocation contract.
+Run the 6 semantic invariants that deterministic `scripts/lint.sh` cannot reach (memory↔constitution drift, decisions↔constitution drift, agent roster description mismatch, topic shard cross-reference breakage, optional architecture audit staleness, decided-terms completeness). This command is a **thin shell** — checks and report format live in the `consistency-checker` agent. This file is the invocation contract.
 
 ## Usage
 
@@ -22,6 +22,7 @@ Valid `--check` ids:
 - `agent-roster-semantic`
 - `topic-shard-stakeholder-xref`
 - `audit-staleness` (optional — only if fork uses architecture tier audits)
+- `decided-terms-completeness` (no-op with INFO if `memory/audits/consistency/decided-terms.yaml` is absent)
 
 ## Argument syntax
 
@@ -101,7 +102,7 @@ The orchestrator does NOT raise this cap.
 ## Cross-references
 
 - **Agent (executor):** `.claude/agents/consistency-checker.md`
-- **Triage workflow:** `/consistency-review <YYYY-MM-DD>` — **out of scope for Setup1**, owned by `governance-architect`'s domain. Defer to Setup2 when first real-world findings need triage. See `docs/setup1-complete.md` § "Cross-architect TODOs (unresolved, low priority)".
+- **Triage workflow:** `/consistency-review <YYYY-MM-DD>` (`.claude/commands/consistency-review.md` → `.claude/workflows/consistency-review.md`) — per-finding verdicts + precision tally. Run after each check during shadow mode.
 - **State file:** `memory/audits/consistency/_state.md`
 - **Deterministic lint complement:** `scripts/lint.sh` (this command covers what regex/YAML parsing can't)
 - **Governance policy:** `docs/governance.md` § Consistency checks (shadow mode + promotion criteria)

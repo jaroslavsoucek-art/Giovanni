@@ -65,8 +65,13 @@ For every source_type the playbook is the same shape:
 ### project-tracker
 
 - Format per bullet: `<status> · <date> · <task-name> · assignee=<person> · due=<date> · parent=<project-or-epic> · <permalink>`
-- Filter to items where the principal is assignee OR follower (apply in bullet-emission, not in the underlying query — the audit trail matters).
-- If the platform exposes a CLI script (`scripts/<tracker>-pull.sh`), prefer that for stable output. If exit code ≠ 0 → return `ERROR: project-tracker pull failed — <stderr>` and stop.
+- **Single-feed (default):** filter to items where the principal is assignee OR follower (apply in bullet-emission, not in the underlying query — the audit trail matters).
+- **Multi-feed:** a project-tracker source MAY define a `feeds:` list in `memory/digest_sources.md` — each feed `{identifier, filter_policy, tag}`. Apply the filter policy **per feed**:
+  - `assigned-to-principal` — emit only assignee/follower items (the default above).
+  - `wholesale` — emit **ALL items** in the window, no assignee filter. Rationale: an externally-owned decision/risk log feeds the digest unfiltered and tagged, because its items are not assigned to the principal — a project manager's risk/decision log entry about the principal's domain would never survive an assignee filter, yet it's exactly the input the digest needs (role-boundary rule: consume the owner's outputs as inputs).
+- Items from a tagged feed carry the feed's `tag` as a bullet prefix (e.g. `[RAID]`) so synthesis and drift detection can attribute provenance.
+- With multiple feeds, the 50-item cap splits across feeds proportionally to their window volume (caller can override per feed via `extra_context`). Never let one feed starve the others.
+- If the platform exposes a CLI script (`scripts/<tracker>-pull.sh`), prefer that for stable output — pass the window through verbatim and apply feed filter policies at bullet-emission. If exit code ≠ 0 → return `ERROR: project-tracker pull failed — <stderr>` and stop.
 
 ### version-control
 

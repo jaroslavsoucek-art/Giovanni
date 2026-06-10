@@ -181,7 +181,9 @@ After writing the memo:
    Full memo: memory/intel/market-radar/focused/<file>.md
    ```
 
-3. **Never auto-commit.** Memo stays unstaged.
+3. **Regenerate the memory MAP** — run `bash scripts/build-memory-map.sh` after writing the memo; PostToolUse hooks don't fire for subagent writes (shared hook-gap rule in `.claude/agents/README.md`).
+
+4. **Never auto-commit.** Memo stays unstaged.
 
 ## Confidence tiers
 

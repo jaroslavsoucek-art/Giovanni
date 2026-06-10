@@ -41,6 +41,7 @@ Schema per entry:
                                      ordering. high = always include even if
                                      volume low.
   notes: <one-line context — why this source matters, what to watch for>
+  feeds: <optional, project-tracker only — multi-feed list, see that section>
 
 source_type enum (matches source-puller agent):
   chat-platform           — Slack, Teams, Discord, Mattermost
@@ -127,10 +128,35 @@ detection can see them (an unexpected cancellation IS a signal).
   identifier: <project ID + workspace, or repo for issue-only trackers>
   priority: <high | medium | low>
   notes: <filter at synthesis: assignee=principal OR follower=principal>
+  feeds:                # OPTIONAL — omit for single-feed behavior (default)
+    - identifier: <project or board ID>
+      filter_policy: assigned-to-principal
+      tag: <short uppercase provenance tag>
+    - identifier: <externally-owned decision/risk log project ID>
+      filter_policy: wholesale
+      tag: <short uppercase provenance tag, e.g. RAID>
 
 <!--
 Filter at synthesis (Step 5), not at pull time — the audit trail matters
 ("why is X showing up?" should be answerable from the bullets).
+
+Multi-feed (optional): one project-tracker source MAY aggregate several feeds.
+Each feed is {identifier, filter_policy, tag} with filter_policy one of:
+
+- assigned-to-principal — emit only items where the principal is assignee or
+  follower (the single-feed default).
+- wholesale — emit ALL items in the window, no assignee filter. Rationale: an
+  externally-owned decision/risk log feeds the digest unfiltered and tagged,
+  because its items are not assigned to the principal — a project manager's
+  risk/decision log entry about the principal's domain would never survive an
+  assignee filter, yet it's exactly the input the digest needs (role-boundary
+  rule: consume the owner's outputs as inputs — see docs/governance.md
+  § Role boundaries).
+
+Each feed's `tag` becomes a bullet prefix (e.g. `[RAID]`) so synthesis and
+drift detection can attribute provenance. The source-puller applies the filter
+policy per feed and splits the 50-item cap across feeds proportionally to
+window volume — see .claude/agents/source-puller.md § project-tracker.
 
 If the tracker has a CLI script (e.g. `scripts/<tracker>-pull.sh`), prefer
 that for stability. Mention the script path in `notes`.
