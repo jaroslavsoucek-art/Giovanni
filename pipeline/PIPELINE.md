@@ -8,7 +8,7 @@ ingest → extract claims → score → triage → adversarial → HITL
 
 ---
 
-## 1. Ingest  (`giovanni-aggregator`)
+## 1. Ingest  (`boss-aggregator`)
 
 - For each node in `sources/registry.yaml`, pull **with history** (git log + `decisions/` + memory),
   not a flat snapshot. In public-only mode, read only `[GIOVANNI: public]` regions.
@@ -16,7 +16,7 @@ ingest → extract claims → score → triage → adversarial → HITL
   ingested — it just yields lower-confidence claims downstream.
 - Output: per-node raw bundle (knowledge text + decision records + git log of knowledge files).
 
-## 2. Extract claims  (`giovanni-aggregator`)
+## 2. Extract claims  (`boss-aggregator`)
 
 - Decompose each node's knowledge into atomic **claims**. A claim =
   `{ statement, anchor, node, domain, visibility, node_confidence }`.
@@ -47,7 +47,7 @@ Every input is free:
 
 No training, no embeddings required for MVP. Scoring is a deterministic function over git + the matrix.
 
-## 4. Triage  (`giovanni-triage`)
+## 4. Triage  (`boss-triage`)
 
 Bucket each claim. Tiers reuse the node-level branch-out vocabulary — no new slang:
 
@@ -60,7 +60,7 @@ Bucket each claim. Tiers reuse the node-level branch-out vocabulary — no new s
 
 Unanchored claims (§2) are capped at `likely` regardless of corroboration.
 
-## 5. Adversarial  (`giovanni-adversarial`)  — P7
+## 5. Adversarial  (`boss-adversarial`)  — P7
 
 Every `canon-ready` candidate and every `contested` pair is red-teamed before it goes further:
 
@@ -71,7 +71,7 @@ Every `canon-ready` candidate and every `contested` pair is red-teamed before it
   vs *stale claim* (one side has a newer anchor → the other re-opens).
 - Verdict per item: PROMOTE / HOLD / ESCALATE / KILL.
 
-## 6. HITL  (`giovanni-triage` emits; humans resolve)
+## 6. HITL  (`boss-triage` emits; humans resolve)
 
 - Contested + ESCALATE items form a **queue**, each routed to a proposed **oracle** = the domain owner
   from `authority-matrix.yaml` (e.g. CORE → Kácha, pricing → board, rollout → Urban).

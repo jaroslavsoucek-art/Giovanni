@@ -69,7 +69,7 @@ node has low corroboration → stays `singleton` → does not auto-promote.
 
 ## P7 — Adversarial by default
 
-Every promotion candidate and every contested pair passes `giovanni-adversarial` before reaching the
+Every promotion candidate and every contested pair passes `boss-adversarial` before reaching the
 HITL queue or a canon draft. Default mode is critical, not advisory — same doctrine as the node level.
 
 ## P8 — Provenance is permanent and live
