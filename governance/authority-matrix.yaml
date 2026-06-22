@@ -1,0 +1,58 @@
+# Authority Matrix
+#
+# domain -> owner. Drives TWO things in the pipeline:
+#   1. authority weight in scoring (pipeline §3) — a node owned by the domain owner
+#      weighs more WITHIN that domain.
+#   2. HITL oracle routing (pipeline §6) — a contested claim in a domain escalates to its owner.
+#
+# This is a PREREQUISITE, not an output. Without it, scoring has no authority signal and HITL
+# has nowhere to route. It must exist before the first scored run.
+#
+# Seed below = Shoptet NEO governance model (CLAUDE.md). Extend org-wide as nodes onboard.
+# `weight` is the authority multiplier applied to that owner's claims in their domain.
+
+version: 0
+updated: 2026-06-22
+
+domains:
+  core_cms4:
+    description: CORE / cms4 platform — architecture, migrations, shared code
+    owner: kacha            # Kácha owns CORE/cms4
+    oracle: kacha
+    weight: 1.5
+
+  expansion_product:
+    description: NEO product vision, MVP, roadmap, launch scope, acceptance criteria
+    owner: jarda            # Product Lead
+    oracle: jarda
+    weight: 1.4
+
+  delivery_rollout:
+    description: integrated rollout plan, RAID, sequencing, status, change control
+    owner: urban            # Project Manager
+    oracle: urban
+    weight: 1.3
+
+  pricing_commercial:
+    description: pricing, GTM, commercial model, cross-sell
+    owner: board            # co-owned, final = board
+    oracle: board           # Hospodka / Cvetler / Buben
+    weight: 1.4
+
+  engineering_neo:
+    description: NEO build / architecture (non-CORE)
+    owner: bruna            # Engineering Lead
+    oracle: bruna
+    weight: 1.3
+
+  strategy_scope_budget:
+    description: scope / budget / go-no-go / launch date — strategic arbitration
+    owner: board
+    oracle: board
+    weight: 1.6
+
+# Fallback when a claim's domain has no listed owner: route to node owner, weight 1.0,
+# and flag "domain unmapped" so the matrix gets extended rather than silently defaulting.
+unmapped_domain:
+  weight: 1.0
+  action: flag_for_matrix_extension
