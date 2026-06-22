@@ -6,3 +6,8 @@ node_modules/
 .env.local
 *.log
 .claude/projects/
+
+# Ephemeral pipeline run output — recomputed each run, never committed.
+# Only the explainer is tracked; actual run artifacts are ignored. See runs/README.md.
+runs/*
+!runs/README.md

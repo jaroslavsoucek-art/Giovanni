@@ -78,7 +78,7 @@ Every `canon-ready` candidate and every `contested` pair is red-teamed before it
 - Resolution cadence: **batched** (a periodic "oracle session" — the quarterly-pub model), or
   **trigger-based** when a contested claim blocks something material. Never one-ping-per-claim spam.
 - On resolution: re-anchor to the external referent (P4 guard — the oracle's *reasoned* answer, not a
-  nod at Boss's summary) → draft canon patch → human approves → write to `memory/canon/`.
+  nod at Boss's summary) → draft canon patch → human approves → write to `knowledge/canon/`.
   **That is the moment canon is born that did not exist before.**
 
 ---

@@ -19,7 +19,18 @@ aggregator (per node, parallel fan-out)  →  scorer (deterministic)  →  triag
 
 - **Parallel fan-out:** one `boss-aggregator` per Giovanni node in a single batch (mirrors a node's digest fan-out).
 - **No auto-handoff between agents.** Main thread orchestrates; no agent writes canon (P4).
-- **No agent writes back into a node, ever** (P4). Canon drafts are human-approved at the `update-canon` gate.
+- **No agent writes back into a node, ever** (P4). Canon drafts are human-approved at the `update-canon` gate, then written to `knowledge/canon/`.
+
+### Where outputs land (write doctrine — see `memory/README.md`)
+
+| Output | Lands in | Persists? |
+|---|---|---|
+| Triage table / scores / claim list | `runs/` (git-ignored) | no — recomputed each run |
+| Contested/escalate items awaiting an oracle | `memory/hitl-queue/` | yes — async resolution |
+| Approved canon (post-HITL, human-gated) | `knowledge/canon/` | yes — the only canonical store |
+
+No agent writes `knowledge/canon/` directly. Triage and adversarial agents only *propose*; the
+`update-canon` gate (human) is the sole writer of canon.
 
 ## Not yet built
 - Workflow fitness agent — blocked on `workflows/WORKFLOW_FITNESS.md` discovery.

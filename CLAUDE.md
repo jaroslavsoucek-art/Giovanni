@@ -14,6 +14,7 @@ them. "Giovanni is the node; Boss is the network."
 
 - **Read-only over nodes (P4).** Boss never writes back into a node. Node autonomy is absolute.
 - **Propose, don't write.** Boss drafts canon patches; a human owner approves. No auto-commit to canon.
+- **Canon is knowledge, not memory.** The earned canon is the canonical layer (`knowledge/`), a peer of `memory/` — never nested under it. `memory/` is Boss's own volatile run-state and is *never* canonical. The only write that becomes truth (canon) is the only write a human gates; everything Boss writes itself is non-canonical and disposable.
 - **Anchors, not prose.** Read gen-0 anchors (commit / explicit statement / code), never another node's synthesis as fact — that is the generational-telephone trap.
 - **Disagreement is the product (P5).** Surfacing a contested claim two teams didn't know they had is the value, not noise.
 - **Adversarial by default (P7).** Every promotion candidate and contested pair gets red-teamed.
@@ -25,7 +26,9 @@ them. "Giovanni is the node; Boss is the network."
 - `pipeline/PIPELINE.md` — the 6 stages: ingest → extract → score → triage → adversarial → HITL
 - `sources/` — `SOURCE_CONTRACT.md` (what a node must expose) + `registry.yaml` (registered nodes) + `_template/manifest.yaml`
 - `governance/authority-matrix.yaml` — domain → owner (authority weight + HITL routing)
-- `memory/` — `META_MEMORY.md` (aggregated canon/decisions only) + `MEMORY_RULES.md` + `canon/`
+- `knowledge/` — `canon/` (the earned org canon — Boss's canonical layer) + `README.md` (layer contract + `update-canon` write gate). **Canon is knowledge, not memory** — `knowledge/` is the source of truth, written only through the gate.
+- `memory/` — Boss's own volatile run-state ONLY: `STATE.md` (run-state shortcut) + `README.md` (read/write doctrine + storage rules) + `hitl-queue/` (open items awaiting an oracle) + `audit_state.md`.
+- `runs/` — ephemeral, git-ignored triage output (recomputed each run)
 - `workflows/` — `WORKFLOW_FITNESS.md` (fitness, not convergence) + `registry.yaml`
 - `.claude/agents/ROSTER.md` — `boss-aggregator` / `boss-triage` / `boss-adversarial`
 

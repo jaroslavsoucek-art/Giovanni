@@ -62,10 +62,15 @@ boss/  (this branch)
 │   └── registry.yaml              ← registered Giovanni nodes
 ├── pipeline/
 │   └── PIPELINE.md                ← the 6 stages: ingest → extract → score → triage → adversarial → HITL
-├── memory/
-│   ├── META_MEMORY.md             ← aggregated canon/decision/fitness ONLY (anti-drift)
-│   ├── MEMORY_RULES.md            ← read-doctrine + size pressure, one level up
-│   └── canon/_index.md            ← emergent canon index
+├── knowledge/                     ← Boss's CANONICAL layer — the earned org canon (peer of memory/)
+│   ├── README.md                  ← layer contract + update-canon write gate
+│   └── canon/_index.md            ← emergent canon index (written only through the gate)
+├── memory/                        ← Boss's own VOLATILE run-state — never canonical
+│   ├── README.md                  ← read + write doctrine, storage rules, anti-drift
+│   ├── STATE.md                   ← run-state shortcut (thin pointer to canon)
+│   ├── hitl-queue/                ← open contested/escalate items awaiting an oracle (persists)
+│   └── audit_state.md             ← memory-hygiene cadence
+├── runs/                          ← ephemeral triage output (git-ignored; recomputed each run)
 ├── workflows/
 │   └── WORKFLOW_FITNESS.md        ← how workflows are judged (fitness, not convergence) — open discovery branch
 └── .claude/agents/ROSTER.md       ← boss-aggregator / boss-adversarial / boss-triage
@@ -86,7 +91,7 @@ boss/  (this branch)
 
 > **Naming note:** the aggregator is called **Boss** consistently across this
 > branch's own docs (`CONSTITUTION.md`, `pipeline/PIPELINE.md`, `sources/*`,
-> `memory/{MEMORY_RULES,META_MEMORY}.md`, the agent roster). The branch *also*
+> `knowledge/README.md`, `memory/{README,STATE}.md`, the agent roster). The branch *also*
 > carries the **node-level Giovanni framework** files — it was scaffolded on top of
 > them — and there "Giovanni" correctly means the individual per-person assistant
 > that Boss aggregates, so it is left unchanged.
