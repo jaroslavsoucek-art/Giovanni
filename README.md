@@ -1,45 +1,52 @@
 # Giovanni
 
-> Extended hand and second brain.
+> Extended hand and second brain — the **system layer** under an AI Chief of Staff.
 
-A **methodology framework** for running an AI Chief of Staff inside Claude Code
-— memory architecture, daily digest, predictive layer, governance discipline,
-custom subagents, slash commands, living constitution, per-stakeholder modeling,
-adversarial-default review.
+## The problem
 
-Distilled from a working domain-specific implementation, then sanitized into a
-domain-agnostic framework you can fork and fill with your own context.
+You run a high-context, multi-stakeholder program — as a founder, chief of
+staff, head of strategy / legal / operations. Your reality is a moving
+time-series: what each stakeholder believes **this month** vs last, why each
+decision was made, what counterparties are likely to do next. You want an AI
+assistant that still reads the situation correctly in **month six**, not just
+on day one.
 
-## In 10 seconds
+A prompt library cannot do this. Prompts are stateless; your reality
+compounds and rots. Five specific things go wrong — and none of them are
+fixed by a better prompt:
 
-Most "AI assistant" repos hand you prompts. Giovanni hands you the **system layer**
-underneath the prompts: how to structure memory so it doesn't drift, how to run a
-daily digest that survives weeks of compounding context, how to model
-stakeholders as time-series (not snapshots), how to predict reactions
-**without contaminating the prediction** (shadow hypotheses invisible to the
-principal — see [The moat](#the-moat--predictive-layer-with-invisible-shadow-hypotheses)
-below), how to enforce honesty via lint and adversarial review.
+| The pain | What it looks like | What Giovanni does about it |
+|---|---|---|
+| **Context rot** | A single growing notes/`CLAUDE.md` file becomes a junk drawer within ~4 weeks. Canon, this-week's blockers, and dead items pile into one place until the agent can't tell what's *true* from what's merely *tracked* — and acts on the wrong tier. | **4-layer memory** (MAP → operational shortcut → topic shards → deep storage) with classify-before-append discipline, graduation criteria, and hard limits *with teeth* (300-line L1, 2% strikethrough, 14d/35d audit cadence). |
+| **Stale stakeholder snapshots** | You stored a one-time bio for a counterparty. The relationship moved — souring since a specific meeting — and the snapshot silently went wrong. | **Stakeholder profiles as sentiment-trajectory time-series** (append-only), with a 6-value relationship-type enum and a *predicted-reactions* section tied to observed patterns. |
+| **Prediction contamination** | The moment you read "expect Sarah to push back on Series B timing," you walk in framing the conversation around it. The prediction self-fulfills or self-prevents; the model's "track record" becomes a record of *how surfacing changed your behavior*, not how well it reads people. | **Invisible shadow hypotheses** — predictions the principal never sees during the window (see [The moat](#the-moat--invisible-shadow-hypotheses)). |
+| **Honesty erosion** | RLHF trains the base model helpful-then-*agreeable*. Any review function regresses to "overall solid draft, just one concern…" — surfacing nothing you couldn't see, until you stop asking because it never changes anything. | **Adversarial-as-default review**: forced `SHIP / REWRITE / KILL` enum (no compounds), a *mandatory strongest-counter-case*, default-critical — an explicit reversal of the agreeableness bias, not an opt-in flavor. |
+| **Canon ↔ reality drift** | A decision gets made but never propagates to the source-of-truth doc. Memory starts contradicting the constitution. A superseded term resurfaces. Nobody notices until a call is made on stale canon. | **Living constitution** (single source of truth, anchor IDs, supersedes-pointers, decision back-links) + **daily-digest drift detection** + a pluggable **lint/governance** layer that fails the build on contradictions. |
 
-The runtime lives in your **fork**, not here. This repo is templates, schemas,
-agents, workflows, and governance — domain-agnostic on purpose.
+## What this is
 
-## The moat — predictive layer with invisible shadow hypotheses
+Giovanni hands you the system layer *underneath* the prompts: memory that
+resists drift, stakeholders modeled as trajectories, predictions that are
+testable without contaminating themselves, and governance that keeps an AI
+honest instead of agreeable.
+
+It is a **methodology framework**, not a working assistant. The runtime lives
+in your **fork** — this repo is templates, schemas, agents, workflows, and
+governance, domain-agnostic on purpose. Distilled from a real
+domain-specific implementation, then sanitized clean-room into something you
+fork and fill with your own context.
+
+## The moat — invisible shadow hypotheses
 
 Most AI assistants either don't predict counterparty behavior, or predict it
-**in plain sight** — which contaminates the prediction. The moment you read
-"the model expects Sarah to push back on Series B timing", you walk into the
-1:1 framing the conversation around it. The prediction becomes self-fulfilling
-or self-preventing; either way, the loop is broken. The model's "track record"
-becomes a record of *how surfaced predictions changed your behavior*, not
-*how well it reads your stakeholders*.
-
-Giovanni's predictive layer is three pieces, designed against this trap:
+**in plain sight** — which contaminates the prediction (see the table above).
+Giovanni's predictive layer is three pieces, designed against that trap:
 
 ```mermaid
 flowchart LR
     digest["Daily digest +<br/>stakeholder updates"] -->|"writes silently"| shadow["📦 Shadow hypotheses<br/>memory/shadow/pending/<br/><br/>Invisible to principal.<br/>Not in digest, not in briefing, not in chat."]
     shadow -->|"+90 days"| review["🔍 /shadow-review<br/>quarterly adversarial lookback<br/>'where did the model miss?'<br/>default-skeptical on uncertainty"]
-    review -->|"per-actor verdict"| calibration["📊 /calibration-report<br/>monthly · per-actor · per-tier<br/>healthy: 60–80 / 20–40 / 5–15 %"]
+    review -->|"per-actor verdict"| calibration["📊 /calibration-report<br/>monthly · per-actor · per-tier<br/>design-target (unvalidated): 60–80 / 20–40 / 5–15 %"]
     calibration -.tunes.-> branchout["🔮 /branch-out<br/>3 tiers (no percentages)<br/>max t+2 horizon<br/>hard-stop on shallow actors"]
     situation["High-stakes situation"] -->|"active query"| branchout
     branchout -->|"visible to principal"| principal["👤 Principal acts on<br/>3-tier scenario tree"]
@@ -48,33 +55,32 @@ flowchart LR
 1. **Branch-out** *(visible)* — active simulation for a specific situation.
    Three likelihood tiers, **no fake percentages** (numeric probabilities on
    small-N stakeholder predictions are vibes with arithmetic decoration). Max
-   `t+2` horizon (further is fiction). **Hard-stop on shallow actors**: if
-   2+ key actors have <5 observed touches, `/branch-out` refuses to run rather
-   than emit caveat-degraded "best effort" predictions.
+   `t+2` horizon. **Hard-stop on shallow actors**: if 2+ key actors have <5
+   observed touches, `/branch-out` refuses to run rather than emit
+   caveat-degraded "best effort" predictions.
 
 2. **Shadow hypotheses** *(invisible — the moat)* — predictions the principal
    **never sees** during the prediction window. Stored in
-   `memory/shadow/pending/`. Not rendered in digests. Not in 1:1 briefs. Not in
-   chat. They become visible only at `/shadow-review`, after the horizon date
-   has passed and the outcome is structurally determined. The quarterly review
-   runs an **adversarial lookback**: *"what are the strongest arguments this
-   hypothesis was NOT fulfilled?"* — default-skeptical on uncertainty, because
-   generous verdicts inflate accuracy and corrupt calibration. `>80 %` accuracy
-   triggers an immediate re-audit because it usually means tier labels have
-   drifted.
+   `memory/shadow/pending/`, absent from digests / briefs / chat. They become
+   visible only at `/shadow-review`, after the horizon has passed and the
+   outcome is structurally determined. The quarterly review runs an
+   **adversarial lookback** — *"what are the strongest arguments this was NOT
+   fulfilled?"* — default-skeptical, because generous verdicts inflate
+   accuracy and corrupt calibration. `>80%` accuracy triggers an immediate
+   re-audit (it usually means tier labels drifted).
 
 3. **Per-actor calibration** *(monthly)* — `/calibration-report` aggregates
-   hit rates per actor, per tier. Framework-level accuracy is meaningless;
-   what matters is *which specific stakeholders the model reads well and
-   which it doesn't*. The score is per-relationship, and it tunes the
-   triage heuristic that gates branch-out runs.
+   hit rates **per actor, per tier**. Framework-level accuracy is meaningless;
+   what matters is *which specific stakeholders the model reads well*. The
+   score tunes the triage heuristic that gates branch-out runs.
 
-The shadow piece is what lets you measure whether the model actually *sees*
-your stakeholders, or just generates plausible-sounding narrative. You can't
-fake your way through 6 months of invisible predictions and adversarial
-review. See [`docs/prediction.md`](docs/prediction.md) for the full binding
-rationale (anti-self-fulfilling rule, no-recommendation principle, canonical-
-moves discipline, calibration healthy-range bands).
+The shadow piece is what *lets you measure* — over months, once enough
+hypotheses resolve — whether the model actually *sees* your stakeholders or
+just generates plausible narrative. The mechanism is designed so you can't
+fake your way through it; that measurement has **not happened yet** (no real
+shadow hypotheses have resolved — see [Status](#status)). The machinery is
+built; the track record is not. Full binding rationale:
+[`docs/prediction.md`](docs/prediction.md).
 
 ## Architecture
 
@@ -95,10 +101,25 @@ flowchart TB
     Governance -.governs.- Workers
 ```
 
+## See it filled — the Lattice Finance fork
+
+Reading templates is abstract. [`examples/lattice-finance/`](examples/lattice-finance/)
+is a **complete filled fork** on a synthetic domain (Alex Park / Lattice
+Finance — a Series A treasury-automation SaaS): a real constitution, four
+stakeholder profiles as trajectories, topic shards, decision records, a
+predictive layer (branch-out + shadow + calibration), runtime digest config,
+and a rendered digest transcript. It exists to prove the templates compose
+into a coherent operational instance — and it is **validated in CI** on every
+commit:
+
+```bash
+python3 scripts/lint.py            --repo-root examples/lattice-finance   # all governance rules pass
+python3 scripts/run-digest-dryrun.py --repo-root examples/lattice-finance # the fork is digest-ready
+```
+
 ## Who this is for
 
-- Anyone running a **high-context, multi-stakeholder program** (founders,
-  chiefs of staff, heads of strategy / legal / operations) who needs an
+- Anyone running a **high-context, multi-stakeholder program** who needs an
   assistant that *remembers across weeks* without rotting into noise.
 - People who already use Claude Code and want **schema-level discipline**
   instead of stitching together yet another prompt library.
@@ -111,87 +132,81 @@ filling Giovanni with your domain context and running it for months.
 ## Quick start
 
 ```bash
-# Option A — "Use this template" button on GitHub (top-right) for a clean fork.
-# Option B — manual clone:
+# 1. Fork — "Use this template" on GitHub, or clone:
 git clone https://github.com/jaroslavsoucek-art/Giovanni.git my-chief-of-staff
 cd my-chief-of-staff
+git remote set-url origin <your-private-repo-url>   # stakeholder data is sensitive — keep it private
 
-# Validate framework lint passes on the vanilla repo:
-./scripts/lint.sh
+# 2. Scaffold the runtime from templates (copies, creates dirs, regenerates indexes):
+bash scripts/init-fork.sh
 
-# Read the fork-and-fill walkthrough:
+# 3. Fill it — the multi-hour part: constitution, stakeholders, sources.
 $EDITOR docs/setup-guide.md
 ```
 
-For the synthetic test domain (Alex Park / Lattice Finance — used to
-stress-test every template), see [`docs/test-domain.md`](docs/test-domain.md)
-and the `memory/examples/*.example.md` files.
+`init-fork.sh` is the mechanical half of "fork in <30 minutes." Filling it
+with real domain content — and running the predictive layer long enough to
+produce accuracy signals — takes weeks; that's the actual work, walked
+through in [`docs/setup-guide.md`](docs/setup-guide.md).
 
 ## Status
 
-**Setup1 architecture complete; runtime unvalidated.** 8/8 specialist
-architects shipped; all framework layers have templates, schemas, agents,
-workflows, and lint integration. **Not yet end-to-end runtime-tested** —
-no fork to actual operational domain, no independent cross-validation, no
-Setup2 fork-and-fill walkthrough yet (see
-[`docs/setup1-complete.md`](docs/setup1-complete.md) § "What Setup1 did NOT
-include"). Hobby project — no commercial support, no roadmap promises.
-Built part-time by extracting the system layer from a real high-stakes
-program (expansion of an e-commerce platform into 6 EU markets) and
-stripping out the domain content.
+**Structurally validated end-to-end; not yet run against a real domain.**
+8/8 specialist architects shipped; all layers have templates, schemas, agents,
+workflows, and lint integration. The bundled [Lattice
+fork](examples/lattice-finance/) proves the templates compose into a
+lint-clean, digest-ready operational instance, and CI
+([`.github/workflows/ci.yml`](.github/workflows/ci.yml)) enforces that on
+every commit — plus a fresh-clone `init-fork.sh` smoke test.
 
-Next stage (Setup2): fork Giovanni into a clean repo, fill with your own
-domain content, run actual workflows. **This is where the runtime gets
-validated.** See [`docs/setup1-complete.md`](docs/setup1-complete.md) for
-the bootstrap summary, [`docs/setup-guide.md`](docs/setup-guide.md) for the
-fork-and-fill walkthrough (WIP — iterates as Setup2 surfaces real-world
-friction).
-
-## What's in scope
-
-| Layer | Files | Purpose |
-|---|---|---|
-| **4-layer memory architecture** | `memory/templates/`, `memory/examples/`, `memory/README.md` | MAP → operational shortcut → topic shards → deep storage. Graduation criteria, hard limits, audit cadence. |
-| **Living constitution** | `knowledge/constitution.template.md`, `knowledge/README.md`, `knowledge/INDEX.template.md` | Single source of truth, commit-traceable, anchor IDs, supersedes-pointer, auto-INDEX. |
-| **Per-stakeholder profiles** | `memory/templates/stakeholder.template.md`, 3 Lattice examples, `docs/stakeholder-profiles.md` | Sentiment trajectory time-series, communication style, predicted reactions, 6-value relationship-type enum. |
-| **Daily digest workflow** | `.claude/workflows/daily-digest.md`, `memory/digest-{state,sources}.template.md`, `docs/digest.md` | 12-step procedure, parallel source-puller fan-out, drift detection with 7d ack expiry, brief auto-gen ≤48h, predictive integration. |
-| **Predictive layer** — *the moat* | `memory/templates/branch-out.template.md`, `shadow-hypothesis.template.md`, `calibration-actor-score.template.md`, `memory/branch-out/canonical-moves.md`, `docs/prediction.md` | **Branch-out** (3-tier no-percentages, max t+2, hard-stop shallow actors). **Shadow hypotheses** — *invisible to the principal at generation* (anti-self-fulfilling rule, the binding constraint of the layer), reviewed quarterly with **adversarial lookback** (default-skeptical on uncertainty). **Calibration** scoring per-actor monthly with healthy-range bands. See the dedicated section above. |
-| **Custom subagents** | `.claude/agents/` (8 architects + 8 workers) | 8 operational worker agents + 8 framework architects. Generic, model-tagged, tool-scoped, isolated context. |
-| **Slash commands** | `.claude/commands/` (9 commands + registry + design doc) | `/digest`, `/branch-out`, `/shadow-review`, `/calibration-report`, `/consistency-check`, `/consistency-review`, `/market-radar`, `/review`, `/redline`. |
-| **Adversarial-review-as-default** | `.claude/agents/adversarial-reviewer.md`, `.claude/workflows/adversarial-review.md`, `docs/adversarial.md` | SHIP/REWRITE/KILL verdict (no compounds), strongest-counter-case requirement, default-critical, suspend conditions documented. |
-| **Governance + lint** | `scripts/lint.{sh,py}`, `scripts/lint_rules/` (15+ pluggable rules — `scripts/lint.sh --list`), regen scripts (`scripts/build-*`), `.claude/hooks/` (7 hooks), `docs/governance.md` | Pluggable Python lint framework + bash staleness checks, INDEX/MAP/REGISTRY auto-regen, hard-limit enforcement (300-line, 2% strikethrough), audit cadence (14d light / 35d full), classification rules. |
+What that does **not** yet include: a fork to an actual operational domain
+running live `/digest` against real signal; independent cross-validation (the
+same agent built the schemas and filled the synthetic examples — confirmation
+bias is acknowledged and unresolved). The predictive layer's accuracy claims
+are unproven until months of real shadow hypotheses resolve. Hobby project —
+no commercial support, no roadmap promises. Sanitized clean-room extraction
+from a private domain-specific implementation; no proprietary content carried
+over. See [`docs/setup1-complete.md`](docs/setup1-complete.md).
 
 ## What's NOT in scope
 
-- **No domain content.** No stakeholders by name (except Lattice synthetic test domain in examples), no real decision logs, no project specifics.
-- **No vendor lock-in.** Works with Claude Code today; designed to migrate to platform-native primitives (Anthropic memory tool, Dreaming, Antigravity SDK) as they ship.
+- **No domain content.** No real stakeholders by name (the Lattice fork is a
+  synthetic test domain), no real decision logs, no project specifics.
+- **No vendor lock-in.** Works with Claude Code today; designed to migrate to
+  platform-native primitives as they ship.
 - **No commercial support.** MIT license; fork at your own risk.
-- **No automatic value.** Giovanni is templates + workers + workflows + governance. Value comes from filling it with your domain context and running it for months.
+- **No automatic value.** Value comes from filling it with your domain
+  context and running it for months.
 
-## Test domain
+## What's in scope
 
-`docs/test-domain.md` defines a synthetic 2nd domain (Alex Park / Lattice
-Finance — Series A B2B treasury automation SaaS) used to validate every
-template + workflow is genuinely generic. Every architect's output is
-stress-tested against this domain. See `memory/examples/*.example.md` for
-filled artifacts.
+| Layer | Where | Purpose |
+|---|---|---|
+| **4-layer memory** | `memory/templates/`, `memory/examples/`, `memory/README.md` | MAP → operational shortcut → topic shards → deep storage. Graduation criteria, hard limits, audit cadence. |
+| **Living constitution** | `knowledge/` | Single source of truth, commit-traceable, anchor IDs, supersedes-pointer, auto-INDEX. |
+| **Per-stakeholder profiles** | `memory/templates/stakeholder.template.md`, `docs/stakeholder-profiles.md` | Sentiment-trajectory time-series, communication style, predicted reactions, 6-value relationship-type enum. |
+| **Daily digest** | `.claude/workflows/daily-digest.md`, `memory/digest-*.template.md`, `docs/digest.md` | 12-step procedure, parallel source-puller fan-out, drift detection with ack expiry, brief auto-gen ≤48h, predictive integration. |
+| **Predictive layer** *(the moat)* | `memory/templates/{branch-out,shadow-hypothesis,calibration-actor-score}.*`, `memory/branch-out/canonical-moves.md`, `docs/prediction.md` | Branch-out (3-tier, no %, hard-stop shallow). Shadow hypotheses (invisible at generation). Per-actor monthly calibration. |
+| **Custom subagents** | `.claude/agents/` | 8 framework architects + 8 operational workers. Generic, model-tagged, tool-scoped, isolated context. |
+| **Slash commands** | `.claude/commands/` | `/digest`, `/branch-out`, `/shadow-review`, `/calibration-report`, `/consistency-check`, `/consistency-review`, `/market-radar`, `/review`, `/redline`. |
+| **Adversarial-as-default review** | `.claude/agents/adversarial-reviewer.md`, `docs/adversarial.md` | `SHIP / REWRITE / KILL` (no compounds), strongest-counter-case requirement, default-critical. |
+| **Governance + lint + CI** | `scripts/lint.{sh,py}`, `scripts/lint_rules/`, `scripts/build-*`, `scripts/init-fork.sh`, `scripts/run-digest-dryrun.py`, `.claude/hooks/`, `.github/workflows/ci.yml` | Pluggable lint (15 Python rules + 5 bash checks — `scripts/lint.sh --list`), INDEX/MAP/REGISTRY auto-regen, hard-limit enforcement, audit cadence, fork scaffolder, digest-readiness harness, CI. |
 
 ## Stats
 
-Loose by design — exact counts drift; the live lists are one command away.
+Loose by design — the live lists are one command away (`bash scripts/lint.sh --list`).
 
-- 8 architect agents + 8 operational agents = 16 total
-- 9 slash commands · 15+ pluggable lint rules + 5 bash checks (`bash scripts/lint.sh --list`) · 7 hooks
-- 13 memory templates + 12 Lattice examples
-- 1 living constitution template + 1 INDEX template + 1 governance config template
-- 11 workflow/policy/design docs in `docs/` + 3 workflows in `.claude/workflows/`
+- 8 architect agents + 8 operational agents = 16
+- 9 slash commands · 20 lint checks (15 Python rules + 5 bash) · 7 hooks
+- 12 memory templates + 12 worked Lattice examples · 1 living-constitution template
+- 11 docs in `docs/` + 3 workflows in `.claude/workflows/`
+- 1 fully-filled reference fork (`examples/lattice-finance/`) validated in CI
 
 ## Contributing
 
 See [CONTRIBUTING.md](CONTRIBUTING.md). Hard "no domain content" rule,
-generic-first check before opening a PR, critical-mode default review.
-Hobby project — PRs may sit. Read the realistic-expectations section
-before opening anything bigger than a typo.
+generic-first check before opening a PR, critical-mode default review. Hobby
+project — PRs may sit.
 
 ## License
 
@@ -199,6 +214,5 @@ MIT — see [`LICENSE`](LICENSE).
 
 ## Origin
 
-See [`docs/origin.md`](docs/origin.md). Sanitized clean-room extraction from
-a private domain-specific implementation; no proprietary content carried
-over.
+See [`docs/origin.md`](docs/origin.md). Sanitized clean-room extraction from a
+private domain-specific implementation; no proprietary content carried over.
