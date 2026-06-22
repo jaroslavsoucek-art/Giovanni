@@ -1,6 +1,6 @@
 # Giovanni
 
-> Extended hand and second brain — the **system layer** under an AI Chief of Staff.
+> Your own AI Chief of Staff — a **generic** assistant anyone can fork, fill, and run. (For teams, [**Boss**](#boss--the-org-layer-on-top) aggregates many Giovannis into one org view.)
 
 ## The problem
 
@@ -30,11 +30,41 @@ resists drift, stakeholders modeled as trajectories, predictions that are
 testable without contaminating themselves, and governance that keeps an AI
 honest instead of agreeable.
 
-It is a **methodology framework**, not a working assistant. The runtime lives
-in your **fork** — this repo is templates, schemas, agents, workflows, and
-governance, domain-agnostic on purpose. Distilled from a real
-domain-specific implementation, then sanitized clean-room into something you
-fork and fill with your own context.
+Giovanni is a **generic AI Chief of Staff that anyone can stand up for
+themselves.** The repo is the *system layer* — templates, schemas, agents,
+workflows, governance — domain-agnostic on purpose. You fork it, fill it with
+your own constitution, stakeholders, and sources, and run it. Nothing here is
+tied to a company or a domain; the synthetic [Lattice
+fork](examples/lattice-finance/) just shows what a filled one looks like.
+Distilled from a real domain-specific implementation, then sanitized
+clean-room. It's a framework you make real by filling it — not an
+out-of-the-box product.
+
+## Boss — the org layer on top
+
+Giovanni is **one person's** assistant. When many people each run their own
+Giovanni, **Boss** sits one level above and aggregates them.
+
+Boss treats each person's Giovanni as a **source, not as truth**: it reads
+their knowledge, decisions, and memory, scores where the org **converges**
+(many nodes agree → higher confidence) vs **contradicts**, and surfaces the
+contested claims for a human to resolve — producing an *emergent,
+confidence-ranked org canon* rather than assuming one exists. **Giovanni is
+the node; Boss is the network.**
+
+Boss is a separate, evolving design and lives on its own branch, not on
+`main`:
+
+```
+main            →  Giovanni — the individual, generic assistant (this README)
+Giovanni-Boss   →  Boss — the org-level aggregator over many Giovanni nodes
+```
+
+If you just want a personal Chief of Staff, you never touch Boss. If you're
+rolling Giovanni out across a team, Boss is how the individual instances add
+up to more than their sum — see the
+[`Giovanni-Boss`](https://github.com/jaroslavsoucek-art/Giovanni/tree/Giovanni-Boss)
+branch.
 
 ## The moat — invisible shadow hypotheses
 
