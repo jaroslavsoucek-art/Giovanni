@@ -1,0 +1,39 @@
+# Deliverables registry — single source of truth for the lifecycle status of
+# Lattice Finance's outbound artifacts.
+#
+# Statuses:
+#   live       = maintained artifact / valid reference (changes as the project changes)
+#   draft      = in preparation / not yet sent (send queue, pending review)
+#   sent       = delivered / presented / published — FROZEN, do not edit
+#   superseded = replaced by a newer version or decision — candidate for _archive/
+#
+# Rules (binding — see deliverables/README.md in the framework root):
+#   - New file in deliverables/ => entry here (the deliverables-registry lint rule enforces it).
+#   - Status flip (draft->sent) = edit this file. NEVER rename/move the artifact.
+#   - REGISTRY.md is auto-generated (scripts/build-deliverables-registry.py) — never hand-edit.
+#   - date = creation/send date of the artifact (not last edit).
+
+entries:
+  - file: 2026-05-30_series-b-narrative-v0.3.md
+    status: draft
+    type: narrative
+    date: '2026-05-30'
+    title: Series B narrative (v0.3)
+    owner: self
+    note: Series B narrative draft; awaiting sarah-vyas redline before v0.4.
+
+  - file: 2026-05-26_dp1-roi-summary.md
+    status: sent
+    type: customer-analysis
+    date: '2026-05-26'
+    title: Helios Holdings ROI summary
+    owner: self
+    note: Sent to Karim Solanki (CFO, buyer-of-record at lattice-design-partner-1) ahead of the renewal call — FROZEN.
+
+  - file: 2026-05-18_design-partner-renewal-onepager.md
+    status: sent
+    type: one-pager
+    date: '2026-05-18'
+    title: Helios renewal one-pager
+    owner: self
+    note: Sent to the lattice-design-partner-1 renewal contact — FROZEN.

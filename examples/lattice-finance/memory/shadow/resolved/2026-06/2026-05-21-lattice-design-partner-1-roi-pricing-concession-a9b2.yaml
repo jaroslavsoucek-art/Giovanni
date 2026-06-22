@@ -1,0 +1,94 @@
+id: 2026-05-21-lattice-design-partner-1-roi-pricing-concession-a9b2
+
+created: 2026-05-21
+
+generated_by: branch-out:dp1-renewal-call-2026-05-27
+# Provenance — this hypothesis was dropped during the /branch-out simulation
+# for the DP1 renewal call. Cross-referenced from the branch-out artifact's
+# related_shadow_hypotheses field for /shadow-review traceability.
+
+topic: Karim renewal posture — ROI conversation followed by pricing concession ask
+
+actor: lattice-design-partner-1
+# References memory/stakeholders/lattice-design-partner-1.md (Karim is the
+# new buyer-of-record there). The profile_depth is `partial` per the
+# stakeholder profile — partial is the threshold; below this we'd refuse to
+# generate.
+
+source_signal: >-
+  Karim Solanki signals openness to renewal conversation via EA Mira
+  exchange 2026-05-19, framing as "wants to understand the stack value
+  before continuing". Call scheduled 2026-05-27 with quantified ROI
+  framing planned by Alex. The 2026-05-19 EA tone is CFO-evaluation
+  posture, not relationship-mode. Historical pattern from stakeholder
+  profile: new buyer-of-record after champion departure typically
+  follows ROI conversation with pricing pressure before committing to
+  renewal terms.
+
+prediction: >-
+  By 2026-06-15, Karim Solanki (or his EA Mira on his behalf) will send
+  an outbound email or chat-platform message to Alex / Priya that
+  explicitly requests a pricing concession on the DP1 renewal — either a
+  discount (retention rebate, list-price reduction), a tier change (move
+  from current bundle to a lower tier), or a renewal-term restructure
+  (shorter term, more flexibility) — citing the ROI evaluation as
+  justification.
+
+prediction_tier: possible-but-surprising
+# Tier reasoning: pricing-concession ask from a new CFO buyer is plausible
+# but not default. Default expectation (likely) is extending the evaluation
+# window without explicit pricing ask. The concession-with-ROI-justification
+# pattern is non-default but observed across similar enterprise-customer
+# renewal motions.
+
+expected_signal:
+  description: >-
+    Inbound message from Karim Solanki, Karim's EA Mira, or Helios
+    procurement to Alex Park, Priya Shah, or Lattice general inbox.
+    Match criteria (operational — auditable at /shadow-review):
+    (a) Mentions DP1 renewal AND
+    (b) Mentions pricing in explicit terms — discount, tier name change,
+        term-length adjustment, or renewal-pricing restructure language AND
+    (c) References the 2026-05-27 ROI discussion or the broader value
+        evaluation as justification.
+    Partial match (counts as resolved-mixed): only (a) and (b) without
+    (c) — pricing pressure without ROI-justification framing.
+  search_terms: ["discount", "renewal", "pricing", "concession", "terms", "Karim", "Mira", "Solanki"]
+  source_channels: [email, chat-platform]
+
+horizon_days: 25
+horizon_at: 2026-06-15
+# Horizon = call date + 19 days. Standard pattern: CFOs in evaluation mode
+# typically push pricing within 2-4 weeks of the value conversation.
+
+source: branch-out:dp1-renewal-call-2026-05-27
+
+status: resolved-yes
+
+# Fields below filled at /shadow-review or post-horizon resolution
+
+resolved_date: 2026-06-04
+
+resolved_reasoning: >-
+  The 2026-05-27 ROI call ran on the request-ROI-justification framing.
+  On 2026-06-04, EA Mira sent an email on Karim's behalf to Alex and Priya
+  proposing a renewal-term restructure — a two-year term in exchange for a
+  list-price reduction on the platform fee — and cited the 2026-05-27 stack-
+  value discussion explicitly as the justification. The message satisfied all
+  three match criteria (a) renewal named, (b) pricing in explicit terms
+  (term-length adjustment plus list-price reduction), and (c) ROI-evaluation
+  cited as the rationale. Verdict: resolved-yes (strict match — substance,
+  channel, and timing all landed inside the window).
+
+adversarial_check: >-
+  Strongest arguments this was NOT a fulfillment of the hypothesis:
+  (1) The pricing ask could be read as a generic procurement opener
+  (multi-year-for-discount is a standard CFO move) rather than ROI-tied —
+  but the email text named the 2026-05-27 value discussion verbatim, so
+  criterion (c) holds on the actual wording, not on inference.
+  (2) The message came from EA Mira, not Karim directly — but the
+  expected_signal explicitly admits "Karim's EA Mira on his behalf" as a
+  qualifying actor, so this is not a structural miss.
+  (3) Timing: 2026-06-04 is well inside the 2026-06-15 horizon, so no
+  out-of-window concern. No caveat warranted; the match is strict, not
+  substance-only. Verdict stands as resolved-yes.
