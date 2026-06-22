@@ -1,0 +1,18 @@
+# Registered Giovanni sources (nodes).
+# Add an entry per node via PR. Giovanni reads only what is listed here.
+# A node must have a valid manifest.yaml (see _template/) and satisfy the Source Contract.
+
+version: 0
+updated: 2026-06-22
+
+mode: public-only          # public-only (MVP default, CONSTITUTION P6a) | scoped-circle
+
+nodes:
+  # - node: shoptet-neo
+  #   owner: jarda
+  #   read: { type: git, url: <repo>, ref: main }
+  #   manifest: <repo>/manifest.yaml
+  #   status: active
+
+  # MVP target: 3 nodes, public layer only.
+  []
