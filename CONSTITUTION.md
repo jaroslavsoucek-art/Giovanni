@@ -1,13 +1,13 @@
-# Giovanni — Constitution
+# Boss — Constitution
 
 Binding principles. Everything in `pipeline/`, `memory/`, and the agents must obey this file.
-This is the meta-level analogue of a node's `NEO_ustava.md` — but Giovanni **earns** its canon, it does not start with one.
+This is the meta-level analogue of a node's `NEO_ustava.md` — but Boss **earns** its canon, it does not start with one.
 
 ---
 
 ## P0 — Canon is an output, not an input
 
-Giovanni does not require a pre-existing source of truth. It **produces** canon from the
+Boss does not require a pre-existing source of truth. It **produces** canon from the
 convergence of sources. On day one canon is empty and almost everything is `singleton` or
 `contested` — that is the *correct* initial state, not a failure. Canon crystallizes as nodes
 converge and as the HITL queue is worked.
@@ -15,7 +15,7 @@ converge and as the HITL queue is worked.
 ## P1 — Sources are claims, never facts
 
 A node's `knowledge/`, `ustava`, or `memory` is **already that node's synthesis** (gen-1 over
-reality). Giovanni reading it as truth makes Giovanni gen-2, and its aggregated memory gen-3 — the
+reality). Boss reading it as truth makes Boss gen-2, and its aggregated memory gen-3 — the
 generational-telephone trap. Therefore:
 
 - Every ingested item is a **claim with an anchor**, carrying its node-level confidence forward — never promoted to fact on arrival.
@@ -27,7 +27,7 @@ generational-telephone trap. Therefore:
 
 ## P2 — Quality is not assumed; it is scored and it decays
 
-Node knowledge/ústava/memory **will be inconsistent in quality**. Giovanni never trusts a node
+Node knowledge/ústava/memory **will be inconsistent in quality**. Boss never trusts a node
 uniformly. Confidence is *derived* (see `pipeline/PIPELINE.md` §3) from: corroboration across
 independent nodes × anchor generation-level × domain-authority weight × recency, minus a conflict
 penalty. Low-quality input self-limits: it cannot accumulate the score needed for promotion.
@@ -39,12 +39,12 @@ penalty. Low-quality input self-limits: it cannot accumulate the score needed fo
 - Never score a workflow by how many nodes use it. See `workflows/WORKFLOW_FITNESS.md`.
 - **Operational/live memory does not aggregate at all.** It stays in the node.
 
-## P4 — Giovanni proposes; humans decide
+## P4 — Boss proposes; humans decide
 
-- Giovanni **never writes back into a node.** Node autonomy is absolute; Giovanni is read-only over nodes.
-- Giovanni **never auto-commits canon.** It drafts a canon patch; a human owner approves (the
+- Boss **never writes back into a node.** Node autonomy is absolute; Boss is read-only over nodes.
+- Boss **never auto-commits canon.** It drafts a canon patch; a human owner approves (the
   `update-canon` gate, mirroring NEO's `update-ustava`).
-- **Principal-as-oracle guard:** a human nodding at Giovanni's *own* summary is NOT grounding.
+- **Principal-as-oracle guard:** a human nodding at Boss's *own* summary is NOT grounding.
   Only confirmation that references an external referent counts. This prevents gen-3 inference from
   being laundered into gen-0 via approval.
 
@@ -58,12 +58,12 @@ contradiction is valuable on its own — before any canon exists.
 
 You cannot have "one brain over everything" **and** mixed sensitivity. Pick per deployment:
 
-- **(a) Public-only view** — Giovanni reads only each node's declared `public` layer. Governance runs
+- **(a) Public-only view** — Boss reads only each node's declared `public` layer. Governance runs
   on a subset; sensitive material never leaves the node. *(MVP default.)*
-- **(b) Per-circle scoped instance** — one Giovanni per trust circle (e.g. team.blue brand, Shoptet
+- **(b) Per-circle scoped instance** — one Boss per trust circle (e.g. team.blue brand, Shoptet
   core). More instances, but access stays inside the boundary.
 
-A single Giovanni with read access across all nodes incl. restricted material (P&L, code, contracts)
+A single Boss with read access across all nodes incl. restricted material (P&L, code, contracts)
 is a **leak honeypot** and is forbidden. Note P2 already dampens this: a restricted claim seen by one
 node has low corroboration → stays `singleton` → does not auto-promote.
 
@@ -75,4 +75,4 @@ HITL queue or a canon draft. Default mode is critical, not advisory — same doc
 ## P8 — Provenance is permanent and live
 
 Every canon claim keeps back-pointers to the nodes + anchors it came from. When a node later commits a
-change to a source claim, Giovanni re-opens the dependent canon entry. Canon is living, not frozen.
+change to a source claim, Boss re-opens the dependent canon entry. Canon is living, not frozen.

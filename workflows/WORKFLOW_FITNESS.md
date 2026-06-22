@@ -14,11 +14,11 @@ convergence. The best workflow in the org might run on exactly one node. Countin
 - Same machine for both = mediocrity by averaging.
 
 Workflows have a *link* to how facts are created (a good decision-workflow produces well-anchored
-decisions) but are **decoupled** from fact content. Giovanni judges the procedure, not what it produced once.
+decisions) but are **decoupled** from fact content. Boss judges the procedure, not what it produced once.
 
 ## The open question (to be discovered, not guessed)
 
-How does Giovanni tell a *functional workflow wired to the whole* from a *local hack*? Candidate fitness
+How does Boss tell a *functional workflow wired to the whole* from a *local hack*? Candidate fitness
 signals — to be validated, not assumed:
 
 - **Reuse across nodes** — adopted/forked by another node (weak signal; popularity ≠ quality, but non-zero).
@@ -29,7 +29,7 @@ signals — to be validated, not assumed:
 
 ## What MVP does instead
 
-Nothing automated. Giovanni **catalogs** declared workflows per node (`layout.workflows`) into
+Nothing automated. Boss **catalogs** declared workflows per node (`layout.workflows`) into
 `workflows/registry.yaml` with their declared purpose and observed reuse — a directory, not a ranking.
 Fitness scoring is the next discovery branch after the facts pipeline proves out.
 

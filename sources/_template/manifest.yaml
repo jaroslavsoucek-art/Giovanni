@@ -1,4 +1,4 @@
-# Giovanni source manifest — COPY THIS, fill it in, commit to your repo root as `manifest.yaml`.
+# Boss source manifest — COPY THIS, fill it in, commit to your repo root as `manifest.yaml`.
 # You do NOT rewrite how your setup works. You declare it. See ../SOURCE_CONTRACT.md.
 
 node: <your-slug>                 # unique short id, e.g. shoptet-neo
@@ -24,6 +24,6 @@ anchor_resolvable_externally: false   # true ONLY if your anchors verify without
 
 # Onboarding checklist (SOURCE_CONTRACT §4):
 #   [ ] history intact & readable
-#   [ ] shareable knowledge marked [GIOVANNI: public]
+#   [ ] shareable knowledge marked [BOSS: public]
 #   [ ] this manifest committed at repo root
-#   [ ] entry added to giovanni sources/registry.yaml (PR)
+#   [ ] entry added to Boss sources/registry.yaml (PR)

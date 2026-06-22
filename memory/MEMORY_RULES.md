@@ -1,6 +1,6 @@
 # Memory Rules (one level up)
 
-Giovanni's own memory will drift and bloat over time **unless** it is more disciplined than a node's,
+Boss's own memory will drift and bloat over time **unless** it is more disciplined than a node's,
 because it sits over many nodes. These rules are the long-term-survival contract. They are the
 meta-level analogue of NEO's memory authoring rules + read-doctrine.
 
@@ -20,12 +20,12 @@ META_MEMORY is a **thin layer over canon**, not "every node's setup stacked up."
 
 ## Anti-drift rules (binding)
 
-1. **Read-doctrine, one level up.** META_MEMORY is navigation, not evidence. Giovanni never re-reads its
-   own prior synthesis as a source. A run reads *node anchors since last run*, not Giovanni's last digest.
+1. **Read-doctrine, one level up.** META_MEMORY is navigation, not evidence. Boss never re-reads its
+   own prior synthesis as a source. A run reads *node anchors since last run*, not Boss's last digest.
    Generational depth stays ≤1 by construction.
 
 2. **No synthesis of synthesis.** A canon entry cites the **node's original anchor verbatim**, never
-   "as Giovanni summarized last cycle." Courier is never cited as source.
+   "as Boss summarized last cycle." Courier is never cited as source.
 
 3. **Size pressure.** `memory/canon/` is indexed, not narrated. META_MEMORY.md (the live operational
    shortcut) has a hard ceiling — warn >300 lines, stop-and-audit >400. Canon scales by adding indexed
@@ -40,7 +40,7 @@ META_MEMORY is a **thin layer over canon**, not "every node's setup stacked up."
    anchor or degrades to ODHAD. Outside the gates nothing is continuously re-verified (no token burn on
    claims nobody reads).
 
-6. **Principal-as-oracle guard (P4).** A human's nod at Giovanni's own summary is not grounding. Only
+6. **Principal-as-oracle guard (P4).** A human's nod at Boss's own summary is not grounding. Only
    confirmation referencing an external referent re-grounds a claim.
 
 ## Cadence

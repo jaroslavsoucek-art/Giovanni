@@ -1,4 +1,4 @@
-# META_MEMORY — Giovanni live operational shortcut
+# META_MEMORY — Boss live operational shortcut
 
 > Thin layer over canon. Operational state of nodes does NOT belong here (see MEMORY_RULES §"what NOT").
 > Hard ceiling: warn >300 lines, stop-and-audit >400.

@@ -84,8 +84,9 @@ boss/  (this branch)
 
 ---
 
-> **Naming note:** this branch's deeper docs (`CONSTITUTION.md`, `pipeline/PIPELINE.md`,
-> `memory/*`) were written when the aggregator was still called "Giovanni" and may
-> still use that name internally; the product is **Boss**. The branch also carries the
-> node-level Giovanni framework files (it was scaffolded on top of them), where
-> "Giovanni" correctly means the individual assistant.
+> **Naming note:** the aggregator is called **Boss** consistently across this
+> branch's own docs (`CONSTITUTION.md`, `pipeline/PIPELINE.md`, `sources/*`,
+> `memory/{MEMORY_RULES,META_MEMORY}.md`, the agent roster). The branch *also*
+> carries the **node-level Giovanni framework** files — it was scaffolded on top of
+> them — and there "Giovanni" correctly means the individual per-person assistant
+> that Boss aggregates, so it is left unchanged.
