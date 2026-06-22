@@ -88,7 +88,7 @@ when applied. Bullet-style, terse.>
 - <forbidden behaviour 2>
 -->
 
-### Principle 1 — `<principle_one_name>`
+### Principle 1 — `<principle_one_name>` {#principle-1-principle-one-name}
 
 **FACT (source: `<citation_or_decision_record>`):** `<the concrete claim>`
 
@@ -103,7 +103,7 @@ when applied. Bullet-style, terse.>
 
 - `<forbidden_behaviour_1>`
 
-### Principle 2 — `<principle_two_name>`
+### Principle 2 — `<principle_two_name>` {#principle-2-principle-two-name}
 
 **FACT (source: `<citation>`):** `<claim>`
 
@@ -113,7 +113,7 @@ when applied. Bullet-style, terse.>
 
 - `<consequence>`
 
-### Principle 3 — `<principle_three_name>`
+### Principle 3 — `<principle_three_name>` {#principle-3-principle-three-name}
 
 `<and so on>`
 
@@ -126,7 +126,7 @@ when applied. Bullet-style, terse.>
 
 Adversarial review is the default mode for any draft that touches strategic position, external communication, or commitment. RLHF training optimizes the underlying model for agreeable; without explicit policy reversal, review becomes validation theater. The framework reverses the bias at three layers: prompt, verdict enum, and counter-case requirement.
 
-### Binding triggers
+### Binding triggers {#binding-triggers}
 
 Any of the following invokes adversarial review on a draft:
 
@@ -137,7 +137,7 @@ Any of the following invokes adversarial review on a draft:
 
 If a draft is pasted without trigger, the agent asks before auto-running.
 
-### Verdict format (fixed enum)
+### Verdict format (fixed enum) {#verdict-format-fixed-enum}
 
 Three tiers — no compounds, no softening:
 
@@ -147,7 +147,7 @@ Three tiers — no compounds, no softening:
 
 Forbidden: `MOSTLY SHIP`, `SHIP-WITH-CAVEATS`, `MILD REWRITE`, `STRONG REWRITE`, `SOFT KILL`. The three-tier vocabulary is exhaustive.
 
-### Strongest counter-case requirement
+### Strongest counter-case requirement {#strongest-counter-case-requirement}
 
 Adversarial review constructs the **explicit strongest counter-argument** to the draft's position. Default-skeptical lookback, mirroring the predictive layer's adversarial-check discipline:
 
@@ -155,7 +155,7 @@ Adversarial review constructs the **explicit strongest counter-argument** to the
 
 A draft that doesn't acknowledge its strongest counter-case is REWRITE-or-KILL territory — independent of prose polish.
 
-### Anti-patterns
+### Anti-patterns {#anti-patterns}
 
 - RLHF-style softening preambles ("Overall solid, just one concern…")
 - Symmetric pro/con balance when one side clearly wins
@@ -165,7 +165,7 @@ A draft that doesn't acknowledge its strongest counter-case is REWRITE-or-KILL t
 - Compound verdicts ("MOSTLY SHIP")
 - Personally critical language (attacks on the writer, not the work)
 
-### Suspend conditions
+### Suspend conditions {#suspend-conditions}
 
 Adversarial review is suspended in three contexts (workflow doc `.claude/workflows/adversarial-review.md` carries the executable rules):
 
@@ -173,7 +173,7 @@ Adversarial review is suspended in three contexts (workflow doc `.claude/workflo
 2. Moments of distress — review is not crisis support
 3. Mechanical execution tasks — content QA, not strategic challenge → route to `deliverable-reviewer`
 
-### Override mechanism (strongly discouraged)
+### Override mechanism (strongly discouraged) {#override-mechanism-strongly-discouraged}
 
 Forks may disable adversarial-as-default by editing this section and the corresponding agent description. **This reverses the framework's core IP design choice.** See `docs/adversarial.md §4` for the recommended alternative path (suspend per-draft via trigger semantics; keep policy at default-adversarial).
 
@@ -186,13 +186,13 @@ Forks may disable adversarial-as-default by editing this section and the corresp
 > **Status:** `RESOLVED` — binding policy
 > **Last updated:** YYYY-MM-DD
 
-### Cadence (binding)
+### Cadence (binding) {#cadence-binding}
 
 The daily digest is the **operational tempo** of this framework. The principal runs `/digest` once per business day. Cadence override (weekly for low-velocity domains) requires a decision record at `memory/decisions/<date>-digest-cadence-override.md`.
 
 The digest pulls from configured sources (`memory/digest_sources.md`), detects drift between canonical state and reality, auto-generates briefs for high-prep events within 48 h, and feeds the predictive layer with shadow lookback + new shadow hypotheses. Without daily cadence, drift accumulates uncaught and the predictive loop breaks.
 
-### Drift ack flow (binding)
+### Drift ack flow (binding) {#drift-ack-flow-binding}
 
 Drift flags surface as numbered items in the digest output. The principal responds with `confirm | ignore Nd | patch <text>`:
 
@@ -202,7 +202,7 @@ Drift flags surface as numbered items in the digest output. The principal respon
 
 Permanent acks (`9999-12-31`) require explicit rationale in the ack source line — they're effectively a documentation gap acknowledgment, not a workaround.
 
-### Brief auto-gen scope (binding)
+### Brief auto-gen scope (binding) {#brief-auto-gen-scope-binding}
 
 Briefs auto-generate ONLY for high-prep events in the next 48 h:
 
@@ -214,7 +214,7 @@ Briefs auto-generate ONLY for high-prep events in the next 48 h:
 
 NOT for internal stand-ups, daily syncs, recurring blocks, or 1:1 entries without a named counterparty. The fork's `memory/digest_sources.md` `calendar.brief_eligibility` tunes the boundary.
 
-### Anti-patterns (binding)
+### Anti-patterns (binding) {#anti-patterns-binding}
 
 The digest workflow MUST NOT:
 
@@ -223,11 +223,11 @@ The digest workflow MUST NOT:
 3. **Render shadow hypothesis content.** Shadow hypotheses are invisible at generation time (anti-self-fulfilling — see § Predictive layer governance).
 4. **Run more than once per 4 h** without explicit `--force` override.
 
-### Pre-flight (binding)
+### Pre-flight (binding) {#pre-flight-binding}
 
 Every `/digest` invocation verifies CWD is the Giovanni repo root, state file exists and is parseable, source config is non-empty, and cadence guard is not violated. Failure on any check STOPS with diagnostic — no graceful degradation.
 
-### Cross-references
+### Cross-references {#cross-references}
 
 - Workflow: `.claude/workflows/daily-digest.md`
 - Policy: `docs/digest.md`
@@ -316,21 +316,21 @@ Every `/digest` invocation verifies CWD is the Giovanni repo root, state file ex
 > **Last updated:** YYYY-MM-DD
 > _Authoritative roster of who matters and what each person's role is. Detailed per-person profiles live in `memory/stakeholders/<slug>.md`. This section just declares the official structure._
 
-### Decision-making authority
+### Decision-making authority {#decision-making-authority}
 
 | Role | Who | Scope |
 |---|---|---|
 | `<role_1>` | `<stakeholder_slug>` | `<scope>` |
 | `<role_2>` | `<stakeholder_slug>` | `<scope>` |
 
-### Coalition map
+### Coalition map {#coalition-map}
 
 - **Primary advocates:** `<slug>`, `<slug>` — supportive, unblock or amplify.
 - **Sceptics / counterweights:** `<slug>`, `<slug>` — challenge from named positions.
 - **Veto-holders:** `<slug>`, `<slug>` — can block; must be aligned for major moves.
 - **External counterparties:** `<slug>` — customers, vendors, regulators.
 
-### Engagement cadence
+### Engagement cadence {#engagement-cadence}
 
 | Stakeholder | Cadence | Format |
 |---|---|---|
@@ -338,7 +338,7 @@ Every `/digest` invocation verifies CWD is the Giovanni repo root, state file ex
 | `<slug>` | Monthly | Board session |
 | `<slug>` | Ad-hoc | As triggered |
 
-### Operating model / role boundaries (OPTIONAL)
+### Operating model / role boundaries (OPTIONAL) {#operating-model-role-boundaries-optional}
 
 <!--
 Use this block when the initiative has a formal operating model with
@@ -484,7 +484,7 @@ to "this is a known structural problem that requires a decision".
 > **Status:** historical record — read-rarely
 > _When a section is superseded, the old version lands here as a stub with a pointer to the new section. Do not delete; future readers need the trail._
 
-### `<old_position_name>` (SUPERSEDED → §`<new-anchor>`)
+### `<old_position_name>` (SUPERSEDED → §`<new-anchor>`) {#old-position-name}
 
 > **Superseded:** YYYY-MM-DD
 > **Reason:** `<one paragraph — what changed, what new information forced the change>`
@@ -496,19 +496,19 @@ to "this is a known structural problem that requires a decision".
 
 ## Appendices
 
-### A. Glossary
+### A. Glossary {#a-glossary}
 
 | Term | Definition |
 |---|---|
 | `<term_1>` | `<definition>` |
 | `<term_2>` | `<definition>` |
 
-### B. External references
+### B. External references {#b-external-references}
 
 - `<reference_1>` — `<URL or citation>`
 - `<reference_2>` — `<URL or citation>`
 
-### C. Decision record index
+### C. Decision record index {#c-decision-record-index}
 
 <!--
 Auto-discoverable from `memory/decisions/`. This is an optional inline

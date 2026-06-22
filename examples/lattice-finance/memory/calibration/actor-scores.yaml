@@ -1,0 +1,154 @@
+# ============================================================================
+# Calibration actor-scores — canonical YAML state (Layer 3)
+# ============================================================================
+# Per-actor shadow-hypothesis accuracy, aggregated at each /calibration-report.
+# One entry per actor under the top-level `actors:` map, keyed by stakeholder
+# slug. Numbers are synthetic-domain illustrations of healthy calibration
+# patterns, not real measurements.
+#
+# Percentages here are MEASUREMENTS (matched / resolved), not predictions —
+# the three-tier framing rule does not apply to this file.
+# ============================================================================
+
+actors:
+
+  sarah-vyas:
+    total_hypotheses: 16
+    # Cumulative since shadow tracking started for this actor (~6 months back).
+
+    resolved: 14
+    # 14 with recorded verdict (some pending, some expired without verdict).
+
+    matched: 8
+    # Hits across all three tiers.
+
+    falsified: 6
+    # Misses including 1 resolved-mixed counted as falsified per discipline rule.
+
+    expired: 2
+    # 2 past horizon with no signal observed and no human verdict recorded.
+    # Discipline-health signals; don't enter accuracy calculation.
+
+    accuracy_rolling_60d: 0.625
+    # 5 matched / 8 resolved in the last 60 days.
+
+    accuracy_rolling_90d: 0.583
+    # 7 matched / 12 resolved in the last 90 days.
+    # 60d slightly higher than 90d → trend: improving.
+
+    last_calibration: 2026-06-01
+
+    trend: improving
+    # 60d (0.625) > 90d (0.583) with hysteresis-tolerant margin.
+
+    accuracy_by_tier:
+      likely:
+        n: 9
+        matched: 6
+        rate: 0.667
+      possible-but-surprising:
+        n: 3
+        matched: 1
+        rate: 0.333
+      unlikely-but-impactful:
+        n: 2
+        matched: 1
+        rate: 0.500
+        # ⚠ Small-sample warning — 1/2 is above the 5-15% healthy range,
+        # but n=2 means we can't read this as bias yet.
+
+    bias_watch:
+      - channel-specificity-miss
+      # Predictions about Sarah's communication CONTENT land; predictions
+      # about CHANNEL miss (email vs chat-platform). Mitigation: note her
+      # channel-preference patterns in expected_signal. Open since 2026-04-01.
+
+  morgan-chen:
+    total_hypotheses: 11
+    resolved: 9
+    matched: 6
+    falsified: 3
+    expired: 2
+    accuracy_rolling_60d: 0.667
+    accuracy_rolling_90d: 0.667
+    last_calibration: 2026-06-01
+    trend: stable
+    # Deep peer profile; gating-on-conviction behavior is well modeled, so
+    # likely-tier predictions about him land reliably.
+    accuracy_by_tier:
+      likely:
+        n: 6
+        matched: 5
+        rate: 0.833
+        # Slightly hot for the 60-80% band — watch for sandbagging if it
+        # persists, but n=6 is still a small sample.
+      possible-but-surprising:
+        n: 2
+        matched: 1
+        rate: 0.500
+      unlikely-but-impactful:
+        n: 1
+        matched: 0
+        rate: 0.000
+    bias_watch: []
+
+  priya-shah:
+    total_hypotheses: 7
+    resolved: 5
+    matched: 3
+    falsified: 2
+    expired: 1
+    accuracy_rolling_60d: 0.600
+    accuracy_rolling_90d: 0.600
+    last_calibration: 2026-06-01
+    trend: new
+    # Partial profile, hired 6 months ago — calibration still warming up.
+    accuracy_by_tier:
+      likely:
+        n: 4
+        matched: 3
+        rate: 0.750
+      possible-but-surprising:
+        n: 1
+        matched: 0
+        rate: 0.000
+      unlikely-but-impactful:
+        n: 0
+        matched: 0
+        rate: 0.000
+    bias_watch:
+      - depth-gap
+      # Partial profile depth; predicted-reactions section is thin. Enrich
+      # before relying on possible-but-surprising tier predictions for her.
+
+  lattice-design-partner-1:
+    total_hypotheses: 5
+    resolved: 3
+    matched: 2
+    falsified: 1
+    expired: 1
+    accuracy_rolling_60d: 0.667
+    accuracy_rolling_90d: 0.667
+    last_calibration: 2026-06-01
+    trend: new
+    # Partial profile (Karim, new buyer-of-record). Structural inference
+    # carries most of the signal; direct touches are still few.
+    accuracy_by_tier:
+      likely:
+        n: 2
+        matched: 1
+        rate: 0.500
+      possible-but-surprising:
+        n: 1
+        matched: 1
+        rate: 1.000
+        # Single-sample; the 2026-05-21 ROI-pricing-concession hypothesis
+        # resolved-yes. Do not read as tier-drift at n=1.
+      unlikely-but-impactful:
+        n: 0
+        matched: 0
+        rate: 0.000
+    bias_watch:
+      - depth-gap
+      # Partial profile; predictions lean on PE-backed-new-CFO structural
+      # pattern rather than direct behavioral history.

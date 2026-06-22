@@ -13,6 +13,7 @@ CHECK_ID = "constitution-anchors"
 
 _HEADER_RE = re.compile(r"^(##+)\s+([^\n]+)$")
 _ANCHOR_RE = re.compile(r"\{#[a-z0-9][a-z0-9-]*\}\s*$")
+_HTML_COMMENT_RE = re.compile(r"<!--.*?-->", re.DOTALL)
 # Skip sections that are explicitly meta / structural
 _SKIP_HEADERS = {
     "table of contents",
@@ -35,6 +36,11 @@ def run(ctx) -> None:
         text = const.read_text(encoding="utf-8")
     except OSError:
         return
+
+    # Mask HTML comment spans to blanks (preserving newlines for line-number
+    # alignment) so example headers inside <!-- ... --> are not flagged — the
+    # same treatment no_percentages / branch_out_no_recommendation apply.
+    text = _HTML_COMMENT_RE.sub(lambda m: re.sub(r"[^\n]", " ", m.group(0)), text)
 
     # Skip H1 (document title); only check H2/H3
     in_code = False

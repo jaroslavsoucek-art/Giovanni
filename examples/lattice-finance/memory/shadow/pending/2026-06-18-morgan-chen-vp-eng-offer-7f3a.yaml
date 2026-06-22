@@ -1,0 +1,63 @@
+id: 2026-06-18-morgan-chen-vp-eng-offer-7f3a
+
+created: 2026-06-18
+
+generated_by: branch-out:vp-eng-offer-timeline
+# Provenance — dropped during the /branch-out simulation on the VP Eng
+# offer timeline for the finalist (Alina Crisan). Cross-referenced from
+# that branch-out's related_shadow_hypotheses field for /shadow-review.
+
+topic: Morgan reaction to compressing the VP Eng offer timeline
+
+actor: morgan-chen
+# References memory/stakeholders/morgan-chen.md — co-founder & CTO, peer,
+# profile_depth: deep. Well above the partial threshold for generation.
+
+source_signal: >-
+  On 2026-06-17 Alex floated moving the VP Eng offer to the finalist
+  forward by a week to beat a competing offer the recruiter (firm Y)
+  flagged. Morgan had previously framed the final loop as needing a
+  second technical deep-dive he had not yet scheduled. The timeline
+  compression puts Alex's close-fast instinct against Morgan's
+  conviction-before-offer pattern (see profile: he gates senior eng
+  hires on his own technical read, e.g. the 2026-03 staff-eng loop).
+
+prediction: >-
+  By 2026-06-29, Morgan will respond to the compressed VP Eng offer
+  timeline by asking — in writing or in a 1:1 — to keep the second
+  technical deep-dive as a gate before the offer goes out, rather than
+  signing off on sending the offer on the compressed schedule.
+
+prediction_tier: likely
+# Tier reasoning: pattern-matched against Morgan's documented behavior of
+# gating senior eng decisions on his own technical conviction. The default
+# expectation is that he protects the deep-dive step. Not certain — a strong
+# competing-offer signal could move him — but it is the modal response.
+
+expected_signal:
+  description: >-
+    A message from Morgan (chat-platform or email) or a 1:1 note where he
+    either (a) explicitly asks to retain the second technical deep-dive
+    before the offer, or (b) declines to approve sending the offer on the
+    compressed timeline pending that deep-dive. A clean sign-off on the
+    compressed timeline with no deep-dive ask falsifies the prediction.
+  search_terms: [deep-dive, offer, timeline, finalist, "VP Eng"]
+  source_channels: [chat-platform, 1:1]
+
+horizon_days: 11
+horizon_at: 2026-06-29
+# Horizon = created + 11 days. Branch-out-generated shadow sits in the
+# 7-14 day band; 11 days covers the offer-decision window the recruiter
+# flagged without spilling into an unrelated cycle.
+
+source: branch-out:vp-eng-offer-timeline
+
+status: pending
+
+# Fields below filled at /shadow-review or post-horizon resolution
+
+resolved_date: null
+
+resolved_reasoning: null
+
+adversarial_check: null

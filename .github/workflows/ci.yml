@@ -1,0 +1,77 @@
+name: ci
+
+# Giovanni governance CI. Proves, on every push/PR, that:
+#   - the framework lints clean (bash checks + Python rules)
+#   - the lint rules themselves still pass their pass/fail fixtures
+#   - the bundled pseudo-fork (examples/lattice-finance) lints clean and is
+#     digest-ready  ← end-to-end validation of a filled fork (DoD #2 + #4)
+#   - a fresh `init-fork.sh` scaffold succeeds on a clean clone (DoD #1)
+#
+# fetch-depth: 0 is required — the index-stale / map-stale staleness checks
+# read `git log -1 -- <file>` dates and SKIP on shallow clones.
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  governance:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout (full history for staleness checks)
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install PyYAML
+        run: python3 -m pip install --quiet pyyaml
+
+      - name: Framework lint (bash checks + Python rules)
+        run: bash scripts/lint.sh
+
+      - name: Lint-rule self-test (pass/fail fixtures)
+        run: bash scripts/run-lint-fixtures.sh
+
+      - name: Pseudo-fork lint (examples/lattice-finance)
+        run: python3 scripts/lint.py --repo-root examples/lattice-finance
+
+      - name: Pseudo-fork digest readiness (dry-run harness)
+        run: python3 scripts/run-digest-dryrun.py --repo-root examples/lattice-finance
+
+      - name: Pseudo-fork deliverables registry is fresh
+        run: |
+          diff <(python3 scripts/build-deliverables-registry.py \
+                   --repo-root examples/lattice-finance --dry) \
+               examples/lattice-finance/deliverables/REGISTRY.md \
+            || { echo "::error::examples/lattice-finance/deliverables/REGISTRY.md is stale — run build-deliverables-registry.py"; exit 1; }
+
+      - name: init-fork.sh smoke test (fresh clone scaffolds + lints)
+        run: |
+          set -euo pipefail
+          CLONE=/tmp/giovanni-fork-smoke
+          rm -rf "$CLONE"
+          git clone --quiet "$GITHUB_WORKSPACE" "$CLONE"
+          cd "$CLONE"
+          # Drop the bundled example so the smoke fork starts from templates only.
+          rm -rf examples
+          bash scripts/init-fork.sh --yes
+          # Assert the scaffold produced the runtime files a fork needs.
+          for f in knowledge/constitution.md memory/CLAUDE_MEMORY.md \
+                   memory/digest_sources.md memory/digest_state.md \
+                   memory/triage-heuristic.yaml memory/audit_state.md; do
+            test -f "$f" || { echo "::error::init-fork did not create $f"; exit 1; }
+          done
+          for d in memory/stakeholders memory/topics memory/decisions memory/briefs; do
+            test -d "$d" || { echo "::error::init-fork did not create $d/"; exit 1; }
+          done
+          echo "init-fork smoke test passed."
