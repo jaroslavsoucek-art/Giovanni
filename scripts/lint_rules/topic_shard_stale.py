@@ -32,7 +32,7 @@ def run(ctx) -> None:
         return
 
     max_age = int(ctx.config["shard_stale_days"])
-    today = datetime.date.today()
+    today = ctx.today()
 
     for shard in sorted(topics_dir.glob("*.md")):
         if shard.name.startswith("_") or shard.name == "README.md":

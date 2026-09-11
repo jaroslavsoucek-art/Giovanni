@@ -66,6 +66,21 @@ shard_stale_days: 45
 strike_ratio_max: 0.02
 
 # ----------------------------------------------------------------------
+# Reference clock
+# ----------------------------------------------------------------------
+
+# Date every time-based check treats as "today". Empty / absent = the real date.
+#
+# Set this ONLY for a frozen snapshot — a bundled example, a captured audit
+# state, a fixture fork. It makes cadence checks measure the snapshot's own
+# internal age instead of how long ago it was committed.
+#
+# Do not set it on a live fork. A live fork with a pinned clock silently stops
+# reporting every cadence it has, which is the exact opposite of what the
+# cadence checks are for.
+# snapshot_date: 2026-06-22
+
+# ----------------------------------------------------------------------
 # Audit cadence — calibrate to your working cycle
 # ----------------------------------------------------------------------
 

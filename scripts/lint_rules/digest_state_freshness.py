@@ -133,7 +133,7 @@ def run(ctx) -> None:
     threshold_hours = _env_int("GIOVANNI_DIGEST_FRESHNESS_HOURS", 48)
     critical_hours = _env_int("GIOVANNI_DIGEST_FRESHNESS_HOURS_CRITICAL", 168)
 
-    now = dt.datetime.now(dt.timezone.utc)
+    now = ctx.now()
     age_seconds = (now - parsed).total_seconds()
     age_hours = age_seconds / 3600.0
 

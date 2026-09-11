@@ -1,0 +1,12 @@
+# Lattice Finance — pseudo-fork config.
+#
+# This fork is a FROZEN SNAPSHOT: a worked example captured on the date below,
+# kept so the framework can be validated end-to-end in CI. Its artifacts are
+# deliberately never updated.
+#
+# snapshot_date is what makes that survivable. Every time-based check measures
+# age against this date instead of the real clock, so the example stays green
+# because it is internally consistent — not because someone bumped dates the
+# morning CI went red. Without it, a frozen example is a scheduled build
+# failure: the artifacts are fine, the calendar isn't.
+snapshot_date: 2026-06-22

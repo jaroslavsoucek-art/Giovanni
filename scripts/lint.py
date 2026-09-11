@@ -90,6 +90,12 @@ DEFAULT_CONFIG: dict[str, Any] = {
     # Deliverables lifecycle registry (opt-in — checks activate only when
     # <deliverables_dir>/_registry.yaml exists)
     "deliverables_dir": "deliverables",
+    # Reference date for every time-based check. Empty = the real today.
+    # A frozen reference fork (a bundled example, a captured audit state) sets
+    # this to the date it was captured, so cadence checks measure the snapshot's
+    # own age rather than how long ago it was committed. Without it, any example
+    # with dates in it goes red on a clock, not on a defect.
+    "snapshot_date": "",
     # Domain-leak guard — list of strings forbidden in memory + knowledge.
     # Fork-time: populate with prior-domain proper nouns to catch carry-over
     # during template filling. Default empty = no check.
@@ -161,6 +167,33 @@ class LintContext:
 
     def deliverables_dir(self) -> Path:
         return self.repo / self.config["deliverables_dir"]
+
+    def today(self):
+        """Reference date for time-based checks — `snapshot_date` if set, else today.
+
+        Every cadence rule must use this rather than date.today(), or a frozen
+        fixture becomes a failing build the moment enough time passes.
+        """
+        import datetime as _dt
+        raw = str(self.config.get("snapshot_date") or "").strip()
+        if raw:
+            try:
+                return _dt.date.fromisoformat(raw)
+            except ValueError:
+                pass
+        return _dt.date.today()
+
+    def now(self):
+        """Reference timestamp (UTC) for time-based checks. See today()."""
+        import datetime as _dt
+        raw = str(self.config.get("snapshot_date") or "").strip()
+        if raw:
+            try:
+                d = _dt.date.fromisoformat(raw)
+                return _dt.datetime(d.year, d.month, d.day, 23, 59, 59, tzinfo=_dt.timezone.utc)
+            except ValueError:
+                pass
+        return _dt.datetime.now(_dt.timezone.utc)
 
 
 # ---------------------------------------------------------------------------

@@ -109,7 +109,7 @@ def _check_pending(ctx, rel) -> None:
     if not candidates:
         return
 
-    today = dt.date.today()
+    today = ctx.today()
 
     for path in candidates:
         try:

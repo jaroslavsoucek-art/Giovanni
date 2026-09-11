@@ -45,7 +45,7 @@ def run(ctx) -> None:
 
     # 2. Anything resolved long enough should have been filed.
     window = int(ctx.config["resolved_shard_retirement_days"])
-    today = datetime.date.today()
+    today = ctx.today()
     for shard in sorted(topics_dir.glob("*.md")):
         if shard.name.startswith("_") or shard.name == "README.md":
             continue

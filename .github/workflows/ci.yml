@@ -68,9 +68,18 @@ jobs:
           # Assert the scaffold produced the runtime files a fork needs.
           for f in knowledge/constitution.md memory/CLAUDE_MEMORY.md \
                    memory/digest_sources.md memory/digest_state.md \
-                   memory/triage-heuristic.yaml memory/audit_state.md; do
+                   memory/triage-heuristic.yaml memory/audit_state.md \
+                   .claude/settings.json docs/governance.config.yaml CLAUDE.md; do
             test -f "$f" || { echo "::error::init-fork did not create $f"; exit 1; }
           done
+          # settings.json is what makes the hooks fire at all — assert it is wired,
+          # not merely present.
+          python3 -c "import json,sys; h=json.load(open('.claude/settings.json')).get('hooks',{}); sys.exit(0 if {'SessionStart','PreToolUse','PostToolUse'} <= set(h) else 1)" \
+            || { echo "::error::scaffolded settings.json has no hook trigger map"; exit 1; }
+          # CLAUDE.md must be the fork operating contract, not the framework's
+          # meta-builder instructions.
+          grep -q "meta-builder mode" CLAUDE.md \
+            && { echo "::error::init-fork left the framework CLAUDE.md in place"; exit 1; } || true
           for d in memory/stakeholders memory/topics memory/decisions memory/briefs; do
             test -d "$d" || { echo "::error::init-fork did not create $d/"; exit 1; }
           done
