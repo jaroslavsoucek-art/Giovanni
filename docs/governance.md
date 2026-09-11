@@ -318,6 +318,7 @@ Python-side pluggable rules (`scripts/lint_rules/*.py`):
 | `l1-size` | high / critical | L1 line count vs warn/critical thresholds |
 | `l1-byte-size` | high | L1 byte size — the cap the line count is blind to |
 | `l1-strikethrough-ratio` | medium / critical | Strikethrough ratio vs threshold |
+| `mcp-uuid-pin` | high | No hardcoded UUID MCP server prefixes in `.claude/` (they are valid for one install) |
 | `no-percentages-in-predictions` | high | Predictive artifacts use the three-tier enum, never numeric probabilities |
 | `shadow-expired-pending` | medium / high | Pending shadow hypotheses not past `horizon_at`; resolved ones carry a filled `adversarial_check` |
 | `slash-command-registry` | low | `.claude/commands/README.md` registry table in sync with command files |

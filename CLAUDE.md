@@ -23,6 +23,7 @@ Specialist agents do NOT modify the source snapshot.
 
 ```
 Giovanni/
+├── CLAUDE.template.md (the FORK's operating contract — init-fork swaps it in for this file)
 ├── memory/
 │   ├── README.md (schema explanation)
 │   ├── templates/ (operational-memory, topic-shard, stakeholder, decision-record, brief, etc.)
@@ -36,6 +37,7 @@ Giovanni/
 │   ├── hooks/ (auto-regen, audit warnings, etc.)
 │   └── workflows/ (digest, branch-out, audit, etc.)
 ├── docs/
+│   ├── invariants.md (the register: what the repo asserts, and what enforces it)
 │   ├── setup-guide.md (how to fork + customize for your domain)
 │   ├── customization.md (per-layer customization points)
 │   ├── test-domain.md (synthetic 2nd domain for pseudo-fork validation)

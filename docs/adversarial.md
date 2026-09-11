@@ -257,3 +257,16 @@ Patterns to watch for. If any persist over multiple weeks, the adversarial layer
 - User stops invoking adversarial review (= the friction stopped being useful)
 
 The first response to any of these is re-reading this doc + the agent prompt. If the issue persists, the agent prompt likely needs a tightening pass — not a wholesale rewrite, but explicit re-emphasis on the binding rules at the top.
+
+---
+
+## Why the disposition gate exists
+
+The obvious failure of an adversarial review is that it never happens. The less obvious one — and the common one once the workflow is in place — is that it happens, produces five findings, and nothing records what became of them.
+
+Findings then die three quiet deaths. Absorbed: the rewrite happens to touch that paragraph, and nobody knows whether the issue was addressed or coincidentally overwritten. Argued away: "I considered that" appears in the reasoning, which is not a rejection with grounds. Dropped: the draft ships and the finding is simply not mentioned again.
+
+The gate makes each one cost something: accept and say what changed, reject and cite something, or hand back with a proposed answer. **Reject-with-citation is the load-bearing half.** Without the citation requirement, "reject" becomes "disagree", and a reviewer whose findings can be dismissed by preference is decoration.
+
+The three-round cap is the counterweight. Given no limit, reviewer and author will iterate to exhaustion on the last 5% — so the run ends, the state goes to the principal with the open issues named, and a human decides. Ending at REWRITE with one honest open fatal is a better outcome than a SHIP nobody can defend.
+

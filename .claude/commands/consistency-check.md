@@ -1,11 +1,11 @@
 ---
-description: Run semantic consistency checks across memory, constitution, agent roster, decision records, and the decided-terms registry. Routes to consistency-checker agent. Read-only — proposes diffs, never applies them.
+description: Run semantic consistency checks across memory, constitution, agent roster, decision records, the decided-terms registry, knowledge↔knowledge cross-doc drift, and externally published pages. Routes to consistency-checker agent. Read-only — proposes diffs, never applies them.
 allowed-tools: Task, Read, Write, Bash
 ---
 
 # /consistency-check
 
-Run the 6 semantic invariants that deterministic `scripts/lint.sh` cannot reach (memory↔constitution drift, decisions↔constitution drift, agent roster description mismatch, topic shard cross-reference breakage, optional architecture audit staleness, decided-terms completeness). This command is a **thin shell** — checks and report format live in the `consistency-checker` agent. This file is the invocation contract.
+Run the 8 semantic invariants that deterministic `scripts/lint.sh` cannot reach (memory↔constitution drift, decisions↔constitution drift, agent roster description mismatch, topic shard cross-reference breakage, optional architecture audit staleness, decided-terms completeness, knowledge↔knowledge cross-doc drift, published-pages outbound drift). This command is a **thin shell** — checks and report format live in the `consistency-checker` agent. This file is the invocation contract.
 
 ## Usage
 

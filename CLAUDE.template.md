@@ -91,6 +91,7 @@ Every run has a trigger, a file holding the procedure, what it writes, where it 
 | Trigger | File | Writes | Stops at | Autonomy |
 |---|---|---|---|---|
 | `/digest` (or session-start hook past threshold) | `.claude/commands/digest.md` → `.claude/workflows/daily-digest.md` | `memory/digest_state.md`, shadow YAML, stakeholder touches, shards | Renders to chat. NO auto-commit — waits for drift response (`confirm` / `ignore Nd` / `patch`) | hook-startable |
+| `/pulse [since= block= quick]` | `.claude/commands/pulse.md` | `memory/pulse/<date>.md` + `_state.md` | File, then commit `docs(pulse):` | explicit, weekly; **not** part of the digest |
 | `/branch-out <situation-slug>` | `.claude/commands/branch-out.md` | `memory/branch-out/`, `memory/decisions/` (draft) | File, no commit. Hard stop on 2+ shallow actors | explicit |
 | `/market-radar [focus= market= depth=]` | `.claude/commands/market-radar.md` (agent `market-radar`) | `memory/intel/market-radar/` | File, no commit | explicit, weekly |
 | `/consistency-check [--check id]` | `.claude/commands/consistency-check.md` (agent `consistency-checker`) | `memory/audits/consistency/<date>.md` | File, no commit. Surfaces, never applies | explicit, weekly |

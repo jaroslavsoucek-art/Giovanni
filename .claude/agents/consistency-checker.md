@@ -144,6 +144,35 @@ This is deliberately a **semantic** check living in this agent, not in determini
 
 **Acceptance self-test:** pin a self-test to a known fork incident once one exists — run the check against the pre-fix repo state of a real propagation miss; the check must surface the stale references the original sweep claimed to have cleaned.
 
+#### Check 7 — Knowledge ↔ knowledge cross-doc drift
+
+`check-id: knowledge-cross-doc`
+
+Every check above compares memory, decisions or agents **against** the constitution. None compares two canon documents with each other — and that is where the slowest, most expensive drift lives.
+
+The shape: a decision-bearing number, date, scope boundary or name appears in several knowledge documents (the constitution, a business case, an architecture note, a plan). One gets updated. The others keep asserting the old value, with the same authority, in the same directory. There is no "stale" marker because every one of them is canon — which means the next reader gets whichever document they happened to open.
+
+1. Extract decision-bearing claims from `knowledge/*.md`: numbers with units, dates, named scope boundaries, decided options, capability assertions.
+2. Cluster them by subject across documents.
+3. Flag clusters where two documents assert **different** values for the same subject.
+4. For each: which is newer (git log on the line, not the file), which is the canonical owner of that subject, and a proposed diff for the other.
+
+Severity: high when one of the divergent copies is in the constitution, medium otherwise. **Not** a finding: the same value stated twice consistently (redundancy is not drift), or a document explicitly framed as a historical snapshot.
+
+#### Check 8 — Published pages vs canon (outbound)
+
+`check-id: published-register`
+
+The mirror image of the drift the digest catches. The digest watches **inbound** — external sources contradicting canon. Nothing watches **outbound**: a page you published to a shared wiki six weeks ago, still live, still being read by the people it was written for, asserting what canon said then.
+
+Inbound drift gets noticed because someone says something surprising. Outbound drift never gets noticed by anyone in a position to fix it — the readers do not know the repo exists, and the author never re-opens the page.
+
+1. Read the outbound register (a fork-level file listing every externally published page: url / id, source-of-truth path in the repo, last-published date, owner). **Absent → no-op**, note `INFO: outbound register absent, Check 8 skipped`.
+2. For each entry, diff the repo source against the last-published state.
+3. A material change since publication = finding: what changed, who reads that page, and the republish decision.
+
+Republish protocol worth stating once: **republish the body clean** and add a changelog line. Do not leave the old claim struck through in the live page — external readers do not need your edit history, and a page carrying both values is worse than either.
+
 ### Step 3 — Compose report
 
 Write to `memory/audits/consistency/<YYYY-MM-DD>.md` using this format **verbatim**:

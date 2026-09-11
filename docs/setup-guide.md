@@ -111,7 +111,9 @@ Open `memory/triage-heuristic.yaml`. Default thresholds (3 active branch-outs/da
 
 `source-puller` agent is generic — it doesn't know your actual MCP server identifiers. Fork-time wiring:
 
-1. Edit `.claude/agents/source-puller.md` frontmatter `tools:` list, append your MCP tool identifiers (e.g. `mcp__<your-slack-id>__slack_read_channel`, etc.)
+1. Edit `.claude/agents/source-puller.md` frontmatter `tools:` list, append your MCP tool identifiers (e.g. `mcp__<chat-server>__read_channel`).
+
+   **Use a named server, never a generated id.** Some harnesses expose connectors as `mcp__<uuid>__tool`, valid for one machine and one install. Pinned into an agent, it breaks in the worst available way: the tool is not found, the agent reports the source unavailable, and the digest renders a clean "no signal" for a connector that was working the whole time. Declare the server in `.mcp.json` so it resolves by name. Lint rule `mcp-uuid-pin` enforces this.
 2. Update body's "Tool routing per source_type" section to map your `source_type` enum values to actual MCP tool calls
 
 **Write gate:** wire **read-only** tools first. Wire write-capable tools (post / send / publish / update) only after adopting the external write gate — reads are free, writes require per-action confirmation, and an ambiguous instruction is never publish authorization. See [`docs/governance.md`](governance.md) § "External write gate" and the constitution template's `{#external-write-gate}` section (enumerate your gated destinations there before the first write-capable tool goes live).

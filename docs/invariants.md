@@ -55,6 +55,7 @@ Unenforced invariants get an id in the same shape, so promoting one to code is a
 | `topic-shard-stale` | an active shard must not freeze — refresh or retire | medium | lint.py |
 | `resolved-shard-status` | `_resolved/` holds only resolved shards; resolved shards get filed | medium | lint.py |
 | `agent-roster-match` | agent files ↔ roster rows ↔ declared model | medium | lint.py |
+| `mcp-uuid-pin` | no install-specific MCP server ids in `.claude/` | high | lint.py |
 
 ## Enforced by hook
 
@@ -80,7 +81,7 @@ Hooks warn or gate in the moment. They are **additive** to lint, never a substit
 | `shard-retirement` | resolved shards move to `topics/_resolved/` | 60 d | full audit |
 | `shadow-review` | shadow hypotheses audited for calibration | 90 d | hook warns |
 | `calibration-report` | actor-score calibration written up | monthly | `/calibration-report` |
-| `consistency-check` | semantic drift checks the linter cannot reach | weekly | `/consistency-check` |
+| `consistency-check` | 8 semantic drift checks the linter cannot reach, incl. knowledge↔knowledge and outbound published pages | weekly | `/consistency-check` |
 | `re-grounding` | every FACT promoted to canon or shipped in a deliverable has a primary anchor verified this cycle | at the two gates | constitution amendment · deliverable ship |
 
 ---

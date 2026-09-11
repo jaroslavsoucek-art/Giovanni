@@ -134,6 +134,28 @@ The flip side: an agent that produces bad final output is opaque to main. Mitiga
 - Hard rules around honesty (no coverage faking, no confidence inflation, no fabrication)
 - Spot-checks via slash command output where the principal sees the final artifact
 
+### The transcript is not a log
+
+There is exactly one way to read an agent's isolation away, and every harness offers it: the raw transcript of the agent's run, usually one file path away from the task result.
+
+**Never read it.** Not to check what the agent did, not to debug a thin result, not to "just look at the tool output". The file is the complete run — every raw tool result the agent saw, including the 300 KB payloads and the base64 blobs — and pulling it into the main thread imports precisely the cost the agent existed to keep out. An agent whose result was disappointing costs one re-spawn with a better prompt. An agent whose transcript you read costs the context window you were protecting, and you still have to re-spawn.
+
+The result is the contract. If the result is too thin to act on, the fix is in the agent definition or the prompt — never in reading around it.
+
+### While an agent runs, do different work
+
+The tempting move when an agent is slow is to start pulling its source yourself on the main thread. That produces two versions of the same fact, from two contexts, with no rule for which wins — and it spends the isolation you were paying for.
+
+Do something else: another lane, local greps, drafting the write-up. The one exception is an item with a deadline today that cannot wait for the agent — then pull it, and say in the run notes that it was duplicated.
+
+An agent that consistently overruns gets a cap in its definition. It does not get worked around.
+
+### One backend, two agents
+
+Parallel fan-out is safe across **different backends**. Two agents hitting the same backend concurrently is a different thing: shared gateways have been observed returning one consumer's data to the other's request, with nothing in the payload marking it wrong — and the sequential re-pull comes back clean, so it reads as a flake rather than a pattern.
+
+Group by backend, not by product name. Parallelise across, serialise within, and have each agent verify that the response answers the request it sent.
+
 ## 6. Model selection
 
 | Model | When to use | Rationale |

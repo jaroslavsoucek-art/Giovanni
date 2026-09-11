@@ -91,6 +91,30 @@ Severity tiers (binding):
 
 ---
 
+## Disposition gate — what happens to each issue
+
+A review that produces findings and no record of what was done with them is a review that produced nothing. Issues get quietly absorbed, quietly ignored, or quietly argued away in the rewrite, and nobody can tell which.
+
+So: **every issue gets an explicit disposition, in a table, before anything ships.** The reviewer returns issues with ids (`A1`, `A2`, …). The main thread dispositions each one.
+
+| Id | Disposition | What it requires |
+|---|---|---|
+| A1 | **Accept** | The fix, stated: what changed in the draft |
+| A2 | **Reject** | A citation — a rule, an anchor, a constitution section, a stakeholder profile, an external source. **A reject with no citation does not count; the issue stays open.** |
+| A3 | **Hand back** | A question for the principal, with your proposed answer |
+
+Rules of the gate:
+
+- A **round** is review → dispositions → re-review. **Maximum three rounds.** After the third, the state goes to the principal as it stands. An endless loop is the reviewer and the author negotiating, which is not what either is for.
+- **Closed** = accepted (and fixed), or rejected with a citation the reviewer did not overturn next round. **Open** = everything else, hand-backs included.
+- **SHIP requires zero open fatal and zero open major.** An open fatal after round three, or a hand-back on a fatal, ends the run as **REWRITE** — the draft does not go out, and that issue is the first line of what the principal sees.
+- From round two the reviewer sees the disposition table plus the revised draft, and judges only open issues and regressions. New minor issues in round two or later are not taken. A new fatal must say why round one missed it.
+- **The disposition table ships with the output to the principal.** What was rejected, and on what grounds, is the most useful part of the record — it is also the part that makes a bad rejection visible.
+
+**Author intent, scope, and facts only the principal holds are always Hand back, never Reject.** Rejecting on "I think they meant this" is the reviewer and the author agreeing with each other about someone who is not in the room.
+
+---
+
 ## Strongest counter-case requirement
 
 Adversarial review is not "list a few gaps and walk away". The reviewer must construct the **explicit strongest counter-argument** to the draft's central position.

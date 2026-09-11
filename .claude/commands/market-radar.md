@@ -107,7 +107,7 @@ This binding rule reflects that market-radar is intelligence, not strategy. The 
 
 ## Cadence guidance
 
-- **Default scan:** weekly (e.g. Monday morning before weekly planning)
+- **Default scan:** weekly (e.g. Monday morning before weekly planning). Layers run on different clocks — the slow-moving layer is scanned monthly, on the first sweep of the month. See `.claude/agents/market-radar.md` § Step 2. A layer that returns "no material shifts" several runs running is telling you its cadence is wrong, not that it is quiet.
 - **Focused scan:** ad hoc — typically at strategic decision moments (market entry, regulatory question, competitor announcement)
 - **NOT auto-scheduled.** Run manually 4-6 weeks to validate output quality before considering cron — most forks find weekly default cadence sufficient.
 

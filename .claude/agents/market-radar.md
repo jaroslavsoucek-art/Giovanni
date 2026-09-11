@@ -34,10 +34,20 @@ If `mode=focused` but no focus/market/competitor provided → fail fast: `ERROR:
 
 ### Step 2 — Build target set
 
-**Default mode:**
-- All layers × all markets per scope file
+**Default mode — layers on different clocks:**
+
+Not every layer moves at the same speed, and scanning them all weekly spends most of the budget re-reading things that did not change.
+
+| Layer | Cadence | Why |
+|---|---|---|
+| Fast-moving layer (direct competitors, product announcements, pricing) | weekly | Genuinely changes week to week; a missed move here costs positioning |
+| Slow-moving layer (per-market incumbents, structural / regulatory shifts) | **monthly** | Weekly scans of this layer returned near-zero material shifts run after run — the layer moves on a quarterly clock, so a weekly read is a budget transfer from the layers that do move |
+| Adjacent threats (platforms that could enter the space) | weekly | Cheap, and the whole point is early warning |
+
+The monthly layer runs on the first sweep of each calendar month; the memo says which layers were in scope this run, so a reader can tell "no shifts" from "not scanned". Which layer is which is a fork-level decision in the scope file — the principle is that cadence follows the rate the layer actually changes, and you only learn that from a few months of memos returning nothing.
+
 - Surface depth = top 3-5 material shifts max
-- Sources: 15-25 fetches total (constrained budget)
+- Sources: 15-25 fetches total (constrained budget), weighted toward the layers in scope this run
 
 **Focused mode:**
 - Filter target set by `focus` / `market` / `competitor` args
@@ -152,6 +162,7 @@ drift_candidates_count: <N>
 
 - Sources fetched: <N>
 - Sources unreachable: <list with reason — 404, paywall, blocked>
+- Layers in scope this run (weekly / monthly): <list>
 - Layers/markets fully covered: <list>
 - Layers/markets partially covered (note why): <list>
 
