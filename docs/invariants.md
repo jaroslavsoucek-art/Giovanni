@@ -66,11 +66,12 @@ Hooks warn or gate in the moment. They are **additive** to lint, never a substit
 | `post-knowledge-edit.sh` | `knowledge/INDEX.md` never drifts from `knowledge/` | regenerates |
 | `post-memory-edit.sh` | `memory/MAP.md` never drifts from `memory/` | regenerates |
 | `post-constitution-edit-check.sh` | constitution amendments follow the supersede + changelog convention | reminds |
-| `session-start-audit-check.sh` | audit cadence, L1 size, strikethrough creep | warns |
+| `session-start-audit-check.sh` | audit cadence, L1 size, strikethrough creep, consistency-check cadence + pending triage | warns |
 | `session-start-digest.sh` | digest cadence, expired drift acks, shadow-review cadence | warns |
 | `check-decision-records.sh` | no commit with an empty `trigger_conditions` | blocks |
 | `check-unmerged-claude-branches.sh` | no forgotten unmerged `claude/*` branches | warns |
 | `block-external-writes.sh` | external writes gated per action; demoted channels denied | gates |
+| `stop-ephemeral-commit-guard.sh` | no unsaved work at the end of an ephemeral session | warns |
 
 ## Enforced by cadence (a human runs it)
 

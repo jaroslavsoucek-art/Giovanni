@@ -139,7 +139,8 @@ Prose in this document is a rule the agent reads and can talk itself past — "t
 | Layer | File | Reaches |
 |---|---|---|
 | Permission globs | `.claude/settings.json` → `permissions.ask` / `permissions.deny` | Every MCP tool call, matched on verb (`mcp__*__create*`, `mcp__*__send*`, …) |
-| PreToolUse hook | `.claude/hooks/block-external-writes.sh` | Every `mcp__*` call: denies writes on demoted channels, asks on all other external writes, passes reads |
+| PreToolUse hook | `.claude/hooks/stop-ephemeral-commit-guard.sh` | Session stop, **only** in an ephemeral environment (`$CLAUDE_CODE_REMOTE`, or `GIOVANNI_EPHEMERAL=1`) | Warns on a dirty tree or unpushed commits. No-op on a persistent machine. |
+| `.claude/hooks/block-external-writes.sh` | Every `mcp__*` call: denies writes on demoted channels, asks on all other external writes, passes reads |
 
 Glob on **verb, not vendor**. A vendor-keyed list ages badly: a connector added on Tuesday is ungated until someone remembers to list it. Verb globs catch it the day it appears.
 
@@ -268,13 +269,15 @@ resolved_shard_retirement_days: 90
 | `.claude/hooks/post-knowledge-edit.sh` | After Edit/Write to `knowledge/<anything>.md` (except INDEX.md) | Regenerates `knowledge/INDEX.md` via `scripts/build-knowledge-index.sh`. Inline echo confirms refresh. |
 | `.claude/hooks/post-memory-edit.sh` | After Edit/Write to `memory/{topics,decisions,briefs,stakeholders,archive}/*` (except MAP.md) | Regenerates `memory/MAP.md` via `scripts/build-memory-map.sh`. Inline echo confirms refresh. |
 | `.claude/hooks/post-constitution-edit-check.sh` | After Edit/Write to `knowledge/<constitution>.md` | Surfaces amendment checklist: supersedes-pointer convention, commit prefix expectation, decision-record back-link reminder. Detects unattached "SUPERSEDED" headers. |
-| `.claude/hooks/session-start-audit-check.sh` | At Claude Code session start | Warns if cadence overdue, L1 over size, strikethrough creep. Silent if state file missing (fresh fork). |
+| `.claude/hooks/session-start-audit-check.sh` | At Claude Code session start | Warns if audit cadence overdue, L1 over size, strikethrough creep, consistency-check overdue or its findings untriaged. Surfaces only — never spawns an agent. Silent if state files missing (fresh fork). |
 | `.claude/hooks/session-start-digest.sh` | At Claude Code session start | Soft reminders from `memory/digest_state.md`: digest overdue (default 12h, `GIOVANNI_DIGEST_THRESHOLD_HOURS`), expired drift acks, shadow-review cadence overdue. Never blocks; silent on missing/malformed state. |
 | `.claude/hooks/check-decision-records.sh` | Pre-tool-use of `git commit` (configure in `.claude/settings.json`) | Blocks commit if any staged `memory/decisions/*.md` has empty `trigger_conditions`. Override: `GIOVANNI_SKIP_DECISION_CHECK=1`. |
 | `.claude/hooks/block-external-writes.sh` | Pre-tool-use of any `mcp__*` tool | Enforces the external write gate in code: write-shaped calls on a demoted channel are **denied**, every other external write is **asked**, reads pass. Demoted channels come from `readonly_channels` in `docs/governance.config.yaml` (or `GIOVANNI_READONLY_CHANNELS`). |
 | `.claude/hooks/check-unmerged-claude-branches.sh` | Session start / stop | Warns if `claude/*` branches exist that aren't merged to `main`. Threshold configurable via `GIOVANNI_BRANCH_WARN_THRESHOLD` (default 1). |
 
 **Trigger configuration** lives in `.claude/settings.json`, copied from `.claude/settings.template.json` by `scripts/init-fork.sh`. Without that file the scripts in `.claude/hooks/` are inert — executable, committed, and never run by anything. (Giovanni shipped exactly that state until this template existed: hooks with no trigger map, and a write gate that was prose only.) Disable a hook by deleting its block from your `settings.json`; the framework's template is the starting set, not a mandate.
+
+**PostToolUse hooks must return `hookSpecificOutput.additionalContext`, not a plain echo.** Stdout from a PostToolUse hook lands in the transcript; `additionalContext` lands in the agent's context. The difference decides whether the agent learns that a generated file changed under it — a regeneration notice nobody reads is a stale `INDEX.md` in the next commit. SessionStart hooks are the exception: their stdout is injected, so a plain `printf` is correct there.
 
 `scripts/install-hooks.sh` is the other half: chmod, plus the two git-side gates — pre-commit (lint) and pre-push (lint + fixture self-test). The two layers are independent: Claude Code hooks fire on tool use, git hooks fire on commit and push. Pre-push matters most for forks working directly on main, where it is the last gate before the shared branch.
 

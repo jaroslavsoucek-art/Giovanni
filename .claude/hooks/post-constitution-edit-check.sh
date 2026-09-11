@@ -41,7 +41,7 @@ SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 REPO_ROOT="$( cd "${SCRIPT_DIR}/../.." && pwd )"
 CONST_PATH="${REPO_ROOT}/${KNOWLEDGE_DIR}/${CONSTITUTION_FILE}"
 
-cat <<EOF
+MSG=$(cat <<EOF
 ⚠ ${KNOWLEDGE_DIR}/${CONSTITUTION_FILE} was just edited.
 
 Per knowledge/README.md "How to amend safely" — pre-commit checklist:
@@ -63,15 +63,32 @@ Pre-commit lint will check:
 
 Run manually before commit: bash scripts/lint.sh
 EOF
+)
 
-# Optional: light supersession-pointer heuristic — warn if "SUPERSEDED"
-# header appears WITHOUT an arrow pointer.
+# Light supersession-pointer heuristic — warn if "SUPERSEDED" header appears
+# WITHOUT an arrow pointer.
 if grep -qE '^##.*SUPERSEDED' "${CONST_PATH}" 2>/dev/null; then
     if grep -qE '^##.*SUPERSEDED[^→]*$' "${CONST_PATH}" 2>/dev/null; then
-        echo ""
-        echo "⚠ Detected 'SUPERSEDED' header WITHOUT '→ §<anchor>' pointer."
-        echo "   Expected format:  ## <name> (SUPERSEDED → §<new-anchor>)"
+        MSG="${MSG}
+
+⚠ Detected 'SUPERSEDED' header WITHOUT '→ §<anchor>' pointer.
+   Expected format:  ## <name> (SUPERSEDED → §<new-anchor>)"
     fi
+fi
+
+# PostToolUse output reaches the agent as hookSpecificOutput.additionalContext.
+# A plain echo lands in the transcript, where the agent may never read it — and a
+# checklist the agent does not see is a checklist that does not exist.
+if command -v python3 >/dev/null 2>&1; then
+    python3 -c "
+import json, sys
+print(json.dumps({'hookSpecificOutput': {
+    'hookEventName': 'PostToolUse',
+    'additionalContext': sys.argv[1],
+}}))
+" "${MSG}"
+else
+    printf '%s\n' "${MSG}"
 fi
 
 exit 0

@@ -9,7 +9,7 @@
 | workflows (`.claude/workflows/*.md`) | 3 |
 | commands (`.claude/commands/*.md`) | 11 |
 | agents (`.claude/agents/*.md`) | 17 |
-| hooks (`.claude/hooks/*.sh`) | 8 |
+| hooks (`.claude/hooks/*.sh`) | 9 |
 | skills (`.claude/skills/*/`) | 0 |
 | lint rules (`scripts/lint_rules/*.py`) | 23 |
 
@@ -66,11 +66,12 @@
 | `.claude/hooks/block-external-writes.sh` | 125 | 5050 | `95719910d6` |
 | `.claude/hooks/check-decision-records.sh` | 131 | 4531 | `9490a7ddf8` |
 | `.claude/hooks/check-unmerged-claude-branches.sh` | 59 | 2064 | `a89e05fce9` |
-| `.claude/hooks/post-constitution-edit-check.sh` | 77 | 2657 | `0aa39b00ad` |
-| `.claude/hooks/post-knowledge-edit.sh` | 47 | 1356 | `804d3afce3` |
-| `.claude/hooks/post-memory-edit.sh` | 52 | 1565 | `b992048f0c` |
-| `.claude/hooks/session-start-audit-check.sh` | 105 | 4331 | `7df96c2c12` |
+| `.claude/hooks/post-constitution-edit-check.sh` | 94 | 3112 | `d21c640f95` |
+| `.claude/hooks/post-knowledge-edit.sh` | 69 | 2212 | `2acdd2ff9d` |
+| `.claude/hooks/post-memory-edit.sh` | 74 | 2406 | `761daabe19` |
+| `.claude/hooks/session-start-audit-check.sh` | 131 | 5691 | `78d46fc498` |
 | `.claude/hooks/session-start-digest.sh` | 157 | 6282 | `9105bff5e6` |
+| `.claude/hooks/stop-ephemeral-commit-guard.sh` | 47 | 1612 | `5c9fa95d48` |
 
 ## root files
 
@@ -78,6 +79,6 @@
 |---|---|---|---|
 | `CLAUDE.md` | 89 | 6680 | `0c35a6bc17` |
 | `CLAUDE.template.md` | 148 | 12133 | `34403a54de` |
-| `docs/invariants.md` | 106 | 8397 | `777ecd2689` |
+| `docs/invariants.md` | 107 | 8539 | `d1aea3fa9c` |
 | `scripts/lint.sh` | 262 | 9690 | `d6bfbb304e` |
 | `scripts/lint.py` | 318 | 10660 | `a8fbb925d6` |

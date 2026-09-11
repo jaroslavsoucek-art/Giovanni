@@ -100,6 +100,32 @@ if [ -f "${L1_PATH}" ]; then
     fi
 fi
 
+# ----- Consistency-check freshness + pending triage -----
+#
+# The semantic checks the linter cannot reach only help if someone runs them, and
+# a weekly cadence with no reminder is a cadence that runs twice. Surfacing, not
+# spawning: this hook never starts the check — an agent run that begins before the
+# principal has said a word is how a session start turns into a bill.
+
+CONSISTENCY_STATE="${REPO_ROOT}/${MEMORY_DIR}/audits/consistency/_state.md"
+CONSISTENCY_CADENCE=${GIOVANNI_CONSISTENCY_CADENCE_DAYS:-7}
+
+if [ -f "${CONSISTENCY_STATE}" ]; then
+    LAST_RUN_DATE=$(grep -E '^## Run ' "${CONSISTENCY_STATE}" | tail -1 | awk '{print $3}')
+    LAST_REVIEW_STATUS=$(grep -E '^- review_status:' "${CONSISTENCY_STATE}" | tail -1 | awk '{print $3}')
+    LAST_FINDINGS=$(grep -E '^- findings_total:' "${CONSISTENCY_STATE}" | tail -1 | awk '{print $3}')
+
+    if AGE=$(age_days "${LAST_RUN_DATE}"); then
+        if [ "${AGE}" -gt "${CONSISTENCY_CADENCE}" ]; then
+            WARNINGS="${WARNINGS}⚠ Consistency-check overdue: ${AGE}d since ${LAST_RUN_DATE} (cadence ${CONSISTENCY_CADENCE}d). Run /consistency-check.\n"
+        fi
+    fi
+
+    if [ "${LAST_REVIEW_STATUS}" = "pending" ]; then
+        WARNINGS="${WARNINGS}ℹ Consistency run ${LAST_RUN_DATE}: ${LAST_FINDINGS:-?} findings pending triage — /consistency-review ${LAST_RUN_DATE}.\n"
+    fi
+fi
+
 [ -n "${WARNINGS}" ] && printf '%b' "${WARNINGS}"
 
 exit 0

@@ -1,0 +1,14 @@
+{
+  "_comment": "Named MCP servers for this fork. Copy to .mcp.json and fill in. The point is the NAME: a connector declared here resolves as mcp__<name>__<tool>, which survives a re-install, a new machine, and a different account. Harness-generated ids (mcp__<uuid>__tool) do not — and when one stops matching, the tool is simply not found, the agent reports the source unavailable, and your digest renders a clean 'no signal' for a connector that was working fine. Lint rule mcp-uuid-pin refuses the pinned form.",
+
+  "mcpServers": {
+    "_example-tracker": {
+      "type": "http",
+      "url": "https://mcp.example-tracker.com/v1/mcp"
+    },
+    "_example-wiki": {
+      "type": "http",
+      "url": "https://mcp.example-wiki.com/v1/mcp"
+    }
+  }
+}

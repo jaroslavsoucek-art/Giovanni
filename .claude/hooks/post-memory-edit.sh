@@ -44,9 +44,31 @@ esac
 SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 REPO_ROOT="$( cd "${SCRIPT_DIR}/../.." && pwd )"
 
+
+# PostToolUse hooks reach the agent through hookSpecificOutput.additionalContext,
+# not through stdout. A plain echo lands in the transcript and the agent may never
+# see it — which for a regeneration notice means the agent does not learn that a
+# generated file changed under it, and commits a stale one.
+emit_context() {
+    if command -v python3 >/dev/null 2>&1; then
+        python3 -c "
+import json, sys
+print(json.dumps({'hookSpecificOutput': {
+    'hookEventName': 'PostToolUse',
+    'additionalContext': sys.argv[1],
+}}))
+" "$1"
+    else
+        echo "$1"
+    fi
+}
+
 if [ -x "${REPO_ROOT}/scripts/build-memory-map.sh" ]; then
-    "${REPO_ROOT}/scripts/build-memory-map.sh" 2>/dev/null
-    echo "${MEMORY_DIR}/MAP.md auto-refreshed (${MEMORY_DIR}/ touched)"
+    if "${REPO_ROOT}/scripts/build-memory-map.sh" >/dev/null 2>&1; then
+        emit_context "${MEMORY_DIR}/MAP.md auto-refreshed (${MEMORY_DIR}/ touched) — include the regenerated MAP.md in the same commit as the memory change."
+    else
+        emit_context "⚠ build-memory-map.sh FAILED — ${MEMORY_DIR}/MAP.md may be stale. Run it manually and read the error before committing."
+    fi
 fi
 
 exit 0
