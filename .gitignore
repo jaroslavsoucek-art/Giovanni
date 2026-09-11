@@ -16,3 +16,6 @@ node_modules/
 # its domain-leak denylist is a list of the source domain's proper nouns.
 # FORKS SHOULD COMMIT THEIRS: drop this line, or `git add -f`.
 docs/governance.config.yaml
+
+# Local dev-server / preview config — machine paths, not framework content.
+.claude/launch.json
