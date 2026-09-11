@@ -32,6 +32,16 @@ distrust the file.
 
 ---
 
+## Sensitivity — read this before writing the first profile
+
+Profiles are the highest-risk artifact in the framework: behavioural and sentiment analysis of named people, stored in a git repo, where the principal is often more junior than some of the subjects.
+
+The handling rules live where the files live — `memory/stakeholders/README.md` (from `memory/templates/stakeholders-README.template.md`) — so they are in front of whoever is writing. In short: audience is the principal only; observable behaviour with anchors, never character verdicts or amateur psychology; every sentence has to survive the subject reading it; archived people get purged after twelve months; and git history means deletion is not deletion, so repo access *is* the access control.
+
+Two things forks get wrong. The first is treating classification as paperwork and skipping it until an audit asks — by which point there are fifteen profiles of named colleagues and no rules. The second is assuming the risk is legal; the realistic failure is someone pasting "context on X" from a profile into a shared document, which needs no malice and no breach.
+
+---
+
 ## Bootstrap trigger criteria
 
 Create a profile when **any** of the following is true:

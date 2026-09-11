@@ -73,13 +73,21 @@ Limits exist because they have teeth. Soft conventions get ignored. Hard limits 
 
 Two cadences. Both tracked in `memory/audit_state.md` (flat, see "State file placement" below).
 
-### Light prune — every 14 days
+### Light audit — every 14 days
 
-Strip strikethroughs, archive resolved items, scan for soft-delete patterns. ~5 minutes, no full re-read. Updates `last_audit_light:` in state file.
+**Reconcile L1 against reality.** Every dated item in L1 gets checked against its live source: the tracker task, the calendar event, the thread. A date that has moved gets corrected in the same session. ~10 minutes, no full re-read. Updates `last_audit_light:`.
+
+This started life as "strip strikethroughs and check size", and the change is worth explaining because it is the kind of thing every fork will get wrong the same way. Over four consecutive light audits in the implementation this framework came from, the strikethrough check fired **zero** times and stale dates were a finding **every** time. Size, meanwhile, is already a hook warning at session start — auditing it on a cadence is checking something a machine checked for you this morning.
+
+So the rule is: **a cadence audit should look for what no hook can see.** Whether a date in L1 still matches the tracker is exactly that. Whether the file is over 300 lines is exactly not.
 
 ### Full audit — every 35 days
 
-Section-by-section L1 review. Archive resolved items. Graduate hot items to shards. Re-classify items that drifted into the wrong tier (e.g. canonical fact accidentally in L1). Updates `last_audit_full:` in state file.
+**Step 0 — diff the apparatus baseline.** `scripts/build-claude-baseline.sh --dry | diff memory/audits/claude-baseline.md -`. Every diff line is an item to explain: a new hook, agent, command or workflow with no row in the route table is a finding; a changed hash is "what changed and why". Then regenerate the baseline and commit it with the audit.
+
+The agentic layer grows by accretion — a command added in the session that needed it, an agent someone wrote once. Nothing records the shape of the whole, so nobody notices it doubling. The snapshot is deterministic (no dates, no SHAs), so an empty diff means genuinely nothing moved.
+
+**Then:** section-by-section L1 review. Archive resolved items. Graduate hot items to shards. Re-classify items that drifted into the wrong tier (e.g. a canonical fact sitting in L1). Updates `last_audit_full:`.
 
 The session-start hook (`session-start-audit-check.sh`) warns when either cadence is overdue.
 

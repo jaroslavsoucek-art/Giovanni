@@ -12,6 +12,21 @@ session start.
 
 ---
 
+## Classification: CONFIDENTIAL — personal data
+
+This directory holds behavioural and sentiment analysis of **named people**, most of them colleagues, some of them senior to the principal. That is personal data in the regulatory sense and dynamite in the ordinary sense. Six rules, binding:
+
+1. **Audience is the principal, full stop.** Profiles are never quoted, paraphrased, attached, or summarised into anything that leaves this repo — no wiki page, no chat message, no deliverable, no slide, no project-knowledge upload. If your fork syncs part of the repo anywhere, `memory/stakeholders/` is not in the allowlist, and keeping it out is the default that must be actively broken, not actively maintained.
+2. **What never gets written:** health, personal or family life beyond what they shared in a work context, speculation about compensation, protected characteristics, defamatory judgements with no anchor. Write observable work behaviour with an anchor (permalink, date). Not character verdicts.
+3. **The tone test:** every sentence has to survive that person reading it. Sharp analysis of how someone negotiates, what they optimise for, where they have been burned — fine. Amateur psychology — not.
+4. **Retention.** Person leaves the project or the company → `status: archived` and move to `_archive/` at the next memory audit. Twelve months after archiving, delete the content.
+5. **Git history holds every version.** Deleting a profile does not unwrite it. Before the repo moves, before access widens, before anyone is added as a collaborator: this directory is the thing to resolve first (access review, or history rewrite). Treat "who can clone this repo" as the real access-control boundary, because it is.
+6. **Legal basis.** Most forks will land on legitimate interest for work coordination, with no formal assessment. That holds while the audience is one person. The moment profiles are shared beyond the principal, it stops holding, and the answer is a privacy review — not a wider distribution list.
+
+None of this is optional polish. A profile directory is the single most damaging thing a Giovanni fork can leak, and the leak does not need malice — one paste of "context" into a shared doc does it.
+
+---
+
 ## Purpose
 
 In a single-principal or thin-team context, nobody else holds the model of

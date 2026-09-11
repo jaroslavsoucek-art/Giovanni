@@ -56,6 +56,7 @@ The one file an agent always reads. Strict shape:
 | Limit | Threshold | Rationale |
 |---|---|---|
 | **Total length** | 300 lines | Above this, an agent spends meaningful tokens loading L1 every session. The whole point of L1 is cheap session start. |
+| **Total size** | 32 KB | Lines are a proxy for cost and the proxy breaks on long paragraphs. Observed: 201 lines — comfortably under the line cap — and 58 KB, paid at every session start with nothing firing. Whichever cap trips first, trips. |
 | **Strikethrough ratio** | 2% of lines | Strikethrough is acceptable for ≤1 session as "done but not yet archived". Persistent strikethrough = soft delete = drift. Above 2% means cleanup is overdue. |
 
 **Why these numbers, not others?**
@@ -63,6 +64,12 @@ The one file an agent always reads. Strict shape:
 300 was chosen empirically — at ~80 tokens per line, that's ~24k tokens, roughly 12% of a 200k-token context window. Acceptable session-start overhead. If your agent has a much smaller context (e.g. 32k), drop to ~100 lines. If much larger, the limit doesn't change much — token-cheap session starts are still desirable.
 
 2% strikethrough is a drift signal, not an absolute count. Below 2% it's noise. Above 2% it indicates the writer is using strikethrough as "I'll archive this later" — and "later" never comes. The fix is archive immediately or delete.
+
+**Shard-first write (binding).** If a topic already has a shard, the update goes **in the shard**. L1 keeps 1–3 lines and a pointer `→ topics/<slug>.md`.
+
+This is the rule that keeps the caps honest. Without it, every cap is a trimming exercise: the file grows, the check fires, someone shortens sentences, and the same content comes back next week. A shard-sized paragraph sitting in L1 is not a formatting problem to be compressed — it is a topic that has outgrown Layer 1 and needs to move.
+
+Where a run writes matters more than how much it writes. A digest that appends its findings to L1 will defeat any cap you set; the same digest writing to the relevant shard and leaving a pointer keeps L1 at constant size forever.
 
 **Templates and worked examples:** `templates/operational-memory.template.md`, `examples/operational-memory.example.md`.
 
@@ -224,8 +231,8 @@ Before adding content to memory, classify. **Default is NOT L1.** L1 is a restri
 |---|---|---|
 | **Session start** | L0 + L1 auto-load | Every session |
 | **Per-edit** | MAP regen | Hook on any `memory/topics|decisions|briefs|stakeholders|archive` Edit/Write |
-| **14 days** | L1 light prune | Strip strikethroughs, check size; ~5 min, no full re-read |
-| **35 days** | L1 full audit | Section-by-section review; archive resolved items; graduate hot items to shards |
+| **14 days** | L1 light audit | **Reconcile L1 against reality** — every dated item checked against the live source (tracker, calendar, thread). Size is a hook trigger, not an audit task |
+| **35 days** | L1 full audit | Step 0: diff the `.claude/` baseline. Then section-by-section review; archive resolved items; graduate hot items to shards |
 | **60 days** | Resolved shard retirement | Move `topics/<slug>.md` to `topics/_resolved/<slug>.md` if `status: resolved` and untouched |
 
 Cadence state lives in `memory/audit_state.md` (one canonical file with last-run dates + thresholds). Session-start hook warns when overdue.
