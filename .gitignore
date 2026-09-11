@@ -6,3 +6,13 @@ node_modules/
 .env.local
 *.log
 .claude/projects/
+
+# Pointer to the live reference implementation (scripts/source-path.sh).
+# Machine-local on purpose: this repo is public, the source repo is not, and its
+# name identifies the domain this framework was sanitised of.
+.source-path
+
+# The framework repo's own lint config is machine-local for the same reason —
+# its domain-leak denylist is a list of the source domain's proper nouns.
+# FORKS SHOULD COMMIT THEIRS: drop this line, or `git add -f`.
+docs/governance.config.yaml

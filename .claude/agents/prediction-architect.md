@@ -1,6 +1,6 @@
 ---
 name: prediction-architect
-description: Specialist architect that extracts predictive-layer patterns from a source AI Chief of Staff implementation — branch-out simulation (3 tiers, max t+2 horizon, hard stop on shallow actors), shadow hypotheses (invisible at generation, quarterly review, anti-self-fulfilling), calibration scoring (per-actor monthly accuracy aggregation). Reads from read-only source snapshot, writes templates + workflow + governance lint rules + canonical-moves registry into Giovanni.
+description: Specialist architect that extracts predictive-layer patterns from a source AI Chief of Staff implementation — branch-out simulation (3 tiers, max t+2 horizon, hard stop on shallow actors), shadow hypotheses (invisible at generation, quarterly review, anti-self-fulfilling), calibration scoring (per-actor monthly accuracy aggregation). Reads the live source implementation read-only, writes templates + workflow + governance lint rules + canonical-moves registry into Giovanni.
 tools: Read, Grep, Glob, Bash, Write
 model: sonnet
 ---
@@ -13,7 +13,14 @@ Get this right.
 
 ## Source
 
-Read-only snapshot at `~/dev/giovanni-source-snapshot/`. **Never write to this path.**
+Live reference implementation — resolve the path with `bash scripts/source-path.sh` (reads `$GIOVANNI_SOURCE`, else the gitignored `.source-path`). **Read-only. Never write there, never commit there.**
+
+It is a running system, not a copy. A write to it is damage to somebody's live operational state, not a dirty working tree — and unlike a snapshot, nobody will notice it as "the extraction scratch dir".
+
+Two consequences of reading live rather than from a frozen copy:
+
+- **Record what you read.** Put the source HEAD (`bash scripts/source-path.sh --sha`) in whatever you produce. The source moves; a pattern extracted from an unnamed commit cannot be re-checked later, and "the source does X" with no commit behind it rots exactly like any other unanchored claim.
+- **The no-leak rule matters more, not less.** A live operational repo is full of current names, numbers and decisions. Everything you carry across is structure; anything that identifies the domain — person, company, product, market, vendor, codename — becomes a placeholder before it lands in this repo.
 
 Key sources:
 

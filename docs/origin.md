@@ -6,7 +6,9 @@ The extraction goal: keep the **structure** (memory architecture, governance dis
 
 ## Extraction method
 
-Specialist architect agents (one per layer: memory, governance, digest, prediction, stakeholder, adversarial, subagent-roster, slash-command) read from a read-only snapshot of the source implementation and produce sanitized templates + schema documentation in this repo. An orchestrator agent coordinates conflicts (e.g. memory schema references stakeholder schema).
+Specialist architect agents (one per layer: memory, governance, digest, prediction, stakeholder, adversarial, subagent-roster, slash-command) read the source implementation **read-only** and produce sanitized templates + schema documentation in this repo. An orchestrator agent coordinates conflicts (e.g. memory schema references stakeholder schema).
+
+The original extraction read a frozen snapshot. That was a mistake with a three-month half-life: the source kept learning — connector failure modes, review gates, memory-write discipline, most of it written after something went wrong — while the framework kept reading a copy taken before any of it happened, with nothing to indicate the gap. Architects now read the live repo (path resolved by `scripts/source-path.sh`, machine-local and never committed), and anything extracted records the source commit it came from.
 
 Each architect operates under a strict no-leak rule: any source-domain reference (project name, person name, country, vendor) translates to a placeholder.
 

@@ -42,22 +42,22 @@
 | file | lines | bytes | hash |
 |---|---|---|---|
 | `.claude/agents/README.md` | 86 | 7384 | `dbf77de3a0` |
-| `.claude/agents/adversarial-architect.md` | 137 | 10435 | `49efe79afb` |
+| `.claude/agents/adversarial-architect.md` | 144 | 11429 | `b0d2e4b873` |
 | `.claude/agents/adversarial-reviewer.md` | 215 | 14165 | `644877a47d` |
 | `.claude/agents/consistency-checker.md` | 279 | 16537 | `cf402ac1e2` |
 | `.claude/agents/deliverable-reviewer.md` | 137 | 6699 | `1713c1245b` |
-| `.claude/agents/digest-architect.md` | 167 | 11678 | `3b8fa56a1f` |
-| `.claude/agents/governance-architect.md` | 165 | 12235 | `3c6817767b` |
+| `.claude/agents/digest-architect.md` | 174 | 12672 | `09f59a660e` |
+| `.claude/agents/governance-architect.md` | 172 | 13239 | `015dd5cc6d` |
 | `.claude/agents/market-radar.md` | 248 | 11978 | `74d15cb50d` |
-| `.claude/agents/memory-architect.md` | 94 | 7517 | `a4afcec995` |
-| `.claude/agents/prediction-architect.md` | 201 | 15393 | `e8f00aa7e4` |
+| `.claude/agents/memory-architect.md` | 101 | 8542 | `7a7b0bf0b0` |
+| `.claude/agents/prediction-architect.md` | 208 | 16397 | `7d76bb033a` |
 | `.claude/agents/prediction-runtime.md` | 467 | 22561 | `b3095e8e33` |
 | `.claude/agents/profile-bootstrap.md` | 181 | 10055 | `daeb03fe44` |
 | `.claude/agents/researcher.md` | 149 | 6707 | `84df20c4d7` |
-| `.claude/agents/slash-command-architect.md` | 146 | 9909 | `f8b9dd6b3f` |
+| `.claude/agents/slash-command-architect.md` | 153 | 10903 | `c69b3e9c8c` |
 | `.claude/agents/source-puller.md` | 131 | 9406 | `fc57420d4d` |
-| `.claude/agents/stakeholder-architect.md` | 133 | 11864 | `37f88ffa60` |
-| `.claude/agents/subagent-roster-architect.md` | 143 | 12053 | `a7b9610646` |
+| `.claude/agents/stakeholder-architect.md` | 140 | 12868 | `2b4801812c` |
+| `.claude/agents/subagent-roster-architect.md` | 150 | 13057 | `52f63f101d` |
 
 ## hooks
 
@@ -76,8 +76,8 @@
 
 | file | lines | bytes | hash |
 |---|---|---|---|
-| `CLAUDE.md` | 65 | 3711 | `165a70e49f` |
+| `CLAUDE.md` | 89 | 6680 | `0c35a6bc17` |
 | `CLAUDE.template.md` | 148 | 12133 | `34403a54de` |
 | `docs/invariants.md` | 106 | 8397 | `777ecd2689` |
 | `scripts/lint.sh` | 262 | 9690 | `d6bfbb304e` |
-| `scripts/lint.py` | 285 | 9249 | `06062db9f9` |
+| `scripts/lint.py` | 318 | 10660 | `a8fbb925d6` |
