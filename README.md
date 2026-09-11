@@ -52,19 +52,17 @@ contested claims for a human to resolve — producing an *emergent,
 confidence-ranked org canon* rather than assuming one exists. **Giovanni is
 the node; Boss is the network.**
 
-Boss is a separate, evolving design and lives on its own branch, not on
-`main`:
+Boss is a separate, evolving design and lives in **its own repository**:
+[jaroslavsoucek-art/Boss](https://github.com/jaroslavsoucek-art/Boss).
 
-```
-main            →  Giovanni — the individual, generic assistant (this README)
-Giovanni-Boss   →  Boss — the org-level aggregator over many Giovanni nodes
-```
+It used to live on a `Giovanni-Boss` branch here. That was a mistake worth
+naming: the Boss tree is a *different* tree, not a superset of this one, so
+the branch read as `main` minus ~24k lines. Anyone merging it would have
+deleted Giovanni and called it a merge. Two products, two repos.
 
 If you just want a personal Chief of Staff, you never touch Boss. If you're
 rolling Giovanni out across a team, Boss is how the individual instances add
-up to more than their sum — see the
-[`Giovanni-Boss`](https://github.com/jaroslavsoucek-art/Giovanni/tree/Giovanni-Boss)
-branch.
+up to more than their sum.
 
 ## The moat — invisible shadow hypotheses
 
