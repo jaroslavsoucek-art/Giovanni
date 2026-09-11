@@ -268,11 +268,14 @@ resolved_shard_retirement_days: 90
 
 **Trigger configuration** lives in `.claude/settings.json`, copied from `.claude/settings.template.json` by `scripts/init-fork.sh`. Without that file the scripts in `.claude/hooks/` are inert — executable, committed, and never run by anything. (Giovanni shipped exactly that state until this template existed: hooks with no trigger map, and a write gate that was prose only.) Disable a hook by deleting its block from your `settings.json`; the framework's template is the starting set, not a mandate.
 
-`scripts/install-hooks.sh` is the other half: chmod + the git-side gate. The two are independent — Claude Code hooks fire on tool use, git hooks fire on commit/push.
+`scripts/install-hooks.sh` is the other half: chmod, plus the two git-side gates — pre-commit (lint) and pre-push (lint + fixture self-test). The two layers are independent: Claude Code hooks fire on tool use, git hooks fire on commit and push. Pre-push matters most for forks working directly on main, where it is the last gate before the shared branch.
 
 ---
 
 ## Lint framework
+
+> The full register of what this repo asserts about itself — enforced by lint, enforced by hook, enforced only by cadence, and **declared but unenforced** — is [`docs/invariants.md`](invariants.md). That file is the contract; the code below is its implementation. When they disagree, the code is the bug.
+
 
 Two-layer lint (`scripts/lint.sh` + `scripts/lint.py` + `scripts/lint_rules/`):
 
@@ -363,6 +366,22 @@ Deterministic lint catches what regex and YAML parsing can reach. Semantic drift
 - at least `promotion_gate_min_reviewed_runs` reviewed runs (default **3**).
 
 Promotion is a governance decision by the principal — the agent proposes the integration (e.g. session-start surfacing of unreviewed high-severity findings), never auto-implements it. A check that misses the precision gate gets tightened or killed, not promoted.
+
+---
+
+## Branch policy — land the work {#branch-policy}
+
+Pick one of two shapes and adopt all of it:
+
+**Direct to main.** Every run commits and pushes to the main branch. Simple, and nothing can strand. Requires a local gate, because there is no pull-request check to lean on — `scripts/install-hooks.sh` installs pre-commit (lint) and pre-push (lint + fixture self-test).
+
+**Branch and merge.** Runs work on branches. Then *some run has to own the merge step* — name which one, in the route table, with the same rigour as any other stop point.
+
+The failure this exists to prevent, observed in the wild: an apparatus wrote, linted and pushed into a working branch for three days straight — 34 commits — while the main branch sat frozen. Every workflow reported success, because every workflow's contract ended at "pushed". The merge had happened once, manually, long before, and nobody noticed it was a one-off rather than a step.
+
+Note the shape of it: nothing failed. No hook fired, no lint finding, no error. **A pipeline whose last step is "push to a branch" will happily run forever without the work ever landing.** The fix is not another reminder hook — it is to make the landing step part of a run's definition of done, or to not need one.
+
+`check-unmerged-claude-branches.sh` warns about leftover `claude/*` branches. That is a smoke detector, not the policy — it tells you branches exist, not that the work they carry was supposed to land last Tuesday.
 
 ---
 

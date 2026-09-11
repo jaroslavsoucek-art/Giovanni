@@ -6,8 +6,9 @@
 #   1. Make .claude/hooks/*.sh executable (Claude Code triggers them via
 #      Edit/Write/SessionStart events — see .claude/settings.json for the
 #      trigger mapping).
-#   2. Install git pre-commit hook running `scripts/lint.sh`. Existing
-#      pre-commit is backed up to .git/hooks/pre-commit.bak.
+#   2. Install git pre-commit hook running `scripts/lint.sh`, and a pre-push
+#      hook running lint + the fixture self-test. Existing hooks are backed
+#      up to .git/hooks/<name>.bak.
 #
 # The Claude Code hook trigger config (.claude/settings.json) is owned by
 # the user / fork — this script does not modify it. It only ensures the
@@ -15,7 +16,7 @@
 #
 # Usage:
 #   bash scripts/install-hooks.sh
-#   bash scripts/install-hooks.sh --skip-precommit   # only chmod hooks
+#   bash scripts/install-hooks.sh --skip-precommit   # only chmod hooks (skips both git hooks)
 #
 # Idempotent — safe to re-run.
 
@@ -98,6 +99,63 @@ fi
 printf '%s\n' "${NEW_CONTENT}" > "${PRECOMMIT}"
 chmod +x "${PRECOMMIT}"
 echo "  pre-commit: installed (runs scripts/lint.sh; override via GIOVANNI_SKIP_LINT=1)"
+
+# ----- 4. install git pre-push: last gate before the work leaves the machine -----
+#
+# The pre-commit hook is the one people skip. `--no-verify` on a hurried commit is
+# normal and usually harmless — until it is the commit that lands. Pre-push is the
+# gate that runs once per push instead of once per commit, which makes it cheap
+# enough to also run the fixture self-test. Where a fork works directly on main with
+# no pull-request check, this is the only gate left between a broken invariant and
+# the shared branch.
+
+PREPUSH="${GIT_HOOKS_DIR}/pre-push"
+PREPUSH_CONTENT=$(cat <<'EOF'
+#!/usr/bin/env bash
+# Giovanni governance pre-push: lint + fixture self-test before anything leaves.
+# Override: GIOVANNI_SKIP_LINT=1 git push ... (or --no-verify).
+set -uo pipefail
+
+if [ "${GIOVANNI_SKIP_LINT:-0}" = "1" ]; then
+    exit 0
+fi
+
+REPO_ROOT=$(git rev-parse --show-toplevel)
+FAILED=0
+
+if [ -x "${REPO_ROOT}/scripts/lint.sh" ]; then
+    "${REPO_ROOT}/scripts/lint.sh" || FAILED=1
+fi
+
+if [ -x "${REPO_ROOT}/scripts/run-lint-fixtures.sh" ]; then
+    "${REPO_ROOT}/scripts/run-lint-fixtures.sh" >/dev/null || {
+        echo "Lint fixtures failed — a rule changed behaviour. Run: bash scripts/run-lint-fixtures.sh" >&2
+        FAILED=1
+    }
+fi
+
+if [ "${FAILED}" -ne 0 ]; then
+    echo "" >&2
+    echo "Pre-push gate failed. Fix findings or:" >&2
+    echo "  GIOVANNI_SKIP_LINT=1 git push ..." >&2
+    echo "  git push --no-verify ..." >&2
+    exit 1
+fi
+exit 0
+EOF
+)
+
+if [ -f "${PREPUSH}" ]; then
+    EXISTING_PP=$(cat "${PREPUSH}")
+    if [ "${EXISTING_PP}" != "${PREPUSH_CONTENT}" ]; then
+        cp "${PREPUSH}" "${PREPUSH}.bak"
+        echo "  pre-push: existing hook backed up → ${PREPUSH}.bak"
+    fi
+fi
+
+printf '%s\n' "${PREPUSH_CONTENT}" > "${PREPUSH}"
+chmod +x "${PREPUSH}"
+echo "  pre-push: installed (lint + fixture self-test; override via GIOVANNI_SKIP_LINT=1)"
 
 echo ""
 echo "Done. To verify:"
