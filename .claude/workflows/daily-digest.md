@@ -66,33 +66,79 @@ If a source's underlying tool is unavailable (e.g. an MCP connector is down), do
 
 ## Step 4 — Parallel source pull
 
-**Single message, N agent calls.** Spawn `source-puller` agents in parallel — one per configured source — using a single message with N `Agent` tool calls. This is the orchestrator's responsibility (the slash command runtime, see slash-command-architect).
+### 4a. Connector health gate — probe before trust
 
-Each `source-puller` invocation gets:
+Read the `source_health:` block in `digest_state.md` (per-source consecutive-failure counter, maintained in Step 12).
 
-- `source_type` (from config)
-- `source_identifier` (from config)
-- `window_start` (from Step 3)
-- `window_end` (from Step 3)
-- Optional `extra_context` (e.g. `last_run_sha` for version-control)
+**The carry is a token-saving heuristic, not ground truth.** Before skipping a source on the strength of its counter, run one cheap liveness probe *this run*. Only a failed probe means dead.
 
-Agents return structured markdown bullets per the `source-puller` agent spec (`.claude/agents/source-puller.md`). They do **not** synthesize, prioritize, or recommend — main thread does that in Step 5.
+This rule exists because the counter is systematically pessimistic. Observed: three sources written off from carry in a single run — all three were alive. A connector that needed re-auth last week does not stay broken out of loyalty, and "the session can't do interactive auth" is not the same claim as "the connector has no token".
 
-**Why parallel:**
+Probe shape, per source type:
+
+- **Cheapest identity call the connector has** (`whoami`, current user, account info). An identity response means a live token, whatever the session-start banner says.
+- **Point-read on a known id** for chat platforms — never a search. A search returning zero is ambiguous: dead connector, wrong workspace, or a genuinely quiet channel look identical. A point-read on an id you know exists is unambiguous.
+- **Tool availability** for connectors that vanish entirely when deauthorised: zero tools = account-level outage, go to fallback.
+- **Fallback probe** (browser automation, if the fork uses it): does an authenticated session exist? If yes, fallback is viable this run.
+
+After the probe:
+
+| Carry | Probe | Action |
+|---|---|---|
+| `< threshold` | — | Pull normally |
+| `>= threshold` | fails | **Do not spawn the agent.** A doomed spawn costs a full agent context for an instant error. Activate fallback, report `skipped (dead N runs, probe failed)` in hygiene |
+| `>= threshold` | succeeds | Pull normally, reset counter to 0 (recovery) |
+
+Probe **every run**. The probe is cheap; a missed signal is not.
+
+A probe-confirmed outage lasting many runs is an **infrastructure problem, not a daily operating cost** — surface it as an action item ("reconnect X"), not as a recurring hygiene line the principal learns to scroll past.
+
+### 4b. Connector budgets (binding — applies to agents and to main-thread calls alike)
+
+- **Retry cap = 1.** One repeat, only for a transient failure (auth, timeout, 5xx, mismatched payload). A 404, an empty result, or a schema mismatch after a clean retry is a *result*, not a reason to try again.
+- **Two identical errors = stop.** Same tool, same error text, twice in one run → that source ends as `ERROR`. No third attempt, no "let me try a different query and see". Hygiene gets `⚠ <source> stopped after 2 identical errors: <error>`; `source_health` increments. The fallback channel is a different lane and may be used once.
+- **Bounded queries, always.** Every list/search call carries an explicit cap and a field projection — never default all-fields. At most ~3 pages per source per run; past that, `[... +N more — narrow the window]`. **An unbounded call is a defect of the run regardless of what it returned.** Observed cost of ignoring this: three unbounded queries on the main thread, ~350 KB of result each, in a run whose useful output was a dozen bullets.
+- **Result size.** A single tool result over ~50 KB does not belong on the main thread. It belongs in an agent with a narrower query.
+
+### 4c. Spawn — one source per agent
+
+**Single message, N agent calls.** Spawn `source-puller` agents in parallel — one per live source — as one message with N `Agent` tool calls.
+
+Each invocation gets exactly:
+
+- `source_type` — **exactly one value.** Two sources sharing a backend (mail and calendar on the same account) are still two sources. The agent contract rejects a multi-source request and returns `ERROR` without making a single tool call — the whole spawn is wasted, and the run pays for it twice.
+- `source_identifier`, `window_start`, `window_end`
+- Optional `extra_context` (e.g. `last_run_sha` for version control)
+
+Agents return structured markdown bullets per `.claude/agents/source-puller.md`. They do not synthesize, prioritize, or recommend — the main thread does that in Step 5.
+
+### 4d. Shared-backend serialization
+
+**Two agents hitting the same backend concurrently can cross-wire their responses.** Observed on a connector serving two products behind one gateway: three concurrent consumers, and one agent received the *other product's* data in response to its own query, while point-reads returned pages nobody asked for. The sequential re-pull was clean — so the bug was concurrency, not auth, and nothing about the payload said "wrong".
+
+Rules:
+
+- Group sources by **backend**, not by product name. Different backends → parallel. Same backend → serialize.
+- Within a shared backend, either one dedicated agent does its sources in sequence, or the main thread does them one call per message.
+- Do not make main-thread calls to a backend while an agent is in flight against it.
+- **Guard:** verify the response answers the request — asked for id X, got id X; asked for issues, got issue schema. A mismatch is retried sequentially, never trusted.
+
+### Why parallel
 
 - Sequential pull pollutes main-thread context with raw tool output before synthesis. Parallel keeps each pull isolated in its own agent context.
 - Wall time drops from N × per-source latency to max(per-source latency).
 - Failure isolation — one failed source does not block the others.
 
-**Failure handling:**
+### Failure handling
 
-- Each agent returns either bullets or `ERROR: <reason>` as a single bullet. Main thread aggregates errors into Step 12's "System hygiene" section.
+- Each agent returns bullets or `ERROR: <reason>` as a single bullet. The main thread aggregates errors into Step 12's "System hygiene" section.
 - A single failed source does NOT abort the digest — render what arrived.
 - Do not fabricate data for failed sources. Honest reporting > coverage theater.
+- **Never read a running or finished agent's raw transcript** to find out what it did. The result is the final notification. A task's raw output is the full transcript, and reading it back dumps every raw tool result into the main thread — which is precisely the cost the agent existed to avoid.
 
-**Fallback (degraded mode):**
+### Fallback (degraded mode)
 
-If the agent infrastructure is unavailable (rare), the orchestrator MAY fall back to sequential pull inside main thread. This is explicitly degraded — log a system-hygiene flag noting fallback was used. The fork's slash-command-architect decides whether to support this fallback.
+If agent infrastructure is unavailable, the orchestrator MAY fall back to sequential pull on the main thread. This is explicitly degraded — log a system-hygiene flag. Where the fork uses browser automation as a fallback channel: **read navigation only** (direct URL, scroll, read). Never type into a composer, search box, or reply field; the external write gate does not watch that path.
 
 ---
 
@@ -356,6 +402,13 @@ Active blockers — delta since last run
   Resolved: <…>
   No change: <count> (<names>)
 
+Asks (things only the principal can unblock)
+  #A1 <question — one sentence, decidable as written>
+      proposed: <the answer you would give if it were yours to give>
+      unblocks: <what moves the moment it is answered>
+      tier: now | this week | when convenient
+  #A2 …
+
 Stakeholder updates
   Touched this window: <names with new signal>
   ‼ Sentiment shift: <name> <direction> — <trigger summary>
@@ -391,12 +444,17 @@ System hygiene (flags only when applicable)
   ⚠ Mirrored external tool/skill library sync >7d stale (optional — only if the fork mirrors one)
 ```
 
-Drift items are numbered so the principal can reference `#N` in their response.
+Drift items are numbered so the principal can reference `#N` in their response; asks are numbered `#A<N>` for the same reason.
+
+**Every ask carries a proposed answer.** A question on its own moves work from the assistant to the principal — which is backwards, and it is how a digest turns into a list of homework. A question plus the answer you would have given turns the ask into a yes/no: the principal corrects it or waves it through, and either way it took them ten seconds. If you cannot propose an answer, say what you would need in order to have one; an ask with neither is not ready to be asked.
+
+`unblocks` is the anti-padding field. If nothing moves when the question is answered, it is not an ask — it is curiosity, and it belongs nowhere in the digest.
 
 ### Update `memory/digest_state.md`
 
 - `last_run_timestamp = now()` (ISO 8601 UTC)
 - `last_run_sha = <git rev-parse HEAD>`
+- `source_health` — per source: consecutive failure count, and **one terse sentence** on the last failure. Reset to 0 on any successful pull, including a recovery after a passed probe.
 - Move expired acks (from Step 1) to `## Expired acks` section
 - Update `shadow_generation_stats`:
   - `generated_today` — total this cycle
@@ -404,6 +462,17 @@ Drift items are numbered so the principal can reference `#N` in their response.
   - `expired_no_ground_truth_today` — count from Step 8 expired moves
   - `hard_fail_triggered_today` — boolean
   - `last_generated` — IDs of hypotheses generated this cycle
+
+### Keep the state file a state file
+
+`digest_state.md` is **state, not a journal**. Every run rewrites it; nothing accumulates. The failure mode is gradual and quiet: each run appends one more note about a connector that misbehaved, none of them ever expire, and a year later session start is reading a 68 KB file to learn one timestamp. (Measured, in the implementation this framework came from: 68.5 KB, cut to 24 KB once rotation existed.)
+
+Rules:
+
+- One line per fact. A source's health is a counter plus one sentence — not a history of what it did.
+- Durable lessons about a connector's quirks belong in `memory/digest_sources.md` (the playbook, which is *meant* to accumulate). Per-run numbers belong in this run's state and nowhere else.
+- Expired acks move to their section, then out. Shadow stats are counters, not logs.
+- Soft cap: **32 KB**. Over that, the file is a journal and needs rotating, not a bigger cap.
 
 ### Do NOT auto-commit
 

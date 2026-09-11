@@ -28,6 +28,28 @@ The timestamp is the upper bound of the LAST run's window. The next run uses
 it as the lower bound — so the window is `[timestamp, now]`.
 -->
 
+## Source health
+
+<!--
+Per-source consecutive-failure counter, maintained by the digest workflow
+(Step 12) and read by the health gate (Step 4a).
+
+ONE LINE PER SOURCE. The `last_error` field is one terse sentence about the
+most recent failure — not a history. Durable lessons about a connector's
+quirks (auth shape, rate limits, which query spellings it refuses) belong in
+memory/digest_sources.md, which is meant to accumulate. This file is state:
+every run rewrites it, nothing piles up.
+
+A counter at or above `skip_threshold` does NOT mean "skip". It means "probe
+before trusting it" — see Step 4a. A successful probe resets the counter to 0.
+-->
+
+- skip_threshold: 3
+
+| source | consecutive_failures | last_error |
+|---|---|---|
+| <source_id> | 0 | — |
+
 ## Shadow review cadence
 
 - last_shadow_review_date: <YYYY-MM-DD or null>

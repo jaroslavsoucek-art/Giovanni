@@ -63,6 +63,57 @@ If a source fails any of those tests, it's noise. Tighten or remove.
 
 ---
 
+## Connector discipline — health, budgets, shared backends
+
+The digest is the one workflow that talks to every external system you own, every day. That makes it the workflow where connector behaviour decides cost and truthfulness, and where three failure shapes repeat across forks.
+
+### The pessimistic carry
+
+Tracking per-source failures is right; *trusting the counter* is not. A connector that failed three runs ago is not thereby dead — tokens refresh, outages end, and the session-start banner that said "needs auth" is a guess about a token it cannot see. A counter is a reason to **probe**, never a reason to skip.
+
+Observed cost of skipping on carry alone: three sources written off in one run, all three alive, an entire day's signal missing from a digest that reported itself complete. That last part is what makes it dangerous — a skipped source is invisible in the output unless the workflow says so explicitly.
+
+So: probe every run, one cheap call, and reset the counter on success. And report skips in hygiene with *why* — `skipped (dead 4 runs, probe failed)` is honest; a silently missing section is not.
+
+### Budgets exist because retry loops are invisible
+
+An agent that hits an error and tries a different query is doing something reasonable in the small and catastrophic in the aggregate: three variations × three sources × unbounded results is a context window spent on nothing. The caps are blunt on purpose — retry once, stop after two identical errors, bound every query, keep single results under ~50 KB.
+
+"An unbounded call is a defect regardless of what it returned" is the part worth internalising. Judging the call by its result means you only notice the problem on the day it returns 350 KB.
+
+### One backend, many consumers
+
+Group sources by *backend*, not by the product name in the UI. Two products behind one gateway are one backend, and concurrent requests to it can come back cross-wired — the response to someone else's query, with nothing in the payload to say so. Parallelise across backends, serialise within one, and verify that each response answers the request that was sent.
+
+---
+
+## Asks — questions that arrive with answers
+
+The digest's `Asks` section is for things **only the principal can unblock**: a decision, a fact nobody else holds, an approval. Each one carries four fields — the question, the answer you would give if it were yours to give, what moves once it is answered, and how soon it matters.
+
+The proposed answer is not a courtesy. A bare question moves work from the assistant to the principal, and a digest full of bare questions is a homework list that quietly reverses the point of the thing. With a proposed answer the ask becomes a yes/no: corrected or waved through in seconds, and the assistant stays the one doing the drafting.
+
+`unblocks` is the anti-padding field. Nothing moves on the answer → it is curiosity, not an ask, and it does not go in the digest.
+
+(Not to be confused with the *Asks / decisions needed today* section in a meeting brief, which is what the principal wants **from the counterparty** in that meeting.)
+
+---
+
+## State is state, not a journal
+
+`memory/digest_state.md` is rewritten every run. Nothing accumulates in it.
+
+The failure is gradual: each run appends a note about a connector that misbehaved, nothing expires, and eventually session start reads tens of kilobytes to learn one timestamp. Measured in the implementation this framework came from: 68.5 KB, cut to 24 KB once rotation existed — and none of the deleted text had been read by anyone in months.
+
+The split that keeps it honest:
+
+| Where | What | Grows? |
+|---|---|---|
+| `memory/digest_state.md` | timestamps, counters, one-sentence source health, active acks | no — rewritten each run, soft cap 32 KB |
+| `memory/digest_sources.md` | durable connector lessons: auth shape, rate limits, query spellings that fail | yes — deliberately |
+
+---
+
 ## Drift detection vs noise
 
 The most common digest-tuning challenge is distinguishing **drift** from **new context**.

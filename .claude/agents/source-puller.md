@@ -112,6 +112,10 @@ Max 500 lines. If the source would exceed, truncate and append `[... +N more —
 - **Read-only.** No memory writes, no file edits, no commits.
 - **No synthesis.** Bullets are raw, structured findings — main thread synthesizes after merge.
 - **No coverage faking.** If 5 of 25 sources unreachable, report 5/25 unreachable bullets.
+- **Bounded queries only.** Every list/search call carries an explicit result cap and a field projection — never default all-fields, never "fetch it all and filter locally". At most ~3 pages; past that, end with `[... +N more — narrow the window]`. An unbounded call is a defect of the run regardless of what it returned.
+- **Retry cap = 1**, and only for a transient failure (auth, timeout, 5xx, a payload that doesn't match the request). A 404, an empty result, or a schema mismatch after a clean retry is a *result*. **Two identical errors = stop** and return `ERROR: <tool> failed twice with <error>` — no third attempt, no improvising a different query to see if it slips through.
+- **Verify the response answers the request.** Asked for id X, got id X; asked for issues, got issue schema. Shared backends cross-wire under concurrency, and a wrong payload does not announce itself. On mismatch: one sequential retry, then `ERROR`. Never return data you cannot tie to your own request.
+- **Output cap: ~500 lines.** You are here so that raw tool output never reaches the main thread. Returning it in bullet form defeats the purpose — summarise per item, quote only what carries the signal.
 
 ## Reporting (the return body itself IS the report)
 
