@@ -111,7 +111,10 @@ EOF
 
 # Top-level markdown (exclude INDEX.md + README.md) sorted alphabetically
 TMP_TOP=$(mktemp); trap 'rm -f "${OUT}" "${TMP_TOP}"' EXIT
-find "${KNOWLEDGE}" -maxdepth 1 -name "*.md" -not -name "INDEX.md" -not -name "README.md" 2>/dev/null | sort > "${TMP_TOP}"
+# Sorting is locale-sensitive: en_US.UTF-8 folds case (so `NEO_x.md` and `neo_y.md`
+# interleave), LC_ALL=C does not (uppercase first). Without pinning it the generated
+# file differs between two machines that share the same repo — a permanent phantom diff.
+find "${KNOWLEDGE}" -maxdepth 1 -name "*.md" -not -name "INDEX.md" -not -name "README.md" 2>/dev/null | LC_ALL=C sort > "${TMP_TOP}"
 TOP_COUNT=0
 while IFS= read -r f; do
     [ -z "${f}" ] && continue
@@ -131,7 +134,7 @@ fi
 
 # Top-level non-markdown (xlsx, html, pdf, etc.) — only emit section if any exist
 TMP_DATA=$(mktemp); trap 'rm -f "${OUT}" "${TMP_TOP}" "${TMP_DATA}"' EXIT
-find "${KNOWLEDGE}" -maxdepth 1 -type f -not -name "*.md" -not -name ".DS_Store" -not -name ".gitkeep" 2>/dev/null | sort > "${TMP_DATA}"
+find "${KNOWLEDGE}" -maxdepth 1 -type f -not -name "*.md" -not -name ".DS_Store" -not -name ".gitkeep" 2>/dev/null | LC_ALL=C sort > "${TMP_DATA}"
 DATA_COUNT=$(wc -l < "${TMP_DATA}" | tr -d ' ')
 
 if [ "${DATA_COUNT}" -gt 0 ]; then
@@ -183,7 +186,7 @@ fi
     if [ -d "${REPO_ROOT}/.claude/agents" ]; then
         agent_count=$(find "${REPO_ROOT}/.claude/agents" -maxdepth 1 -type f -name "*.md" 2>/dev/null | wc -l | tr -d ' ')
         if [ "${agent_count}" -gt 0 ]; then
-            agent_list=$(find "${REPO_ROOT}/.claude/agents" -maxdepth 1 -type f -name "*.md" 2>/dev/null | sort | xargs -I{} basename {} .md | tr '\n' ',' | sed 's/,/, /g; s/, $//')
+            agent_list=$(find "${REPO_ROOT}/.claude/agents" -maxdepth 1 -type f -name "*.md" 2>/dev/null | LC_ALL=C sort | xargs -I{} basename {} .md | tr '\n' ',' | sed 's/,/, /g; s/, $//')
             echo "- **Custom agents:** [../.claude/agents/](../.claude/agents/) — ${agent_list}"
         fi
     fi

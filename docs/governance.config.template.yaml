@@ -113,6 +113,24 @@ domain_leak_allowlist:
   - docs/test-domain.md
 
 # ----------------------------------------------------------------------
+# External write gate
+# ----------------------------------------------------------------------
+
+# Channels demoted to ABSOLUTE read-only, as tool-name substrings
+# (e.g. slack, teams, gmail). Read by .claude/hooks/block-external-writes.sh:
+# any write-shaped call on a listed channel is denied outright, not asked.
+#
+# Default: [] — demotion is something your fork decides after a misfire,
+# not a shipped default. See docs/governance.md § Channel demotion.
+#
+# Demoting a channel is two edits, not one: this key (the hook reads it) and
+# permissions.deny in .claude/settings.json (the harness reads that). Two
+# layers on purpose — neither is load-bearing alone.
+#
+# Override via env: GIOVANNI_READONLY_CHANNELS (comma-separated)
+readonly_channels: []
+
+# ----------------------------------------------------------------------
 # Branch warning
 # ----------------------------------------------------------------------
 

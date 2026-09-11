@@ -125,6 +125,12 @@ bash scripts/install-hooks.sh
 bash scripts/lint.sh
 ```
 
+`scripts/init-fork.sh` already copied `.claude/settings.template.json` → `.claude/settings.json`. **Open it before your first real session.** That file is what makes the hooks fire at all, and it carries the permission half of the external write gate:
+
+- `permissions.ask` — write verbs on every `mcp__*` connector. Keep the verb globs; add ones your connectors use that aren't listed.
+- `permissions.deny` — starts empty. Add a channel here when you demote it (see `docs/governance.md` § Channel demotion), together with `readonly_channels` in `docs/governance.config.yaml`.
+- `hooks` — delete a block to disable that hook. Keep `block-external-writes.sh` unless you have a specific reason; it is the only thing standing between an ambiguous instruction and a published page.
+
 Expected: lint clean (your fork starts with empty `memory/topics/`, `memory/decisions/`, etc. — only constitution + stakeholders + sources populated).
 
 If lint fails, see [`docs/governance.md`](governance.md) § "Lint framework" for rule-by-rule debugging.

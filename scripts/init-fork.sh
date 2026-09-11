@@ -6,7 +6,8 @@
 #
 #   1. Copy each *.template.* to its runtime filename (constitution, L1
 #      memory, digest sources/state, triage heuristic). Existing runtime
-#      files are NEVER overwritten (idempotent; --force to re-copy).
+#      files are NEVER overwritten (idempotent; --force to re-copy). This includes
+#      .claude/settings.json — without it the hooks in .claude/hooks/ are inert.
 #   2. Create the runtime memory subdirectories (stakeholders, topics,
 #      decisions, briefs, archive) with .gitkeep.
 #   3. Seed audit_state.md + the stakeholder roster README.
@@ -80,7 +81,8 @@ for t in \
     "memory/templates/operational-memory.template.md" \
     "memory/digest-sources.template.md" \
     "memory/digest-state.template.md" \
-    "memory/triage-heuristic.template.yaml"
+    "memory/triage-heuristic.template.yaml" \
+    ".claude/settings.template.json"
 do
     [ -f "$t" ] || { echo "ERROR: expected template missing: $t (is this a Giovanni clone?)" >&2; missing_templates=1; }
 done
@@ -116,6 +118,21 @@ copy_template "memory/templates/operational-memory.template.md" "memory/CLAUDE_M
 copy_template "memory/digest-sources.template.md"               "memory/digest_sources.md"
 copy_template "memory/digest-state.template.md"                 "memory/digest_state.md"
 copy_template "memory/triage-heuristic.template.yaml"           "memory/triage-heuristic.yaml"
+copy_template ".claude/settings.template.json"                  ".claude/settings.json"
+copy_template "docs/governance.config.template.yaml"            "docs/governance.config.yaml"
+
+# The framework's own CLAUDE.md is meta-builder instructions (how to BUILD Giovanni).
+# A fork needs the operating contract instead (how to RUN the assistant). Swap it only
+# while the meta-builder marker is still there — never clobber a fork's own edits.
+if [ -f "CLAUDE.template.md" ]; then
+    if [ ! -f "CLAUDE.md" ] || grep -q "meta-builder mode" "CLAUDE.md" 2>/dev/null || [ "${FORCE}" -eq 1 ]; then
+        [ -f "CLAUDE.md" ] && cp "CLAUDE.md" "docs/framework-CLAUDE.md.bak"
+        cp "CLAUDE.template.md" "CLAUDE.md"
+        echo "  + CLAUDE.md (fork operating contract; framework original kept at docs/framework-CLAUDE.md.bak)"
+    else
+        echo "  = CLAUDE.md exists and is fork-owned — kept"
+    fi
+fi
 
 # ----- 2. Runtime memory subdirectories -----
 for d in stakeholders topics decisions briefs archive \

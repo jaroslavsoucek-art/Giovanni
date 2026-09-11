@@ -1,0 +1,108 @@
+{
+  "$schema": "https://json.schemastore.org/claude-code-settings.json",
+  "_comment": "Giovanni fork settings template. init-fork.sh copies this to .claude/settings.json. Two things live here: (1) the hook trigger map — without it the scripts in .claude/hooks/ are inert files that nothing ever runs; (2) the permission layer of the external write gate (docs/governance.md). The hook and these globs are two independent layers on purpose — neither is load-bearing alone.",
+
+  "permissions": {
+    "_comment_deny": "Channels demoted to absolute read-only. Empty by default: demotion is a decision your fork makes after a misfire, not a default. When you demote a channel, add its write globs here AND to readonly_channels in docs/governance.config.yaml (the hook reads that one). Example for a chat platform: mcp__*__chat_send*, mcp__*__chat_post*.",
+    "deny": [],
+
+    "_comment_ask": "Write verbs on external connectors, plus the two local commands that reach outside the repo. Glob on verb, not on vendor — a new connector should land in the gate on the day it is added, not on the day someone remembers to list it.",
+    "ask": [
+      "Bash(git push *)",
+      "Bash(curl *)",
+      "mcp__*__create*",
+      "mcp__*__update*",
+      "mcp__*__edit*",
+      "mcp__*__delete*",
+      "mcp__*__send*",
+      "mcp__*__post*",
+      "mcp__*__publish*",
+      "mcp__*__add*",
+      "mcp__*__set*",
+      "mcp__*__remove*",
+      "mcp__*__transition*",
+      "mcp__*__upload*",
+      "mcp__*__schedule*",
+      "mcp__*__draft*"
+    ]
+  },
+
+  "_comment_automemory": "Harness-side auto-memory writes to a per-machine path outside this repo. That splits memory between git and local disk — drift across devices and sessions. Memory lives in memory/, in git, always.",
+  "autoMemoryEnabled": false,
+
+  "hooks": {
+    "SessionStart": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": ".claude/hooks/session-start-digest.sh",
+            "timeout": 10,
+            "statusMessage": "Checking digest freshness..."
+          },
+          {
+            "type": "command",
+            "command": ".claude/hooks/session-start-audit-check.sh",
+            "timeout": 10,
+            "statusMessage": "Checking memory-audit cadence..."
+          }
+        ]
+      }
+    ],
+    "PreToolUse": [
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": ".claude/hooks/check-decision-records.sh",
+            "timeout": 5
+          }
+        ]
+      },
+      {
+        "matcher": "mcp__.*",
+        "hooks": [
+          {
+            "type": "command",
+            "command": ".claude/hooks/block-external-writes.sh",
+            "timeout": 5
+          }
+        ]
+      }
+    ],
+    "PostToolUse": [
+      {
+        "matcher": "Edit|Write",
+        "hooks": [
+          {
+            "type": "command",
+            "command": ".claude/hooks/post-constitution-edit-check.sh",
+            "timeout": 5
+          },
+          {
+            "type": "command",
+            "command": ".claude/hooks/post-knowledge-edit.sh",
+            "timeout": 10
+          },
+          {
+            "type": "command",
+            "command": ".claude/hooks/post-memory-edit.sh",
+            "timeout": 10
+          }
+        ]
+      }
+    ],
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": ".claude/hooks/check-unmerged-claude-branches.sh",
+            "timeout": 10
+          }
+        ]
+      }
+    ]
+  }
+}

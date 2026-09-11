@@ -47,19 +47,24 @@ WARNINGS=""
 iso_to_epoch() {
     local ts="$1"
     [ -z "${ts}" ] && return 1
-    # macOS first (Darwin), then GNU coreutils fallback.
-    date -j -u -f "%Y-%m-%dT%H:%M:%SZ" "${ts}" +%s 2>/dev/null \
-        || date -u -d "${ts}" +%s 2>/dev/null \
-        || return 1
+    # python3, not date: BSD `date -j` and GNU `date -d` are mutually exclusive spellings,
+    # and the || chain degrades silently on whichever platform has neither.
+    python3 -c "
+import datetime, sys
+print(int(datetime.datetime.strptime(sys.argv[1], '%Y-%m-%dT%H:%M:%SZ')
+      .replace(tzinfo=datetime.timezone.utc).timestamp()))
+" "${ts}" 2>/dev/null || return 1
 }
 
 # ----- Helper: parse YYYY-MM-DD to epoch seconds (UTC midnight) -----
 date_to_epoch() {
     local d="$1"
     [ -z "${d}" ] && return 1
-    date -j -u -f "%Y-%m-%d" "${d}" +%s 2>/dev/null \
-        || date -u -d "${d}" +%s 2>/dev/null \
-        || return 1
+    python3 -c "
+import datetime, sys
+print(int(datetime.datetime.strptime(sys.argv[1], '%Y-%m-%d')
+      .replace(tzinfo=datetime.timezone.utc).timestamp()))
+" "${d}" 2>/dev/null || return 1
 }
 
 NOW_EPOCH=$(date -u +%s)

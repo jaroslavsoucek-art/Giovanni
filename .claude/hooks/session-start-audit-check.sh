@@ -45,9 +45,14 @@ age_days() {
     local d=$1
     [ -z "$d" ] && return 1
     local epoch
-    epoch=$(date -j -u -f "%Y-%m-%d" "$d" +%s 2>/dev/null) \
-        || epoch=$(date -u -d "$d" +%s 2>/dev/null) \
-        || return 1
+    # python3, not date: BSD `date -j` and GNU `date -d` are mutually exclusive spellings,
+    # and the || chain degrades silently on whichever platform has neither (INV: portable-hooks).
+    epoch=$(python3 -c "
+import datetime, sys
+print(int(datetime.datetime.strptime(sys.argv[1], '%Y-%m-%d')
+      .replace(tzinfo=datetime.timezone.utc).timestamp()))
+" "$d" 2>/dev/null)
+    [ -z "$epoch" ] && return 1
     local now
     now=$(date -u +%s)
     echo $(( (now - epoch) / 86400 ))

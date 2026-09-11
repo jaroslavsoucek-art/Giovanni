@@ -124,6 +124,27 @@ Giovanni's "never auto-commit" rule covers git. This section covers everything e
 
 Both halves of this rule guard against the same failure shape: an ambiguous instruction read as write authorization. A terse "do item 1" gets read as "publish item 1 to the wiki"; a "confirm the meeting" gets read as "send the confirmation" when the principal wanted a confirmation *draft*. Neither reading is malicious — both are plausible. That is exactly why the gate is per-action and explicit: plausibility is not authorization.
 
+### Technical enforcement (the half that can't be rationalised around)
+
+Prose in this document is a rule the agent reads and can talk itself past — "the principal clearly meant publish". Two mechanisms sit below it, and neither depends on the agent agreeing:
+
+| Layer | File | Reaches |
+|---|---|---|
+| Permission globs | `.claude/settings.json` → `permissions.ask` / `permissions.deny` | Every MCP tool call, matched on verb (`mcp__*__create*`, `mcp__*__send*`, …) |
+| PreToolUse hook | `.claude/hooks/block-external-writes.sh` | Every `mcp__*` call: denies writes on demoted channels, asks on all other external writes, passes reads |
+
+Glob on **verb, not vendor**. A vendor-keyed list ages badly: a connector added on Tuesday is ungated until someone remembers to list it. Verb globs catch it the day it appears.
+
+Both layers are deliberately redundant. A single layer fails in the ordinary way — someone edits settings to silence a prompt, or the hook's verb list misses a spelling — and a gate that fails silently is worse than no gate, because the discipline it replaced is already gone.
+
+What neither layer reaches: **UI automation**. A browser-driving tool typing into a web composer is not an `mcp__*` write call and passes both layers untouched. If your fork uses browser fallback for a channel, the read-only rule for that channel has to be stated in the workflow that drives the browser, because nothing enforces it mechanically. See `docs/governance.md` § Browser-fallback guard below.
+
+### Browser-fallback guard
+
+Scraping a chat or wiki UI as fallback for a dead connector is read navigation only: direct URL, scroll, read. Never focus a composer, a search box, or a reply field — typing is one stray Enter away from posting, and the write gate is not watching this path.
+
+The failure is not hypothetical and not exotic: an agent doing UI fallback typed a search term into a message composer instead of the search field and sent it to a group conversation. Search boxes and composers sit next to each other in every chat UI, both accept typed text, and the accessibility tree often can't tell you which one has focus. So the rule is not "type carefully" — it is **don't type**, and reach the target by URL instead.
+
 ### Channel demotion — the escalation pattern
 
 When a destination accumulates write misfires, demote it to **absolute read-only**. After demotion:
@@ -242,9 +263,12 @@ resolved_shard_retirement_days: 90
 | `.claude/hooks/session-start-audit-check.sh` | At Claude Code session start | Warns if cadence overdue, L1 over size, strikethrough creep. Silent if state file missing (fresh fork). |
 | `.claude/hooks/session-start-digest.sh` | At Claude Code session start | Soft reminders from `memory/digest_state.md`: digest overdue (default 12h, `GIOVANNI_DIGEST_THRESHOLD_HOURS`), expired drift acks, shadow-review cadence overdue. Never blocks; silent on missing/malformed state. |
 | `.claude/hooks/check-decision-records.sh` | Pre-tool-use of `git commit` (configure in `.claude/settings.json`) | Blocks commit if any staged `memory/decisions/*.md` has empty `trigger_conditions`. Override: `GIOVANNI_SKIP_DECISION_CHECK=1`. |
+| `.claude/hooks/block-external-writes.sh` | Pre-tool-use of any `mcp__*` tool | Enforces the external write gate in code: write-shaped calls on a demoted channel are **denied**, every other external write is **asked**, reads pass. Demoted channels come from `readonly_channels` in `docs/governance.config.yaml` (or `GIOVANNI_READONLY_CHANNELS`). |
 | `.claude/hooks/check-unmerged-claude-branches.sh` | Session start / stop | Warns if `claude/*` branches exist that aren't merged to `main`. Threshold configurable via `GIOVANNI_BRANCH_WARN_THRESHOLD` (default 1). |
 
-**Trigger configuration** lives in `.claude/settings.json` (or `.claude/settings.local.json`). Giovanni doesn't provide a default `settings.json` because the fork chooses which hooks to enable. See `scripts/install-hooks.sh` for the chmod step + git pre-commit install — the Claude Code hook *trigger* is wired separately in `settings.json`.
+**Trigger configuration** lives in `.claude/settings.json`, copied from `.claude/settings.template.json` by `scripts/init-fork.sh`. Without that file the scripts in `.claude/hooks/` are inert — executable, committed, and never run by anything. (Giovanni shipped exactly that state until this template existed: hooks with no trigger map, and a write gate that was prose only.) Disable a hook by deleting its block from your `settings.json`; the framework's template is the starting set, not a mandate.
+
+`scripts/install-hooks.sh` is the other half: chmod + the git-side gate. The two are independent — Claude Code hooks fire on tool use, git hooks fire on commit/push.
 
 ---
 

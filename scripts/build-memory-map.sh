@@ -130,7 +130,10 @@ fi
 
 if [ -d "${MEMORY}/topics" ]; then
     TMP_TOPICS=$(mktemp); trap 'rm -f "${OUT}" "${TMP_TOPICS}"' EXIT
-    find "${MEMORY}/topics" -maxdepth 1 -type f -name "*.md" 2>/dev/null | sort > "${TMP_TOPICS}"
+    # Sorting is locale-sensitive: en_US.UTF-8 folds case (so `NEO_x.md` and `neo_y.md`
+    # interleave), LC_ALL=C does not (uppercase first). Without pinning it the generated
+    # file differs between two machines that share the same repo — a permanent phantom diff.
+    find "${MEMORY}/topics" -maxdepth 1 -type f -name "*.md" 2>/dev/null | LC_ALL=C sort > "${TMP_TOPICS}"
     topic_count=$(wc -l < "${TMP_TOPICS}" | tr -d ' ')
 
     {
@@ -166,7 +169,7 @@ fi
 
 if [ -d "${MEMORY}/topics/_resolved" ]; then
     TMP_RESOLVED=$(mktemp); trap 'rm -f "${OUT}" "${TMP_TOPICS:-/dev/null}" "${TMP_RESOLVED}"' EXIT
-    find "${MEMORY}/topics/_resolved" -maxdepth 1 -type f -name "*.md" 2>/dev/null | sort > "${TMP_RESOLVED}"
+    find "${MEMORY}/topics/_resolved" -maxdepth 1 -type f -name "*.md" 2>/dev/null | LC_ALL=C sort > "${TMP_RESOLVED}"
     resolved_count=$(wc -l < "${TMP_RESOLVED}" | tr -d ' ')
     if [ "${resolved_count}" -gt 0 ]; then
         {
@@ -226,7 +229,7 @@ if [ -d "${MEMORY}/decisions" ]; then
         } >> "${OUT}"
         # Sort by filename descending (date-prefixed)
         # NUL-delimited to survive paths containing spaces (P0 fix 2026-05-21)
-        find "${MEMORY}/decisions" -maxdepth 1 -type f -name "*.md" -print0 2>/dev/null | sort -rz | while IFS= read -r -d '' f; do
+        find "${MEMORY}/decisions" -maxdepth 1 -type f -name "*.md" -print0 2>/dev/null | LC_ALL=C sort -rz | while IFS= read -r -d '' f; do
             slug=$(get_frontmatter_field "${f}" "situation")
             [ -z "${slug}" ] && slug=$(get_frontmatter_field "${f}" "slug")
             status=$(get_frontmatter_field "${f}" "status")
@@ -255,7 +258,7 @@ if [ -d "${MEMORY}/briefs" ]; then
             echo "| Date | Event slug |"
             echo "|---|---|"
         } >> "${OUT}"
-        find "${MEMORY}/briefs" -maxdepth 1 -type f -name "*.md" -not -name "README.md" -print0 2>/dev/null | sort -rz | while IFS= read -r -d '' f; do
+        find "${MEMORY}/briefs" -maxdepth 1 -type f -name "*.md" -not -name "README.md" -print0 2>/dev/null | LC_ALL=C sort -rz | while IFS= read -r -d '' f; do
             name=$(basename "${f}" .md)
             date=$(echo "${name}" | grep -oE '^[0-9]{4}-[0-9]{2}-[0-9]{2}' || echo "-")
             slug=$(echo "${name}" | sed -E 's/^[0-9]{4}-[0-9]{2}-[0-9]{2}[_-]//')
@@ -279,7 +282,7 @@ if [ -d "${MEMORY}/stakeholders" ]; then
         echo "${stake_count} profiles. Browse [${MEMORY_DIR}/stakeholders/](stakeholders/) or grep by name." >> "${OUT}"
         echo "" >> "${OUT}"
         echo "Available:" >> "${OUT}"
-        find "${MEMORY}/stakeholders" -maxdepth 1 -type f -name "*.md" -not -name "README.md" -print0 2>/dev/null | sort -z | while IFS= read -r -d '' f; do
+        find "${MEMORY}/stakeholders" -maxdepth 1 -type f -name "*.md" -not -name "README.md" -print0 2>/dev/null | LC_ALL=C sort -z | while IFS= read -r -d '' f; do
             name=$(basename "${f}" .md)
             echo "- [${name}](stakeholders/${name}.md)" >> "${OUT}"
         done
@@ -300,7 +303,7 @@ if [ -d "${MEMORY}/archive" ]; then
             echo "| File | Last modified |"
             echo "|---|---|"
         } >> "${OUT}"
-        find "${MEMORY}/archive" -maxdepth 1 -type f -name "*.md" -print0 2>/dev/null | sort -rz | while IFS= read -r -d '' f; do
+        find "${MEMORY}/archive" -maxdepth 1 -type f -name "*.md" -print0 2>/dev/null | LC_ALL=C sort -rz | while IFS= read -r -d '' f; do
             name=$(basename "${f}")
             last=$(last_commit_date "${MEMORY_DIR}/archive/${name}")
             echo "| [${name}](archive/${name}) | ${last} |" >> "${OUT}"
@@ -371,7 +374,7 @@ if [ -d "${REPO_ROOT}/.claude/agents" ]; then
             echo "## Custom agents (.claude/agents/)"
             echo ""
         } >> "${OUT}"
-        find "${REPO_ROOT}/.claude/agents" -maxdepth 1 -type f -name "*.md" -print0 2>/dev/null | sort -z | while IFS= read -r -d '' f; do
+        find "${REPO_ROOT}/.claude/agents" -maxdepth 1 -type f -name "*.md" -print0 2>/dev/null | LC_ALL=C sort -z | while IFS= read -r -d '' f; do
             name=$(basename "${f}" .md)
             echo "- ${name}" >> "${OUT}"
         done
