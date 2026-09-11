@@ -303,15 +303,22 @@ Python-side pluggable rules (`scripts/lint_rules/*.py`):
 | `constitution-anchors` | medium | Every constitution H2/H3 has `{#anchor-id}` |
 | `decision-trigger-conditions` | critical | Decision records have non-empty trigger conditions |
 | `deliverables-registry` | high | Deliverables ↔ `_registry.yaml` bidirectional completeness, schema + status enum (no-op without `_registry.yaml`) |
+| `digest-state-size` | medium | `digest_state.md` under its byte cap — state file, not a journal |
 | `digest-state-freshness` | low / medium | Digest state `last_run_timestamp` is recent (operational tempo signal) |
+| `hooks-portable-date` | high | Hooks use no single-platform commands (`date -j`, GNU `timeout`, `stat -f`, `readlink -f`) |
 | `domain-leak` | high | Configurable denylist matches caught (fork-time activity) |
 | `l1-size` | high / critical | L1 line count vs warn/critical thresholds |
+| `l1-byte-size` | high | L1 byte size — the cap the line count is blind to |
 | `l1-strikethrough-ratio` | medium / critical | Strikethrough ratio vs threshold |
 | `no-percentages-in-predictions` | high | Predictive artifacts use the three-tier enum, never numeric probabilities |
 | `shadow-expired-pending` | medium / high | Pending shadow hypotheses not past `horizon_at`; resolved ones carry a filled `adversarial_check` |
 | `slash-command-registry` | low | `.claude/commands/README.md` registry table in sync with command files |
 | `stakeholder-frontmatter` | medium | Stakeholder profiles match the documented frontmatter schema (required fields, enums, slug ↔ filename) |
 | `stakeholder-slug-exists` | medium | `key_stakeholders` slugs resolve to profile files |
+| `topic-shard-stale` | medium | An active shard untouched past `shard_stale_days` — refresh or retire |
+| `resolved-shard-status` | medium | `_resolved/` holds only resolved shards; resolved shards get filed |
+| `agent-roster-match` | medium | Agent files ↔ roster rows ↔ declared model |
+| `workflow-route-table` | medium | Route table ↔ `.claude/workflows` + `.claude/commands`, both directions |
 | `topic-shard-frontmatter` | medium | Topic shards have required frontmatter fields |
 
 The live list is always `bash scripts/lint.sh --list`; per-rule details in `scripts/lint_rules/README.md`.

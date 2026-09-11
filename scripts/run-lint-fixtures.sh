@@ -37,6 +37,12 @@ run_one() {
         l1-strikethrough-ratio)
             env_overrides=(GIOVANNI_STRIKE_RATIO_MAX=0.10)
             ;;
+        l1-byte-size)
+            env_overrides=(GIOVANNI_L1_LIMIT_BYTES=200)
+            ;;
+        digest-state-size)
+            env_overrides=(GIOVANNI_DIGEST_STATE_LIMIT_BYTES=200)
+            ;;
     esac
 
     local exit_code=0

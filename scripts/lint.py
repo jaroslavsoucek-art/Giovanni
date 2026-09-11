@@ -72,11 +72,19 @@ DEFAULT_CONFIG: dict[str, Any] = {
     # Size pressure
     "l1_limit": 300,
     "l1_limit_critical": 400,
+    # Bytes, not lines. A file can sit well under the line cap and still be
+    # expensive: 200 lines of 290-char paragraphs is 58 KB of session start.
+    # Whichever cap trips first, trips.
+    "l1_limit_bytes": 32768,
     "strike_ratio_max": 0.02,
+    "digest_state_limit_bytes": 32768,
     # Cadence (days)
     "audit_full_cadence_days": 35,
     "audit_light_cadence_days": 14,
     "resolved_shard_retirement_days": 60,
+    # An ACTIVE shard that nobody has touched in this long is either stale or
+    # finished. Either way it needs a human decision — refresh or retire.
+    "shard_stale_days": 45,
     # Constitution / structural
     "require_anchor_ids": True,
     # Deliverables lifecycle registry (opt-in — checks activate only when

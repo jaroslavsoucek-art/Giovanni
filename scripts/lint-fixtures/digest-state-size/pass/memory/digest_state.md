@@ -1,0 +1,3 @@
+# Digest state
+
+- timestamp: 2026-09-11T06:00:00Z

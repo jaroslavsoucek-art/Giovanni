@@ -45,6 +45,22 @@ l1_limit: 300
 # Default: 400 (≈ 33 % overflow above warn).
 l1_limit_critical: 400
 
+# L1 byte budget. Default: 32768 (32 KB).
+# The line cap and the byte cap measure different failure modes. A file can
+# sit at 200 lines and still be 58 KB — long narrative paragraphs instead of
+# short state bullets. Whichever cap trips first, trips.
+l1_limit_bytes: 32768
+
+# Digest state byte cap. Default: 32768 (32 KB).
+# digest_state.md is rewritten every run; nothing should accumulate. Over the
+# cap means it has turned into a journal — rotate, don't raise.
+digest_state_limit_bytes: 32768
+
+# Days an ACTIVE topic shard may go untouched before lint flags it.
+# Default: 45. A shard nobody has touched is either stale or finished, and
+# the 60-day retirement rule never fires for it because nobody set the status.
+shard_stale_days: 45
+
 # Strikethrough ratio in L1 (fraction). Default: 0.02 (= 2 %).
 # Below this is acceptable transient state. Above is drift signal.
 strike_ratio_max: 0.02

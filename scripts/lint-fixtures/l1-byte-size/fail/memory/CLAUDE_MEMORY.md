@@ -1,0 +1,3 @@
+# Operational memory
+
+- one very long narrative line that belongs in a topic shard rather than in live operational memory. - one very long narrative line that belongs in a topic shard rather than in live operational memory. - one very long narrative line that belongs in a topic shard rather than in live operational memory. - one very long narrative line that belongs in a topic shard rather than in live operational memory. - one very long narrative line that belongs in a topic shard rather than in live operational memory. - one very long narrative line that belongs in a topic shard rather than in live operational memory. 

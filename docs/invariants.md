@@ -50,6 +50,11 @@ Unenforced invariants get an id in the same shape, so promoting one to code is a
 | `stakeholder-slug-exists` | every referenced stakeholder slug resolves to a profile | medium | lint.py |
 | `topic-shard-frontmatter` | topic shards carry the required frontmatter | medium | lint.py |
 | `workflow-route-table` | route table ↔ `.claude/workflows` + `.claude/commands`, both directions | medium | lint.py |
+| `l1-byte-size` | L1 within its byte budget (the cap line count is blind to) | high | lint.py |
+| `digest-state-size` | `digest_state.md` is a state file, not a journal | medium | lint.py |
+| `topic-shard-stale` | an active shard must not freeze — refresh or retire | medium | lint.py |
+| `resolved-shard-status` | `_resolved/` holds only resolved shards; resolved shards get filed | medium | lint.py |
+| `agent-roster-match` | agent files ↔ roster rows ↔ declared model | medium | lint.py |
 
 ## Enforced by hook
 
@@ -86,11 +91,6 @@ These are real rules — stated in `CLAUDE.md` or `docs/governance.md`, binding 
 
 | Id | Invariant | Why unenforced | Path to enforcement |
 |---|---|---|---|
-| `l1-byte-size` | L1 within a byte budget, not just a line budget | not implemented yet | lint rule alongside `l1-size` — a 200-line file can still be 58 KB |
-| `topic-shard-stale` | an active shard must not freeze (refresh or retire) | not implemented yet | lint rule over `last_touch` frontmatter |
-| `resolved-shard-status` | `topics/_resolved/` holds only `status: resolved` shards | not implemented yet | lint rule over frontmatter |
-| `agent-roster-match` | agents on disk ↔ agents listed in docs, with matching models | not implemented yet | lint rule, same shape as `workflow-route-table` |
-| `digest-state-size` | `digest_state.md` is a state file, not a journal | not implemented yet | byte cap in lint |
 | `shard-first-write` | updates to a sharded topic go in the shard, not L1 | requires judgement about topic identity | none planned — audit-time review |
 | `no-strikethrough-soft-delete` | resolved items are archived in the same commit, not struck through | ratio check catches accumulation, not the individual act | partial: `l1-strikethrough-ratio` |
 | `read-doctrine` | synthetic outputs are not inputs; claims carry their original anchor | needs to read meaning, not shape | `consistency-checker` agent, partially |
