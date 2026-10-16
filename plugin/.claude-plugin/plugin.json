@@ -1,0 +1,25 @@
+{
+  "$schema": "https://json.schemastore.org/claude-code-plugin.json",
+  "name": "giovanni",
+  "displayName": "Giovanni",
+  "version": "0.1.0",
+  "description": "AI Chief of Staff runtime: 4-layer memory with hard limits, daily digest with drift detection, stakeholder trajectories, invisible shadow hypotheses, adversarial-default review, and a governance lint that fails the build on contradictions. State lives in your repo; the mechanism lives here.",
+  "author": {
+    "name": "Jaroslav Souček",
+    "url": "https://github.com/jaroslavsoucek-art"
+  },
+  "homepage": "https://github.com/jaroslavsoucek-art/Giovanni",
+  "repository": "https://github.com/jaroslavsoucek-art/Giovanni",
+  "license": "MIT",
+  "keywords": ["chief-of-staff", "memory", "digest", "governance", "stakeholders", "prediction", "adversarial-review"],
+  "agents": [
+    "./agents/adversarial-reviewer.md",
+    "./agents/consistency-checker.md",
+    "./agents/deliverable-reviewer.md",
+    "./agents/market-radar.md",
+    "./agents/prediction-runtime.md",
+    "./agents/profile-bootstrap.md",
+    "./agents/researcher.md",
+    "./agents/source-puller.md"
+  ]
+}

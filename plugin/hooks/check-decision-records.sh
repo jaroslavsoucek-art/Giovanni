@@ -61,8 +61,9 @@ else:
     # 'gate', 'fallthrough', or empty (python failed) → run the check below.
 fi
 
-SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
-REPO_ROOT="$( cd "${SCRIPT_DIR}/../.." && pwd )"
+# Project = $CLAUDE_PROJECT_DIR (exported to hook processes), never this script's own
+# location: installed as a plugin, the script lives in the plugin cache, not in the repo.
+REPO_ROOT="${CLAUDE_PROJECT_DIR:-$(git rev-parse --show-toplevel 2>/dev/null || pwd)}"
 
 MEMORY_DIR="${GIOVANNI_MEMORY_DIR:-memory}"
 

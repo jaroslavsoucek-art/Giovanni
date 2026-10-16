@@ -26,8 +26,25 @@
 
 set +e
 
-SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
-REPO_ROOT="$( cd "${SCRIPT_DIR}/../.." && pwd )"
+# Project = $CLAUDE_PROJECT_DIR (exported to hook processes); plugin = where this
+# script lives. Different directories once Giovanni is installed as a plugin.
+REPO_ROOT="${CLAUDE_PROJECT_DIR:-$(git rev-parse --show-toplevel 2>/dev/null || pwd)}"
+PLUGIN_ROOT="${CLAUDE_PLUGIN_ROOT:-$( cd "$( dirname "${BASH_SOURCE[0]}" )/.." && pwd )}"
+
+# ----- 0. Record the plugin root for the git hooks -----
+#
+# The git pre-commit hook (scripts/git-hooks/pre-commit) has to find the generators
+# and the lint, and it runs outside any Claude session — no $CLAUDE_PLUGIN_ROOT there.
+# The plugin's install path also changes with every version (one cache directory per
+# version), so baking it into the installed hook at install time goes stale on the
+# first update. Each session start therefore writes the current root into the
+# project's .git/ (never tracked, no .gitignore line needed); the git hook reads it
+# back. Silent when the project is not a git repo.
+GIT_DIR_PATH=$(git -C "${REPO_ROOT}" rev-parse --git-common-dir 2>/dev/null)
+if [ -n "${GIT_DIR_PATH}" ]; then
+    case "${GIT_DIR_PATH}" in /*) ;; *) GIT_DIR_PATH="${REPO_ROOT}/${GIT_DIR_PATH}" ;; esac
+    printf '%s\n' "${PLUGIN_ROOT}" > "${GIT_DIR_PATH}/giovanni-plugin-root" 2>/dev/null || true
+fi
 
 MEMORY_DIR="${GIOVANNI_MEMORY_DIR:-memory}"
 STATE_FILENAME="${GIOVANNI_DIGEST_STATE_FILE:-digest_state.md}"
@@ -78,7 +95,7 @@ if [ -n "${TS}" ]; then
         AGE=$((NOW_EPOCH - TS_EPOCH))
         if [ "${AGE}" -ge "${THRESHOLD_SECONDS}" ]; then
             AGE_HOURS=$((AGE / 3600))
-            WARNINGS="${WARNINGS}🔄 Digest stale: last run ${AGE_HOURS}h ago (cutoff ${THRESHOLD_HOURS}h). Consider running \`/digest\` — pulls sources, drift detection, briefs for ≤48h events, predictive lookback. Workflow: \`.claude/workflows/daily-digest.md\`. Skip with one word if you're already mid-task.\n"
+            WARNINGS="${WARNINGS}🔄 Digest stale: last run ${AGE_HOURS}h ago (cutoff ${THRESHOLD_HOURS}h). Consider running \`/giovanni:digest\` — pulls sources, drift detection, briefs for ≤48h events, predictive lookback. Skip with one word if you're already mid-task.\n"
         fi
     fi
 fi

@@ -36,8 +36,12 @@ case "${FILE}" in
     *) exit 0 ;;
 esac
 
-SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
-REPO_ROOT="$( cd "${SCRIPT_DIR}/../.." && pwd )"
+# Project = $CLAUDE_PROJECT_DIR (exported to hook processes); plugin = where this
+# script lives. Different directories once Giovanni is installed as a plugin, so the
+# generator is told the project explicitly instead of guessing from its own path.
+REPO_ROOT="${CLAUDE_PROJECT_DIR:-$(git rev-parse --show-toplevel 2>/dev/null || pwd)}"
+PLUGIN_ROOT="${CLAUDE_PLUGIN_ROOT:-$( cd "$( dirname "${BASH_SOURCE[0]}" )/.." && pwd )}"
+export GIOVANNI_REPO_ROOT="${REPO_ROOT}"
 
 
 # PostToolUse hooks reach the agent through hookSpecificOutput.additionalContext,
@@ -58,8 +62,8 @@ print(json.dumps({'hookSpecificOutput': {
     fi
 }
 
-if [ -x "${REPO_ROOT}/scripts/build-knowledge-index.sh" ]; then
-    if "${REPO_ROOT}/scripts/build-knowledge-index.sh" >/dev/null 2>&1; then
+if [ -x "${PLUGIN_ROOT}/scripts/build-knowledge-index.sh" ]; then
+    if "${PLUGIN_ROOT}/scripts/build-knowledge-index.sh" >/dev/null 2>&1; then
         emit_context "${KNOWLEDGE_DIR}/INDEX.md auto-refreshed (${KNOWLEDGE_DIR}/ touched) — include the regenerated INDEX.md in the same commit as the knowledge change."
     else
         emit_context "⚠ build-knowledge-index.sh FAILED — ${KNOWLEDGE_DIR}/INDEX.md may be stale. Run it manually and read the error before committing."

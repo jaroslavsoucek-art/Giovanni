@@ -37,8 +37,10 @@ case "${FILE}" in
     *) exit 0 ;;
 esac
 
-SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
-REPO_ROOT="$( cd "${SCRIPT_DIR}/../.." && pwd )"
+# Project = $CLAUDE_PROJECT_DIR (exported to hook processes); plugin = where this
+# script lives. Different directories once Giovanni is installed as a plugin.
+REPO_ROOT="${CLAUDE_PROJECT_DIR:-$(git rev-parse --show-toplevel 2>/dev/null || pwd)}"
+PLUGIN_ROOT="${CLAUDE_PLUGIN_ROOT:-$( cd "$( dirname "${BASH_SOURCE[0]}" )/.." && pwd )}"
 CONST_PATH="${REPO_ROOT}/${KNOWLEDGE_DIR}/${CONSTITUTION_FILE}"
 
 MSG=$(cat <<EOF
@@ -61,7 +63,7 @@ Pre-commit lint will check:
   - constitution-anchors (every H2/H3 has {#anchor-id})
   - domain-leak (if denylist configured in governance.config.yaml)
 
-Run manually before commit: bash scripts/lint.sh
+Run manually before commit: bash "${PLUGIN_ROOT}/scripts/lint.sh"
 EOF
 )
 

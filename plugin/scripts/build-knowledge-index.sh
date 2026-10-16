@@ -23,8 +23,11 @@
 
 set -e
 
-SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
-REPO_ROOT="$( cd "${SCRIPT_DIR}/.." && pwd )"
+# The project is not where this script lives: installed as a plugin, the script sits
+# in the plugin cache. Callers that know the project say so (GIOVANNI_REPO_ROOT — the
+# hooks and the lint export it); otherwise the project is the git repo of the cwd.
+REPO_ROOT="${GIOVANNI_REPO_ROOT:-${CLAUDE_PROJECT_DIR:-$(git rev-parse --show-toplevel 2>/dev/null || pwd)}}"
+REPO_ROOT="$( cd "${REPO_ROOT}" && pwd )"
 KNOWLEDGE_DIR="${GIOVANNI_KNOWLEDGE_DIR:-knowledge}"
 KNOWLEDGE="${REPO_ROOT}/${KNOWLEDGE_DIR}"
 INDEX="${KNOWLEDGE}/INDEX.md"

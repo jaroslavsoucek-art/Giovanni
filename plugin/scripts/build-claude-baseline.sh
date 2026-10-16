@@ -25,7 +25,12 @@
 set -euo pipefail
 export LC_ALL=C
 
-REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+# Two surfaces, two roots. The project (its own .claude/ additions, CLAUDE.md, settings)
+# is GIOVANNI_REPO_ROOT / $CLAUDE_PROJECT_DIR / the git repo of the cwd; the plugin
+# (skills, agents, hooks, lint rules) is where this script lives.
+REPO_ROOT="${GIOVANNI_REPO_ROOT:-${CLAUDE_PROJECT_DIR:-$(git rev-parse --show-toplevel 2>/dev/null || pwd)}}"
+REPO_ROOT="$(cd "$REPO_ROOT" && pwd)"
+PLUGIN_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "$REPO_ROOT"
 
 OUT="memory/audits/claude-baseline.md"

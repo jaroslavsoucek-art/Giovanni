@@ -41,8 +41,12 @@ case "${FILE}" in
     *) exit 0 ;;
 esac
 
-SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
-REPO_ROOT="$( cd "${SCRIPT_DIR}/../.." && pwd )"
+# Project = $CLAUDE_PROJECT_DIR (exported to hook processes); plugin = where this
+# script lives. Different directories once Giovanni is installed as a plugin, so the
+# generator is told the project explicitly instead of guessing from its own path.
+REPO_ROOT="${CLAUDE_PROJECT_DIR:-$(git rev-parse --show-toplevel 2>/dev/null || pwd)}"
+PLUGIN_ROOT="${CLAUDE_PLUGIN_ROOT:-$( cd "$( dirname "${BASH_SOURCE[0]}" )/.." && pwd )}"
+export GIOVANNI_REPO_ROOT="${REPO_ROOT}"
 
 
 # PostToolUse hooks reach the agent through hookSpecificOutput.additionalContext,
@@ -63,8 +67,8 @@ print(json.dumps({'hookSpecificOutput': {
     fi
 }
 
-if [ -x "${REPO_ROOT}/scripts/build-memory-map.sh" ]; then
-    if "${REPO_ROOT}/scripts/build-memory-map.sh" >/dev/null 2>&1; then
+if [ -x "${PLUGIN_ROOT}/scripts/build-memory-map.sh" ]; then
+    if "${PLUGIN_ROOT}/scripts/build-memory-map.sh" >/dev/null 2>&1; then
         emit_context "${MEMORY_DIR}/MAP.md auto-refreshed (${MEMORY_DIR}/ touched) — include the regenerated MAP.md in the same commit as the memory change."
     else
         emit_context "⚠ build-memory-map.sh FAILED — ${MEMORY_DIR}/MAP.md may be stale. Run it manually and read the error before committing."

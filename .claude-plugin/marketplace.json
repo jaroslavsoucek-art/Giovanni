@@ -1,0 +1,18 @@
+{
+  "$schema": "https://json.schemastore.org/claude-code-marketplace.json",
+  "name": "giovanni",
+  "description": "Giovanni — an AI Chief of Staff methodology for Claude Code, packaged as one plugin. Install it into any repo and run /giovanni:init to scaffold the memory, knowledge and governance layers it operates on.",
+  "owner": {
+    "name": "Jaroslav Souček",
+    "url": "https://github.com/jaroslavsoucek-art"
+  },
+  "plugins": [
+    {
+      "name": "giovanni",
+      "source": "./plugin",
+      "description": "AI Chief of Staff runtime: 4-layer memory with hard limits, daily digest with drift detection, stakeholder trajectories, invisible shadow hypotheses, adversarial-default review, governance lint.",
+      "category": "productivity",
+      "tags": ["chief-of-staff", "memory", "digest", "governance", "prediction", "adversarial-review"]
+    }
+  ]
+}

@@ -19,7 +19,9 @@ if [ -z "${CLAUDE_CODE_REMOTE:-}" ] && [ "${GIOVANNI_EPHEMERAL:-0}" != "1" ]; th
     exit 0
 fi
 
-REPO_ROOT="$( cd "$( dirname "${BASH_SOURCE[0]}" )/../.." && pwd )"
+# Project = $CLAUDE_PROJECT_DIR (exported to hook processes), never this script's own
+# location: installed as a plugin, the script lives in the plugin cache, not in the repo.
+REPO_ROOT="${CLAUDE_PROJECT_DIR:-$(git rev-parse --show-toplevel 2>/dev/null || pwd)}"
 cd "${REPO_ROOT}" || exit 0
 
 DIRTY=$(git status --porcelain 2>/dev/null | head -5)

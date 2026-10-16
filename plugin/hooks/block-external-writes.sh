@@ -27,7 +27,10 @@
 set +e
 INPUT=$(cat)
 
-REPO_ROOT=$(git rev-parse --show-toplevel 2>/dev/null || pwd)
+# The project is $CLAUDE_PROJECT_DIR (the harness exports it to every hook process),
+# not the cwd: a session that has cd'd into another repo would otherwise read that
+# repo's config — or none — and the gate would silently fall back to "ask everything".
+REPO_ROOT="${CLAUDE_PROJECT_DIR:-$(git rev-parse --show-toplevel 2>/dev/null || pwd)}"
 
 printf '%s' "$INPUT" | GIOVANNI_REPO_ROOT="${REPO_ROOT}" python3 -c "
 import json, os, re, sys

@@ -27,6 +27,7 @@ from __future__ import annotations
 
 import argparse
 import os
+import subprocess
 import sys
 from pathlib import Path
 
@@ -90,7 +91,8 @@ def render(entries: list[dict]) -> str:
 def main(argv: list[str]) -> int:
     parser = argparse.ArgumentParser()
     parser.add_argument("--dry", action="store_true", help="print to stdout, no file write")
-    parser.add_argument("--repo-root", default=None, help="repo root (default: script's parent dir)")
+    parser.add_argument("--repo-root", default=None,
+                        help="project root (default: $GIOVANNI_REPO_ROOT, then the git repo of the cwd)")
     args = parser.parse_args(argv)
 
     if not HAVE_YAML:
@@ -101,11 +103,19 @@ def main(argv: list[str]) -> int:
         )
         return 2
 
-    repo = (
-        Path(args.repo_root).resolve()
-        if args.repo_root
-        else Path(__file__).resolve().parent.parent
-    )
+    # The project is not where this script lives: installed as a plugin, the script
+    # sits in the plugin cache. Explicit flag, then the env the hooks and lint export,
+    # then the git repo of the cwd.
+    repo_arg = args.repo_root or os.environ.get("GIOVANNI_REPO_ROOT") or os.environ.get("CLAUDE_PROJECT_DIR")
+    if repo_arg:
+        repo = Path(repo_arg).resolve()
+    else:
+        try:
+            top = subprocess.run(["git", "rev-parse", "--show-toplevel"], capture_output=True,
+                                 text=True, check=True).stdout.strip()
+            repo = Path(top).resolve()
+        except (subprocess.CalledProcessError, OSError):
+            repo = Path.cwd().resolve()
     deliverables_dir = os.environ.get("GIOVANNI_DELIVERABLES_DIR", "deliverables")
     deliv = repo / deliverables_dir
     registry_yaml = deliv / "_registry.yaml"
