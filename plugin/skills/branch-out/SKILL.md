@@ -1,6 +1,6 @@
 ---
 description: Active predictive simulation for a specific situation — routes to prediction-runtime in branch-out mode. Hard-stops on shallow actors.
-allowed-tools: Agent, Read, Write, Glob, Grep
+allowed-tools: Agent, Read, Write(./memory/**), Glob, Grep
 disable-model-invocation: true
 argument-hint: "<situation-slug> [--from-digest]"
 ---

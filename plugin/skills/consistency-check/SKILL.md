@@ -1,6 +1,6 @@
 ---
 description: Run semantic consistency checks across memory, constitution, agent roster, decision records, the decided-terms registry, knowledge↔knowledge cross-doc drift, and externally published pages. Routes to consistency-checker agent. Read-only — proposes diffs, never applies them.
-allowed-tools: Agent, Read, Write, Bash
+allowed-tools: Agent, Read, Write(./memory/**), Glob, Grep
 disable-model-invocation: true
 argument-hint: "[--check <id>] [--since <YYYY-MM-DD>]"
 ---

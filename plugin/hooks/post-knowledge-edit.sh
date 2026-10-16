@@ -40,7 +40,7 @@ esac
 # script lives. Different directories once Giovanni is installed as a plugin, so the
 # generator is told the project explicitly instead of guessing from its own path.
 REPO_ROOT="${CLAUDE_PROJECT_DIR:-$(git rev-parse --show-toplevel 2>/dev/null || pwd)}"
-PLUGIN_ROOT="${CLAUDE_PLUGIN_ROOT:-$( cd "$( dirname "${BASH_SOURCE[0]}" )/.." && pwd )}"
+PLUGIN_ROOT="${CLAUDE_PLUGIN_ROOT:-$(dirname "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)")}"
 export GIOVANNI_REPO_ROOT="${REPO_ROOT}"
 
 

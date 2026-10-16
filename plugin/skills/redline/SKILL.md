@@ -1,6 +1,6 @@
 ---
 description: Adversarial review variant emphasizing verbatim strike list — same agent as /giovanni:review, prompt biased toward line-level redlines. Returns SHIP / REWRITE / KILL.
-allowed-tools: Agent, Read, Grep, Glob, Bash
+allowed-tools: Agent, Read, Grep, Glob
 disable-model-invocation: true
 argument-hint: '<draft-path> [--position "..."] [--audience internal|external|mixed]'
 ---

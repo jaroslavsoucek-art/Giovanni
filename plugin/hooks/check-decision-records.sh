@@ -15,7 +15,7 @@
 #   exit 2  — violation found, commit blocked (with explanation)
 #
 # Override:
-#   GIOVANNI_SKIP_DECISION_CHECK=1 git commit ...
+#   GIOVANNI_SKIP_DECISION_CHECK=1 git commit <args>
 
 set +e
 
@@ -27,7 +27,7 @@ fi
 # Self-filter: when wired as a Claude Code PreToolUse hook, the matcher
 # ("Bash") fires on EVERY Bash tool call — not just on `git commit`. Without
 # this guard a staged invalid decision record blocks unrelated commands
-# (ls, grep, ...), not just the commit. Parse the hook JSON from stdin
+# (ls, grep, and so on), not just the commit. Parse the hook JSON from stdin
 # (python3 — no jq dependency, consistent with post-knowledge-edit.sh) and
 # exit 0 unless the command is actually a git commit invocation.
 #
@@ -49,7 +49,7 @@ if not isinstance(d, dict):
     print('fallthrough'); sys.exit(0)
 cmd = (d.get('tool_input') or {}).get('command') or ''
 # Tolerant of flags / paths / compound commands:
-#   git commit -m ...; git -C <path> commit; cd x && git commit
+#   git commit -m <msg>; git -C <path> commit; cd x && git commit
 if re.search(r'(^|[;&|]\s*)git(\s+-C\s+\S+)?\s+commit\b', cmd):
     print('gate')
 else:
@@ -125,8 +125,8 @@ fi
     echo "the frontmatter 'trigger_conditions:' field) with concrete signals"
     echo "that would cause revisiting this decision. Empty = no audit trail."
     echo ""
-    echo "Override: GIOVANNI_SKIP_DECISION_CHECK=1 git commit ..."
-    echo "Or:       git commit --no-verify ..."
+    echo "Override: GIOVANNI_SKIP_DECISION_CHECK=1 git commit <args>"
+    echo "Or:       git commit --no-verify <args>"
 } >&2
 
 exit 2

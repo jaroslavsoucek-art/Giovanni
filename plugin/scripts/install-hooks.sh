@@ -35,7 +35,7 @@ while [ $# -gt 0 ]; do
 done
 
 SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
-PLUGIN_ROOT="$( cd "${SCRIPT_DIR}/.." && pwd )"
+PLUGIN_ROOT="$(dirname "${SCRIPT_DIR}")"
 PROJECT="${PROJECT_ARG:-${GIOVANNI_REPO_ROOT:-${CLAUDE_PROJECT_DIR:-$(git rev-parse --show-toplevel 2>/dev/null || pwd)}}}"
 PROJECT="$( cd "${PROJECT}" && pwd )"
 cd "${PROJECT}"

@@ -75,7 +75,7 @@ cd "${REPO_ROOT}"
 # Two roots. The project under lint is REPO_ROOT; the plugin this lint ships in is
 # PLUGIN_ROOT (one level above scripts/). The generators read the project from
 # GIOVANNI_REPO_ROOT — never from their own location, which is the plugin cache.
-PLUGIN_ROOT="$( cd "${SCRIPT_DIR}/.." && pwd )"
+PLUGIN_ROOT="$(dirname "${SCRIPT_DIR}")"
 export GIOVANNI_REPO_ROOT="${REPO_ROOT}"
 
 TOTAL_FINDINGS=0

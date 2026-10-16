@@ -30,7 +30,7 @@ export LC_ALL=C
 # (skills, agents, hooks, lint rules) is where this script lives.
 REPO_ROOT="${GIOVANNI_REPO_ROOT:-${CLAUDE_PROJECT_DIR:-$(git rev-parse --show-toplevel 2>/dev/null || pwd)}}"
 REPO_ROOT="$(cd "$REPO_ROOT" && pwd)"
-PLUGIN_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+PLUGIN_ROOT="$(dirname "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)")"
 cd "$REPO_ROOT"
 
 OUT="memory/audits/claude-baseline.md"

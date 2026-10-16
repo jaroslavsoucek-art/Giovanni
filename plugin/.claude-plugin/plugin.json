@@ -11,6 +11,9 @@
   "homepage": "https://github.com/jaroslavsoucek-art/Giovanni",
   "repository": "https://github.com/jaroslavsoucek-art/Giovanni",
   "license": "MIT",
+  "icon": "./.claude-plugin/icon.png",
+  "documentationUrl": "https://github.com/jaroslavsoucek-art/Giovanni/blob/main/plugin/docs/setup-guide.md",
+  "supportUrl": "https://github.com/jaroslavsoucek-art/Giovanni/issues",
   "keywords": [
     "chief-of-staff",
     "memory",

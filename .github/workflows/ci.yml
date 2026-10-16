@@ -66,7 +66,8 @@ jobs:
               for event, entries in hooks.items():
                   for e in entries:
                       for h in e["hooks"]:
-                          script = h["command"].replace('"${CLAUDE_PLUGIN_ROOT}"/', "")
+                          script = h["command"].replace("${CLAUDE_PLUGIN_ROOT}/", "")
+                          assert h.get("args") == [], f"{event}: hook must be exec form (command + args: [])"
                           assert (pdir / script).is_file(), f"{event}: hook script missing: {script}"
               skills = [d for d in (pdir / "skills").iterdir() if d.is_dir()]
               assert skills and all((d / "SKILL.md").is_file() for d in skills), "skills/ dir without SKILL.md"

@@ -40,7 +40,7 @@ esac
 # Project = $CLAUDE_PROJECT_DIR (exported to hook processes); plugin = where this
 # script lives. Different directories once Giovanni is installed as a plugin.
 REPO_ROOT="${CLAUDE_PROJECT_DIR:-$(git rev-parse --show-toplevel 2>/dev/null || pwd)}"
-PLUGIN_ROOT="${CLAUDE_PLUGIN_ROOT:-$( cd "$( dirname "${BASH_SOURCE[0]}" )/.." && pwd )}"
+PLUGIN_ROOT="${CLAUDE_PLUGIN_ROOT:-$(dirname "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)")}"
 CONST_PATH="${REPO_ROOT}/${KNOWLEDGE_DIR}/${CONSTITUTION_FILE}"
 
 MSG=$(cat <<EOF

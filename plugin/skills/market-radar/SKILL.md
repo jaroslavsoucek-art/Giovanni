@@ -1,6 +1,6 @@
 ---
 description: Proactive external competitive / market intelligence scan. Routes to market-radar agent. Default = periodic sweep; focused = topic / market / competitor deep-dive.
-allowed-tools: Agent, Read, Glob, Grep, Bash
+allowed-tools: Agent, Read, Glob, Grep
 disable-model-invocation: true
 argument-hint: "[--focus <topic>] [--market <code>] [--competitor <slug>]"
 ---

@@ -1,6 +1,6 @@
 ---
 description: Run the daily digest — parallel source pull, synthesis, drift detection, brief generation, shadow lookback, render to chat.
-allowed-tools: Agent, Read, Write, Edit, Glob, Grep, Bash
+allowed-tools: Agent, Read, Write(./memory/**), Edit(./memory/**), Glob, Grep, Bash(git log *), Bash(git diff *), Bash(git status *), Bash(git add *), Bash(git commit *)
 disable-model-invocation: true
 argument-hint: "[--force] [--source <name>]"
 ---

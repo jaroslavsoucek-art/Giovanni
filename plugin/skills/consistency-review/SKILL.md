@@ -1,6 +1,6 @@
 ---
 description: Manual per-finding triage of a /giovanni:consistency-check report — accept-diff / reject / defer / false-positive verdicts, precision tally update. Interactive main-thread workflow, no agent spawn.
-allowed-tools: Read, Edit, Write, Grep, Glob, Bash
+allowed-tools: Read, Edit(./knowledge/**), Edit(./memory/**), Write(./memory/**), Grep, Glob, Bash(git diff *), Bash(git status *), Bash(git add *), Bash(git commit *)
 disable-model-invocation: true
 argument-hint: "[<YYYY-MM-DD>]"
 ---

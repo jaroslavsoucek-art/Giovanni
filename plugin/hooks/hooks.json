@@ -1,19 +1,20 @@
 {
-  "_comment": "Giovanni hook trigger map. Every command is anchored on ${CLAUDE_PLUGIN_ROOT}: hooks run in the session's current working directory, and a relative path resolves wherever the session last cd'd — the script then does not exist, exits 127, and the gate goes quiet without a word. The project the hooks act on is $CLAUDE_PROJECT_DIR (exported to every hook process), never the cwd. The permission half of the external write gate (permissions.ask/deny, autoMemoryEnabled) cannot ship in a plugin — /giovanni:init writes it into the project's .claude/settings.json. Two layers on purpose; neither is load-bearing alone (docs/governance.md § External write gate).",
-
+  "description": "Giovanni hook trigger map. Every command is exec form (command + args), anchored on ${CLAUDE_PLUGIN_ROOT}: hooks run in the session's current working directory, and a relative path resolves wherever the session last cd'd — the script then does not exist, exits 127, and the gate goes quiet without a word. The project the hooks act on is $CLAUDE_PROJECT_DIR (exported to every hook process), never the cwd. The permission half of the external write gate (permissions.ask/deny, autoMemoryEnabled) cannot ship in a plugin — /giovanni:init writes it into the project's .claude/settings.json. Two layers on purpose; neither is load-bearing alone (docs/governance.md § External write gate).",
   "hooks": {
     "SessionStart": [
       {
         "hooks": [
           {
             "type": "command",
-            "command": "\"${CLAUDE_PLUGIN_ROOT}\"/hooks/session-start-digest.sh",
+            "command": "${CLAUDE_PLUGIN_ROOT}/hooks/session-start-digest.sh",
+            "args": [],
             "timeout": 10,
             "statusMessage": "Giovanni: checking digest freshness..."
           },
           {
             "type": "command",
-            "command": "\"${CLAUDE_PLUGIN_ROOT}\"/hooks/session-start-audit-check.sh",
+            "command": "${CLAUDE_PLUGIN_ROOT}/hooks/session-start-audit-check.sh",
+            "args": [],
             "timeout": 10,
             "statusMessage": "Giovanni: checking memory-audit cadence..."
           }
@@ -26,7 +27,8 @@
         "hooks": [
           {
             "type": "command",
-            "command": "\"${CLAUDE_PLUGIN_ROOT}\"/hooks/check-decision-records.sh",
+            "command": "${CLAUDE_PLUGIN_ROOT}/hooks/check-decision-records.sh",
+            "args": [],
             "timeout": 5
           }
         ]
@@ -36,7 +38,8 @@
         "hooks": [
           {
             "type": "command",
-            "command": "\"${CLAUDE_PLUGIN_ROOT}\"/hooks/block-external-writes.sh",
+            "command": "${CLAUDE_PLUGIN_ROOT}/hooks/block-external-writes.sh",
+            "args": [],
             "timeout": 5
           }
         ]
@@ -48,17 +51,20 @@
         "hooks": [
           {
             "type": "command",
-            "command": "\"${CLAUDE_PLUGIN_ROOT}\"/hooks/post-constitution-edit-check.sh",
+            "command": "${CLAUDE_PLUGIN_ROOT}/hooks/post-constitution-edit-check.sh",
+            "args": [],
             "timeout": 5
           },
           {
             "type": "command",
-            "command": "\"${CLAUDE_PLUGIN_ROOT}\"/hooks/post-knowledge-edit.sh",
+            "command": "${CLAUDE_PLUGIN_ROOT}/hooks/post-knowledge-edit.sh",
+            "args": [],
             "timeout": 10
           },
           {
             "type": "command",
-            "command": "\"${CLAUDE_PLUGIN_ROOT}\"/hooks/post-memory-edit.sh",
+            "command": "${CLAUDE_PLUGIN_ROOT}/hooks/post-memory-edit.sh",
+            "args": [],
             "timeout": 10
           }
         ]
@@ -69,12 +75,14 @@
         "hooks": [
           {
             "type": "command",
-            "command": "\"${CLAUDE_PLUGIN_ROOT}\"/hooks/check-unmerged-claude-branches.sh",
+            "command": "${CLAUDE_PLUGIN_ROOT}/hooks/check-unmerged-claude-branches.sh",
+            "args": [],
             "timeout": 10
           },
           {
             "type": "command",
-            "command": "\"${CLAUDE_PLUGIN_ROOT}\"/hooks/stop-ephemeral-commit-guard.sh",
+            "command": "${CLAUDE_PLUGIN_ROOT}/hooks/stop-ephemeral-commit-guard.sh",
+            "args": [],
             "timeout": 10
           }
         ]

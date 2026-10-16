@@ -1,6 +1,6 @@
 ---
 description: Adversarial review of a draft. Routes to adversarial-reviewer agent. Returns SHIP / REWRITE / KILL verdict + prioritized issues + strongest counter-case. Read-only.
-allowed-tools: Agent, Read, Grep, Glob, Bash
+allowed-tools: Agent, Read, Grep, Glob
 disable-model-invocation: true
 argument-hint: '<draft-path> [--position "..."] [--audience internal|external|mixed]'
 ---

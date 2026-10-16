@@ -1,6 +1,6 @@
 ---
 description: Monthly calibration report — routes to prediction-runtime in calibration-report mode. Aggregates per-actor + per-tier accuracy, updates actor-scores.yaml.
-allowed-tools: Agent, Read, Write, Glob
+allowed-tools: Agent, Read, Write(./memory/**), Glob
 disable-model-invocation: true
 argument-hint: "[--month <YYYY-MM>]"
 ---

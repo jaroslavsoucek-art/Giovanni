@@ -16,7 +16,7 @@
 set -uo pipefail
 
 SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
-REPO_ROOT="$( cd "${SCRIPT_DIR}/.." && pwd )"
+REPO_ROOT="$(dirname "${SCRIPT_DIR}")"
 FIXTURES="${SCRIPT_DIR}/lint-fixtures"
 
 PASS_COUNT=0

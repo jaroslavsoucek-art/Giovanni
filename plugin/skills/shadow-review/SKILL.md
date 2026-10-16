@@ -1,6 +1,6 @@
 ---
 description: Quarterly audit of recent shadow hypotheses — routes to prediction-runtime in shadow-review mode. Enforces adversarial lookback discipline.
-allowed-tools: Agent, Read, Glob, Grep, Write, Edit
+allowed-tools: Agent, Read, Glob, Grep, Write(./memory/**), Edit(./memory/**)
 disable-model-invocation: true
 argument-hint: "[--sample N] [--actor <slug>] [--window <YYYY-MM>]"
 ---

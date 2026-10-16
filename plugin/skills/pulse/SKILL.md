@@ -1,6 +1,6 @@
 ---
 description: Weekly read of what is actually getting built or done, per work-block — from the tracker, the code, and the docs. State of the work, not the stream of events. Distinct from the digest, which is signal since the last run.
-allowed-tools: Agent, Bash, Read, Glob, Grep, Write
+allowed-tools: Agent, Read, Glob, Grep, Write(./memory/**), Bash(git log *), Bash(git diff *), Bash(git shortlog *)
 disable-model-invocation: true
 argument-hint: "[since=<YYYY-MM-DD>] [block=<slug>] [quick]"
 ---
