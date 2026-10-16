@@ -6,7 +6,14 @@
 #   1. Generated-file staleness (INDEX / MAP / deliverables REGISTRY) — run
 #      the regen --dry and diff against the committed file. Cheap from bash,
 #      awkward from Python.
-#   2. Hook syntax check — `bash -n` over .claude/hooks/*.sh.
+#   2. Hook syntax check — `bash -n` over the plugin's hooks/*.sh and the
+#      project's own .claude/hooks/*.sh.
+#
+# Two roots: the PROJECT under lint (LINT_REPO_ROOT, else the git repo of the
+# cwd) and the PLUGIN this script ships in (one level up). Giovanni's own
+# surface — skills, agents, hooks, mechanism docs — is linted from the plugin;
+# the fork's state — memory, knowledge, its own .claude/ additions — from the
+# project.
 #
 # Env-aware checks: the git-date-dependent staleness checks (index-stale,
 # map-stale) print [SKIP] on shallow clones instead of emitting false
@@ -64,6 +71,12 @@ while [ $# -gt 0 ]; do
 done
 
 cd "${REPO_ROOT}"
+
+# Two roots. The project under lint is REPO_ROOT; the plugin this lint ships in is
+# PLUGIN_ROOT (one level above scripts/). The generators read the project from
+# GIOVANNI_REPO_ROOT — never from their own location, which is the plugin cache.
+PLUGIN_ROOT="$( cd "${SCRIPT_DIR}/.." && pwd )"
+export GIOVANNI_REPO_ROOT="${REPO_ROOT}"
 
 TOTAL_FINDINGS=0
 PY_INTERNAL=0
@@ -177,29 +190,30 @@ check_registry_stale() {
     fi
 }
 
-# hook-syntax — every .claude/hooks/*.sh passes `bash -n`
+# hook-syntax — every plugin hooks/*.sh and project .claude/hooks/*.sh passes `bash -n`
 check_hook_syntax() {
     local id="hook-syntax"
-    [ -d .claude/hooks ] || return 0
-    local file err
-    for file in .claude/hooks/*.sh; do
+    local file err shown
+    for file in "${PLUGIN_ROOT}"/hooks/*.sh .claude/hooks/*.sh; do
         [ -f "$file" ] || continue
+        shown="${file#"${PLUGIN_ROOT}"/}"
         if ! bash -n "$file" 2>/dev/null; then
             err=$(bash -n "$file" 2>&1 | head -1)
-            emit_finding critical "${id}" "${file}: bash -n failed — ${err}"
+            emit_finding critical "${id}" "${shown}: bash -n failed — ${err}"
         fi
     done
 }
 
-# script-syntax — every scripts/*.sh and scripts/git-hooks/* passes `bash -n`
+# script-syntax — every plugin scripts/*.sh and scripts/git-hooks/* passes `bash -n`
 check_script_syntax() {
     local id="script-syntax"
-    local file err
-    for file in scripts/*.sh scripts/git-hooks/*; do
+    local file err shown
+    for file in "${PLUGIN_ROOT}"/scripts/*.sh "${PLUGIN_ROOT}"/scripts/git-hooks/*; do
         [ -f "$file" ] || continue
+        shown="${file#"${PLUGIN_ROOT}"/}"
         if ! bash -n "$file" 2>/dev/null; then
             err=$(bash -n "$file" 2>&1 | head -1)
-            emit_finding critical "${id}" "${file}: bash -n failed — ${err}"
+            emit_finding critical "${id}" "${shown}: bash -n failed — ${err}"
         fi
     done
 }

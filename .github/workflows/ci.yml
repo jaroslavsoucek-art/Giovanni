@@ -1,14 +1,20 @@
 name: ci
 
 # Giovanni governance CI. Proves, on every push/PR, that:
-#   - the framework lints clean (bash checks + Python rules)
+#   - the plugin manifest and marketplace file parse and point at files that exist
+#   - the framework lints clean (bash checks + Python rules, from the plugin)
 #   - the lint rules themselves still pass their pass/fail fixtures
 #   - the bundled pseudo-fork (examples/lattice-finance) lints clean and is
-#     digest-ready  ← end-to-end validation of a filled fork (DoD #2 + #4)
-#   - a fresh `init-fork.sh` scaffold succeeds on a clean clone (DoD #1)
+#     digest-ready  ← end-to-end validation of a filled instance (DoD #2 + #4)
+#   - a fresh `init-fork.sh` scaffold succeeds on a clean clone and the git
+#     gates install into it (DoD #1)
 #
 # fetch-depth: 0 is required — the index-stale / map-stale staleness checks
 # read `git log -1 -- <file>` dates and SKIP on shallow clones.
+#
+# Not covered here: `claude plugin validate --strict` (needs the Claude Code
+# CLI; run it locally before a release — it is part of the pre-release list in
+# plugin/docs/setup-guide.md).
 
 on:
   push:
@@ -36,26 +42,53 @@ jobs:
       - name: Install PyYAML
         run: python3 -m pip install --quiet pyyaml
 
+      - name: Plugin + marketplace manifests parse and resolve
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import json, pathlib, sys
+          root = pathlib.Path(".")
+          mp = json.loads((root / ".claude-plugin/marketplace.json").read_text())
+          assert mp["name"] == "giovanni", mp["name"]
+          for entry in mp["plugins"]:
+              src = entry["source"]
+              assert src.startswith("./"), src
+              pdir = root / src
+              assert (pdir / ".claude-plugin/plugin.json").is_file(), f"{src}: no plugin.json"
+              pj = json.loads((pdir / ".claude-plugin/plugin.json").read_text())
+              for agent in pj.get("agents", []):
+                  assert (pdir / agent).is_file(), f"agents entry missing: {agent}"
+              hooks = json.loads((pdir / "hooks/hooks.json").read_text())["hooks"]
+              for event, entries in hooks.items():
+                  for e in entries:
+                      for h in e["hooks"]:
+                          script = h["command"].replace('"${CLAUDE_PLUGIN_ROOT}"/', "")
+                          assert (pdir / script).is_file(), f"{event}: hook script missing: {script}"
+              skills = [d for d in (pdir / "skills").iterdir() if d.is_dir()]
+              assert skills and all((d / "SKILL.md").is_file() for d in skills), "skills/ dir without SKILL.md"
+              print(f"{entry['name']}: {len(pj.get('agents', []))} agents, {len(skills)} skills, hooks for {sorted(hooks)}")
+          PY
+
       - name: Framework lint (bash checks + Python rules)
-        run: bash scripts/lint.sh
+        run: bash plugin/scripts/lint.sh
 
       - name: Lint-rule self-test (pass/fail fixtures)
-        run: bash scripts/run-lint-fixtures.sh
+        run: bash plugin/scripts/run-lint-fixtures.sh
 
       - name: Pseudo-fork lint (examples/lattice-finance)
-        run: python3 scripts/lint.py --repo-root examples/lattice-finance
+        run: python3 plugin/scripts/lint.py --repo-root examples/lattice-finance
 
       - name: Pseudo-fork digest readiness (dry-run harness)
-        run: python3 scripts/run-digest-dryrun.py --repo-root examples/lattice-finance
+        run: python3 plugin/scripts/run-digest-dryrun.py --repo-root examples/lattice-finance
 
       - name: Pseudo-fork deliverables registry is fresh
         run: |
-          diff <(python3 scripts/build-deliverables-registry.py \
+          diff <(python3 plugin/scripts/build-deliverables-registry.py \
                    --repo-root examples/lattice-finance --dry) \
                examples/lattice-finance/deliverables/REGISTRY.md \
             || { echo "::error::examples/lattice-finance/deliverables/REGISTRY.md is stale — run build-deliverables-registry.py"; exit 1; }
 
-      - name: init-fork.sh smoke test (fresh clone scaffolds + lints)
+      - name: init-fork.sh smoke test (fresh clone scaffolds, lints, installs git gates)
         run: |
           set -euo pipefail
           CLONE=/tmp/giovanni-fork-smoke
@@ -64,23 +97,35 @@ jobs:
           cd "$CLONE"
           # Drop the bundled example so the smoke fork starts from templates only.
           rm -rf examples
-          bash scripts/init-fork.sh --yes
-          # Assert the scaffold produced the runtime files a fork needs.
-          for f in knowledge/constitution.md memory/CLAUDE_MEMORY.md \
-                   memory/digest_sources.md memory/digest_state.md \
-                   memory/triage-heuristic.yaml memory/audit_state.md \
+          bash plugin/scripts/init-fork.sh --yes
+          # Assert the scaffold produced the runtime files an instance needs.
+          for f in knowledge/constitution.md knowledge/README.md memory/CLAUDE_MEMORY.md memory/README.md \
+                   memory/digest_sources.md memory/digest_state.md memory/triage-heuristic.yaml \
+                   memory/audit_state.md memory/templates/stakeholder.template.md \
                    .claude/settings.json docs/governance.config.yaml CLAUDE.md; do
             test -f "$f" || { echo "::error::init-fork did not create $f"; exit 1; }
           done
-          # settings.json is what makes the hooks fire at all — assert it is wired,
-          # not merely present.
-          python3 -c "import json,sys; h=json.load(open('.claude/settings.json')).get('hooks',{}); sys.exit(0 if {'SessionStart','PreToolUse','PostToolUse'} <= set(h) else 1)" \
-            || { echo "::error::scaffolded settings.json has no hook trigger map"; exit 1; }
-          # CLAUDE.md must be the fork operating contract, not the framework's
-          # meta-builder instructions.
+          # settings.json carries the permission layer and enables the plugin — and
+          # must NOT carry a hooks block, or every plugin hook would run twice.
+          python3 - <<'PY'
+          import json, sys
+          s = json.load(open(".claude/settings.json"))
+          assert s.get("permissions", {}).get("ask"), "scaffolded settings.json has no permissions.ask"
+          assert "hooks" not in s, "scaffolded settings.json carries a hooks block — plugin hooks would double-fire"
+          assert s.get("enabledPlugins", {}).get("giovanni@giovanni") is True, "plugin not enabled in project settings"
+          assert s.get("autoMemoryEnabled") is False
+          PY
+          # CLAUDE.md must be the operating contract, not the framework's meta-builder instructions.
           grep -q "meta-builder mode" CLAUDE.md \
             && { echo "::error::init-fork left the framework CLAUDE.md in place"; exit 1; } || true
+          grep -q "/giovanni:digest" CLAUDE.md || { echo "::error::CLAUDE.md route table does not name the plugin skills"; exit 1; }
           for d in memory/stakeholders memory/topics memory/decisions memory/briefs; do
             test -d "$d" || { echo "::error::init-fork did not create $d/"; exit 1; }
           done
+          # The git gates install from the plugin and find it again through the marker.
+          bash plugin/scripts/install-hooks.sh
+          test -x .git/hooks/pre-commit && test -x .git/hooks/pre-push || { echo "::error::git hooks not installed"; exit 1; }
+          test "$(cat .git/giovanni-plugin-root)" = "$CLONE/plugin" || { echo "::error::plugin root marker wrong: $(cat .git/giovanni-plugin-root)"; exit 1; }
+          # A second run changes nothing.
+          bash plugin/scripts/init-fork.sh --yes --skip-regen | grep -q "exists — kept" || { echo "::error::init-fork is not idempotent"; exit 1; }
           echo "init-fork smoke test passed."

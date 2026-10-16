@@ -1,6 +1,10 @@
 {
   "$schema": "https://json.schemastore.org/claude-code-settings.json",
-  "_comment": "Giovanni fork settings template. init-fork.sh copies this to .claude/settings.json. Two things live here: (1) the hook trigger map — without it the scripts in .claude/hooks/ are inert files that nothing ever runs; (2) the permission layer of the external write gate (docs/governance.md). The hook and these globs are two independent layers on purpose — neither is load-bearing alone.",
+  "_comment": "Giovanni project settings template. /giovanni:init (scripts/init-fork.sh) copies this to .claude/settings.json. It carries what a plugin cannot: the permission layer of the external write gate (docs/governance.md § External write gate) and autoMemoryEnabled. The hooks themselves ship with the plugin (hooks/hooks.json) — do NOT add a hooks block here, or every hook runs twice. The hook and these globs are two independent layers on purpose; neither is load-bearing alone.",
+
+  "enabledPlugins": {
+    "giovanni@giovanni": true
+  },
 
   "permissions": {
     "_comment_deny": "Channels demoted to absolute read-only. Empty by default: demotion is a decision your fork makes after a misfire, not a default. When you demote a channel, add its write globs here AND to readonly_channels in docs/governance.config.yaml (the hook reads that one). Example for a chat platform: mcp__*__chat_send*, mcp__*__chat_post*.",
@@ -28,88 +32,5 @@
   },
 
   "_comment_automemory": "Harness-side auto-memory writes to a per-machine path outside this repo. That splits memory between git and local disk — drift across devices and sessions. Memory lives in memory/, in git, always.",
-  "autoMemoryEnabled": false,
-
-  "_comment_hook_paths": "Every hook command is anchored on $CLAUDE_PROJECT_DIR, never a bare relative path. The harness runs a command hook in the session's current working directory. After a session cd's into another repo (to read its code, say), a relative .claude/hooks/x.sh resolves there, does not exist, and exits 127. That is a non-blocking error, so every hook goes quiet at once, including the external write gate and the Stop guards, until the cwd comes back. Nothing tells you this is happening.",
-
-  "hooks": {
-    "SessionStart": [
-      {
-        "hooks": [
-          {
-            "type": "command",
-            "command": "\"$CLAUDE_PROJECT_DIR\"/.claude/hooks/session-start-digest.sh",
-            "timeout": 10,
-            "statusMessage": "Checking digest freshness..."
-          },
-          {
-            "type": "command",
-            "command": "\"$CLAUDE_PROJECT_DIR\"/.claude/hooks/session-start-audit-check.sh",
-            "timeout": 10,
-            "statusMessage": "Checking memory-audit cadence..."
-          }
-        ]
-      }
-    ],
-    "PreToolUse": [
-      {
-        "matcher": "Bash",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "\"$CLAUDE_PROJECT_DIR\"/.claude/hooks/check-decision-records.sh",
-            "timeout": 5
-          }
-        ]
-      },
-      {
-        "matcher": "mcp__.*",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "\"$CLAUDE_PROJECT_DIR\"/.claude/hooks/block-external-writes.sh",
-            "timeout": 5
-          }
-        ]
-      }
-    ],
-    "PostToolUse": [
-      {
-        "matcher": "Edit|Write",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "\"$CLAUDE_PROJECT_DIR\"/.claude/hooks/post-constitution-edit-check.sh",
-            "timeout": 5
-          },
-          {
-            "type": "command",
-            "command": "\"$CLAUDE_PROJECT_DIR\"/.claude/hooks/post-knowledge-edit.sh",
-            "timeout": 10
-          },
-          {
-            "type": "command",
-            "command": "\"$CLAUDE_PROJECT_DIR\"/.claude/hooks/post-memory-edit.sh",
-            "timeout": 10
-          }
-        ]
-      }
-    ],
-    "Stop": [
-      {
-        "hooks": [
-          {
-            "type": "command",
-            "command": "\"$CLAUDE_PROJECT_DIR\"/.claude/hooks/check-unmerged-claude-branches.sh",
-            "timeout": 10
-          },
-          {
-            "type": "command",
-            "command": "\"$CLAUDE_PROJECT_DIR\"/.claude/hooks/stop-ephemeral-commit-guard.sh",
-            "timeout": 10
-          }
-        ]
-      }
-    ]
-  }
+  "autoMemoryEnabled": false
 }

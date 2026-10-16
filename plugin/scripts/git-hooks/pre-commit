@@ -60,6 +60,28 @@ set -uo pipefail
 REPO_ROOT=$(git rev-parse --show-toplevel)
 cd "${REPO_ROOT}"
 
+# WHERE THE PLUGIN IS
+# The generators and the lint ship with the Giovanni plugin, not with this repo, and
+# this hook runs outside any Claude session — no $CLAUDE_PLUGIN_ROOT here. The plugin's
+# install path also changes with every version (one cache directory per version), so
+# baking it in at install time would go stale on the first update. Resolution: the
+# env, then the marker the session-start hook refreshes every session
+# (.git/giovanni-plugin-root), then ./plugin in a fork clone. None found → the regen
+# and the lint are skipped, loudly.
+MARKER="$(git rev-parse --git-common-dir)/giovanni-plugin-root"
+PLUGIN=""
+if [ -n "${GIOVANNI_PLUGIN_ROOT:-}" ] && [ -f "${GIOVANNI_PLUGIN_ROOT}/scripts/lint.sh" ]; then
+    PLUGIN="${GIOVANNI_PLUGIN_ROOT}"
+elif [ -f "${MARKER}" ] && [ -f "$(cat "${MARKER}")/scripts/lint.sh" ]; then
+    PLUGIN="$(cat "${MARKER}")"
+elif [ -f "${REPO_ROOT}/plugin/scripts/lint.sh" ]; then
+    PLUGIN="${REPO_ROOT}/plugin"
+fi
+if [ -z "${PLUGIN}" ]; then
+    echo "⚠  pre-commit: Giovanni plugin not found (no .git/giovanni-plugin-root, no ./plugin) — index regen and lint skipped. Start a Claude session once, or run install-hooks.sh again." >&2
+    exit 0
+fi
+
 KNOWLEDGE_DIR="${GIOVANNI_KNOWLEDGE_DIR:-knowledge}"
 MEMORY_DIR="${GIOVANNI_MEMORY_DIR:-memory}"
 DELIVERABLES_DIR="${GIOVANNI_DELIVERABLES_DIR:-deliverables}"
@@ -106,8 +128,8 @@ regen() {
     tmp=$(mktemp "${TMPDIR:-/tmp}/giovanni-regen.XXXXXX") || return 0
     err=$(mktemp "${TMPDIR:-/tmp}/giovanni-regen-err.XXXXXX") || { rm -f "${tmp}"; return 0; }
     local dir="${STAGE_WT:-${REPO_ROOT}}"
-    if ! ( cd "${dir}" && unset GIT_INDEX_FILE GIT_DIR GIT_WORK_TREE \
-           && if [ -n "${interp}" ]; then "${interp}" "${gen}" --dry; else bash "${gen}" --dry; fi ) > "${tmp}" 2> "${err}"; then
+    if ! ( cd "${dir}" && unset GIT_INDEX_FILE GIT_DIR GIT_WORK_TREE && export GIOVANNI_REPO_ROOT="${dir}" \
+           && if [ -n "${interp}" ]; then "${interp}" "${PLUGIN}/scripts/${gen}" --dry --repo-root "${dir}"; else bash "${PLUGIN}/scripts/${gen}" --dry; fi ) > "${tmp}" 2> "${err}"; then
         echo "⚠  pre-commit: ${gen} --dry failed — ${out} may be stale (the lint gate will say). $(head -1 "${err}")" >&2
         rm -f "${tmp}" "${err}"; return 0
     fi
@@ -127,7 +149,7 @@ regen() {
 }
 
 STAGED=$(git -c core.quotepath=off diff --cached --name-only --diff-filter=ACMRD)
-GEN_RE="^(${KNOWLEDGE_DIR}/|${MEMORY_DIR}/|\.claude/|CLAUDE\.md$|${DELIVERABLES_DIR}/_registry\.yaml$)"
+GEN_RE="^(${KNOWLEDGE_DIR}/|${MEMORY_DIR}/|\.claude/|plugin/|CLAUDE\.md$|${DELIVERABLES_DIR}/_registry\.yaml$)"
 
 # One HEAD+staged worktree serves both the regen and the lint gate.
 if [ -n "${STAGED}" ] && ! build_stage_worktree; then
@@ -142,9 +164,9 @@ fi
 
 NEED_INDEX=0; NEED_MAP=0; NEED_REG=0
 if [ -n "${STAGED}" ] && echo "${STAGED}" | grep -qE "${GEN_RE}"; then
-    [ -f "${INDEX_OUT}" ] && [ -f scripts/build-knowledge-index.sh ] && NEED_INDEX=1
-    [ -f "${MAP_OUT}" ] && [ -f scripts/build-memory-map.sh ] && NEED_MAP=1
-    [ -f "${DELIVERABLES_DIR}/_registry.yaml" ] && [ -f scripts/build-deliverables-registry.py ] \
+    [ -f "${INDEX_OUT}" ] && [ -f "${PLUGIN}/scripts/build-knowledge-index.sh" ] && NEED_INDEX=1
+    [ -f "${MAP_OUT}" ] && [ -f "${PLUGIN}/scripts/build-memory-map.sh" ] && NEED_MAP=1
+    [ -f "${DELIVERABLES_DIR}/_registry.yaml" ] && [ -f "${PLUGIN}/scripts/build-deliverables-registry.py" ] \
         && command -v python3 >/dev/null 2>&1 && NEED_REG=1
 fi
 
@@ -155,9 +177,9 @@ if [ "$(git rev-parse --is-shallow-repository 2>/dev/null)" = true ] && [ $((NEE
     NEED_INDEX=0; NEED_MAP=0
 fi
 
-[ "${NEED_INDEX}" -eq 1 ] && regen scripts/build-knowledge-index.sh "${INDEX_OUT}"
-[ "${NEED_MAP}" -eq 1 ] && regen scripts/build-memory-map.sh "${MAP_OUT}"
-[ "${NEED_REG}" -eq 1 ] && regen scripts/build-deliverables-registry.py "${REG_OUT}" python3
+[ "${NEED_INDEX}" -eq 1 ] && regen build-knowledge-index.sh "${INDEX_OUT}"
+[ "${NEED_MAP}" -eq 1 ] && regen build-memory-map.sh "${MAP_OUT}"
+[ "${NEED_REG}" -eq 1 ] && regen build-deliverables-registry.py "${REG_OUT}" python3
 
 # ---------- 2. lint gate, on the tree being committed ----------
 
@@ -171,8 +193,12 @@ if [ -n "${STAGE_WT}" ] && [ -f docs/governance.config.yaml ] \
     mkdir -p "${STAGE_WT}/docs" && cp docs/governance.config.yaml "${STAGE_WT}/docs/governance.config.yaml"
 fi
 
-LINT="${LINT_ROOT}/scripts/lint.sh"
-[ -f "${LINT}" ] || { echo "WARN: scripts/lint.sh missing — skipping lint" >&2; exit 0; }
+# The framework repo carries the plugin inside the tree being committed; lint THAT copy,
+# so a commit that changes a lint rule is gated by the rule it commits.
+LINT_PLUGIN="${PLUGIN}"
+[ -n "${STAGE_WT}" ] && [ -f "${STAGE_WT}/plugin/scripts/lint.sh" ] && LINT_PLUGIN="${STAGE_WT}/plugin"
+LINT="${LINT_PLUGIN}/scripts/lint.sh"
+[ -f "${LINT}" ] || { echo "WARN: ${LINT} missing — skipping lint" >&2; exit 0; }
 
 if ! (cd "${LINT_ROOT}" && unset GIT_INDEX_FILE GIT_DIR GIT_WORK_TREE && LINT_REPO_ROOT="${LINT_ROOT}" bash "${LINT}"); then
     echo "" >&2

@@ -152,8 +152,19 @@ def load_config(repo: Path) -> dict[str, Any]:
 
 @dataclass
 class LintContext:
+    """Two roots, deliberately.
+
+    `repo` is the project under lint — the fork's memory, knowledge, its own
+    .claude/ additions. `plugin` is the Giovanni plugin this lint ships in:
+    skills, agents, hooks, mechanism docs. They were one directory while
+    Giovanni was a fork template; as a plugin they are not, and a rule that
+    looks for `.claude/agents` in the project finds the fork's own agents (if
+    any), never Giovanni's. Rules that govern the plugin surface read
+    `ctx.plugin`; rules that govern state read `ctx.repo`.
+    """
     repo: Path
     config: dict[str, Any]
+    plugin: Path = field(default_factory=lambda: Path(__file__).resolve().parent.parent)
     findings: list[Finding] = field(default_factory=list)
 
     def add(self, severity: str, check_id: str, message: str) -> None:
@@ -308,7 +319,7 @@ def main(argv: list[str]) -> int:
         return 2
 
     cfg = load_config(repo)
-    ctx = LintContext(repo=repo, config=cfg)
+    ctx = LintContext(repo=repo, config=cfg, plugin=scripts_dir.resolve().parent)
 
     for check_id, run_fn in rules:
         if args.check and args.check != check_id:

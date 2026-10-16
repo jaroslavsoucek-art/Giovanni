@@ -7,10 +7,11 @@ or aborts the hook outright (GNU `timeout` on stock macOS: command not found).
 Both directions are silent enough to survive months.
 
 Portable spellings:
-  dates             -> python3 datetime (see .claude/hooks/session-start-digest.sh)
+  dates             -> python3 datetime (see hooks/session-start-digest.sh)
   bounded network   -> `command -v timeout || command -v gtimeout` with a fallback,
                        or the tool's own timeout knobs
 
+Scanned: the plugin's `hooks/*.sh` and the project's own `.claude/hooks/*.sh`.
 Comment lines are skipped: quoting a forbidden command while documenting the rule
 is not a use of it.
 """
@@ -31,8 +32,7 @@ NONPORTABLE = [
 ]
 
 
-def run(ctx) -> None:
-    hooks_dir = ctx.repo / ".claude" / "hooks"
+def _scan(ctx, hooks_dir, label: str) -> None:
     if not hooks_dir.is_dir():
         return
     for path in sorted(hooks_dir.glob("*.sh")):
@@ -45,5 +45,11 @@ def run(ctx) -> None:
                 continue
             for pattern, message in NONPORTABLE:
                 if pattern.search(line):
-                    ctx.add(SEVERITY, CHECK_ID,
-                            f".claude/hooks/{path.name}:{i}: {message}")
+                    ctx.add(SEVERITY, CHECK_ID, f"{label}/{path.name}:{i}: {message}")
+
+
+def run(ctx) -> None:
+    plugin = getattr(ctx, "plugin", None)
+    if plugin is not None:
+        _scan(ctx, plugin / "hooks", "hooks")
+    _scan(ctx, ctx.repo / ".claude" / "hooks", ".claude/hooks")
