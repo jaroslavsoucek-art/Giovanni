@@ -56,6 +56,8 @@ Unenforced invariants get an id in the same shape, so promoting one to code is a
 | `resolved-shard-status` | `_resolved/` holds only resolved shards; resolved shards get filed | medium | lint.py |
 | `agent-roster-match` | agent files ↔ roster rows ↔ declared model | medium | lint.py |
 | `mcp-uuid-pin` | no install-specific MCP server ids in `.claude/` | high | lint.py |
+| `silence-counter-verified` | a "N days of silence" claim in L1 / an active shard carries a fresh `[verified YYYY-MM-DD]` stamp, or is written as a past fact without a counter | high / medium | lint.py |
+| `rules-register-pointers` | every `docs/invariants.md#<id>` pointer in `CLAUDE.md` / `CLAUDE.template.md` resolves to a Behavioral rules entry | medium | lint.py |
 
 ## Enforced by hook
 
@@ -99,6 +101,58 @@ These are real rules — stated in `CLAUDE.md` or `docs/governance.md`, binding 
 | `browser-read-only` | UI fallback never types into a composer | the harness cannot distinguish a search box from a composer | none possible — stated in the workflow, held by the agent |
 | `subagent-transcript-ban` | never read a subagent's raw transcript | no hook sees the read | none planned |
 | `external-write-per-action` | the confirmation names the destination and the action | the gate can force a prompt, not judge the answer | partial: `block-external-writes.sh` |
+| `thread-supersession` | a cited thread message comes with the thread's last message and a supersedes verdict | needs to read meaning | partial: puller contract emits `→ tail:` on every thread bullet |
+| `asymmetric-test` | ranked output is checked for corrections that only ever raise urgency | judgement about direction of a correction | partial: digest renders `⚠ asymmetry: N↑ / 0↓` |
+
+---
+
+## Behavioral rules — why each one-line rule exists {#behavioral-rules}
+
+`CLAUDE.md` is loaded into every turn, so every byte in it is paid for again on every message. The reason behind a rule is read only when somebody questions the rule. So the two live apart. `CLAUDE.md` holds the rule, one line, with a pointer here. This section holds why the rule exists, what happened when it did not, and what enforces it.
+
+Rules whose full reasoning already lives in another doc (`docs/governance.md` for the write gate, role boundaries and classification) point there directly and are not duplicated here. Lint-enforced rules keep their story in the rule's docstring.
+
+### `rules-register`
+
+- **Rule:** each rule in `CLAUDE.md` is one line plus a pointer. A new rule is one line there and one entry here, in the same commit. `CLAUDE.md` stays under ~200 lines.
+- **Why:** in the source implementation the operating file had grown to 402 lines and 41 KB, most of it incident narrative appended after each failure. Moving the narrative into a register cut it to 155 lines and 22 KB, and no rule was dropped. The opposite failure is a rule with no reason attached: the first person who finds it inconvenient relaxes it. The register keeps the reason without making every turn pay for it.
+- **Enforced by:** lint `rules-register-pointers` (no dangling pointer). File size: audit cadence.
+
+### `thread-supersession`
+
+- **Rule:** citing message N of a thread? Name the thread's last message too (author + time) and say whether it supersedes N. The newest relevant statement wins.
+- **Why:** in the source, a position was cited as current a week after its own author had retracted it in the same thread. Both messages were in one tool result, and the later one had been quoted correctly twenty minutes earlier. Memory was not the failure, because the whole thread was in context. It was motivated retrieval: the item was already ranked high, the thread was searched for support for the rank rather than for its current state, and reading stopped at the most useful sentence.
+- **Enforced by:** puller contract (`→ tail: <author> <ts>` on every thread bullet, `.claude/agents/source-puller.md`) and digest Step 5. No lint: it needs to read meaning.
+
+### `asymmetric-test`
+
+- **Rule:** before any ranked output, check whether any correction this cycle lowered an item's stakes. If every correction raised urgency, say so.
+- **Why:** both errors from the same morning in the source (a rotted silence counter, see `silence-counter-verified`, and the retracted position above) raised urgency. Neither lowered it. Random retrieval noise points both ways. A system whose job is ranking priorities pulls toward overstating stakes, because stakes are what justify a rank.
+- **Enforced by:** digest Step 10.6 renders `⚠ asymmetry: <N>↑ / 0↓`. The same flag three runs in a row means the bias belongs to the render step and needs a structural fix, not another reminder.
+
+### `subagent-transcript-ban`
+
+- **Rule:** never read a subagent's raw transcript. Consume its result from the final notification only.
+- **Why:** a task's output file is not a log. It is the full raw transcript, and reading it pours every raw tool result back into the main thread. That destroys the one reason the agent ran in isolation.
+- **Enforced by:** nothing. No hook sees the read.
+
+### `agent-lane-discipline`
+
+- **Rule:** while an agent runs, work a different lane. Do not redo its source on the main thread. An agent that keeps overrunning gets a cap in its own definition.
+- **Why:** redoing the source gives two versions of one fact and throws away the isolation. A main-thread workaround for a slow agent hides the problem the cap would fix, and it comes back next run.
+- **Enforced by:** nothing.
+
+### `shared-backend-serialise`
+
+- **Rule:** parallelise across backends, serialise within one. Verify that a response answers the request before trusting it.
+- **Why:** concurrent agents on one connector gateway cross-wired their responses. One received another product's data for its own query, and nothing in the payload said "wrong". The full story is in `.claude/workflows/daily-digest.md` § 4d.
+- **Enforced by:** puller hard rule (verify the response answers the request).
+
+### `branch-landing`
+
+- **Rule:** if the fork adopts branches, it adopts the step that lands them too.
+- **Why:** an apparatus can lint, commit and push into a branch for days while the main branch stays frozen, and every workflow will report success.
+- **Enforced by:** hook `check-unmerged-claude-branches.sh` (warns).
 
 ## Retired
 

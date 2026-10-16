@@ -76,6 +76,8 @@ bash scripts/lint.sh --check <CHECK_ID>
 | `stakeholder-frontmatter` | medium | Stakeholder profiles match the documented frontmatter schema (required fields, enums, slug ↔ filename) |
 | `stakeholder-slug-exists` | medium | `key_stakeholders` slugs resolve to profile files |
 | `topic-shard-frontmatter` | medium | Topic shards have required frontmatter fields |
+| `silence-counter-verified` | high / medium | A "N days of silence" claim in L1 / an active shard carries `[verified YYYY-MM-DD]` ≤ `silence_stamp_max_days`, or is a past fact with no counter |
+| `rules-register-pointers` | medium | Every `docs/invariants.md#<id>` pointer in `CLAUDE.md` / `CLAUDE.template.md` resolves to a Behavioral rules entry |
 
 Plus bash-side checks (in `scripts/lint.sh`, not Python plugins):
 

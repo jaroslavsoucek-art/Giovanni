@@ -61,6 +61,13 @@ digest_state_limit_bytes: 32768
 # the 60-day retirement rule never fires for it because nobody set the status.
 shard_stale_days: 45
 
+# "N days of silence" claims in L1 / active shards (silence-counter-verified).
+# A line with a silence keyword and a counter needs `[verified YYYY-MM-DD]`
+# no older than this. Default: 7.
+silence_stamp_max_days: 7
+# Extra silence keywords for your working language; English defaults always apply.
+# silence_keywords: ["<no reply in your language>", "<unanswered in your language>"]
+
 # Strikethrough ratio in L1 (fraction). Default: 0.02 (= 2 %).
 # Below this is acceptable transient state. Above is drift signal.
 strike_ratio_max: 0.02

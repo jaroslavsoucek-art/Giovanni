@@ -44,5 +44,7 @@ Fixture content rules: synthetic test domain only (Lattice Finance cast), Englis
 - `stakeholder-frontmatter` — pass: schema-complete profile; fail: missing fields, bad enums, slug↔filename mismatch
 - `deliverables-registry` — pass: registry ↔ files consistent; fail: invalid status, orphan entry, unregistered file
 - `registry-stale` — pass: REGISTRY.md matches regen; fail: REGISTRY.md stale vs `_registry.yaml`
+- `silence-counter-verified` — pass: stamped counter, past-fact form, counter in a comment, resolved shard; fail: unstamped counter in L1 + stale stamp in an active shard (clock pinned via `GIOVANNI_SNAPSHOT_DATE`)
+- `rules-register-pointers` — pass: every `docs/invariants.md#<id>` pointer has an entry; fail: one pointer dangles
 
 Checks without fixtures (covered by lint runs against the real repo for now): `index-stale`, `map-stale`, `hook-syntax`, `script-syntax` (need a git repo / scripts tree inside the fixture), `digest-state-freshness` (needs date manipulation), `constitution-anchors`, `domain-leak`, `adversarial-verdict-format`, `no-percentages-in-predictions`, `slash-command-registry`, `stakeholder-slug-exists`. Follow-up can extend.

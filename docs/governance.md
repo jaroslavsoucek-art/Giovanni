@@ -87,6 +87,8 @@ So the rule is: **a cadence audit should look for what no hook can see.** Whethe
 
 The agentic layer grows by accretion — a command added in the session that needed it, an agent someone wrote once. Nothing records the shape of the whole, so nobody notices it doubling. The snapshot is deterministic (no dates, no SHAs), so an empty diff means genuinely nothing moved.
 
+**Also check `CLAUDE.md` against its own contract:** every rule one line plus a pointer, incident prose in `docs/invariants.md` § Behavioral rules, file under ~200 lines. Narrative grows back one incident at a time, and every line of it is paid for on every turn.
+
 **Then:** section-by-section L1 review. Archive resolved items. Graduate hot items to shards. Re-classify items that drifted into the wrong tier (e.g. a canonical fact sitting in L1). Updates `last_audit_full:`.
 
 The session-start hook (`session-start-audit-check.sh`) warns when either cadence is overdue.
@@ -336,6 +338,8 @@ Python-side pluggable rules (`scripts/lint_rules/*.py`):
 | `agent-roster-match` | medium | Agent files ↔ roster rows ↔ declared model |
 | `workflow-route-table` | medium | Route table ↔ `.claude/workflows` + `.claude/commands`, both directions |
 | `topic-shard-frontmatter` | medium | Topic shards have required frontmatter fields |
+| `silence-counter-verified` | high / medium | A "N days of silence" claim in L1 / an active shard carries `[verified YYYY-MM-DD]` ≤ `silence_stamp_max_days`, or is a past fact with no counter |
+| `rules-register-pointers` | medium | Every `docs/invariants.md#<id>` pointer in `CLAUDE.md` resolves to a Behavioral rules entry |
 
 The live list is always `bash scripts/lint.sh --list`; per-rule details in `scripts/lint_rules/README.md`.
 

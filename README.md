@@ -225,7 +225,7 @@ over. See [`docs/setup1-complete.md`](docs/setup1-complete.md).
 Loose by design — the live lists are one command away (`bash scripts/lint.sh --list`).
 
 - 8 architect agents + 8 operational agents = 16
-- 10 slash commands · 28 lint checks (23 Python rules + 5 bash) · 8 hooks
+- 10 slash commands · 30 lint checks (25 Python rules + 5 bash) · 8 hooks
 - 12 memory templates + 12 worked Lattice examples · 1 living-constitution template · 1 fork operating contract (`CLAUDE.template.md`)
 - 12 docs in `docs/` + 3 workflows in `.claude/workflows/`
 - 1 fully-filled reference fork (`examples/lattice-finance/`) validated in CI

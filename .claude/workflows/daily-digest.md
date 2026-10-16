@@ -152,6 +152,8 @@ Synthesis rules:
 - **Stakeholder clustering** — items where the principal interacts with a profiled stakeholder collapse, with a `signals: <N>` count.
 - **Dedup heuristic** — same event surfacing across multiple sources (e.g. an email confirming a calendar event) collapses into the most-source-rich representation.
 - **No re-ordering by importance yet** — triage happens in Step 6.
+- **Thread tail wins.** Every bullet drawn from a thread arrives with `→ tail: <author> <ts>` (puller contract). A cluster that relies on an earlier message states whether the tail supersedes it. The newest relevant statement is the current state. An older one cited because it supports the point being made is the failure mode, not a judgement call. In the source implementation, a position was cited as current although its author had retracted it a week later in the same thread. Both messages were in the same tool result.
+- **Silence is a past fact, never a counter.** Write "last documented message <date> (<author>)". Never take a previous digest's "unanswered for N d" and add the days since: the number grows every run while nobody reads the thread, and it reads as measurement. Where the duration matters enough to state, re-read the thread in this run and stamp the claim `[verified <channel> YYYY-MM-DD]`. Lint `silence-counter-verified` holds L1 and active shards to this. In the source, four out of eight such claims had rotted this way.
 
 Output of this step is the working set fed to Steps 6, 7, 8, 9, 10.
 
@@ -340,6 +342,8 @@ For each new fact / decision from Step 4/5 (post-synthesis):
 
 5. **Output to Step 12 render:** numbered drift flags with actionable choices (`confirm` / `ignore Nd` / `patch <file>:<change>`). See `docs/digest.md` § Ack flow for the full state machine.
 
+6. **Asymmetric test.** Before rendering the ranked sections (Active blockers, Asks, branch-out candidates), count this run's corrections to existing claims: how many raised an item's stakes, how many lowered them. If every correction went up (and there were at least two), add `⚠ asymmetry: <N>↑ / 0↓` to System hygiene. Random retrieval noise points both ways. A system whose job is ranking priorities pulls toward overstating stakes, because stakes are what justify a rank. When the same flag shows up three runs in a row, the bias is a property of the render step and needs a structural fix (for example, a mandatory "what calmed down since last run" block before Asks), not another reminder.
+
 ---
 
 ## Step 11 — Shadow generation
@@ -437,6 +441,7 @@ Active acks
 
 System hygiene (flags only when applicable)
   ⚠ /shadow-review due (last <date> > <cadence> days ago)
+  ⚠ asymmetry: <N>↑ / 0↓ — every correction this run raised urgency (Step 10.6)
   ⚠ <N> shadow hypotheses expired without ground truth (specificity gate review needed)
   ⚠ Shadow volume hard-fail (>25) — triage heuristics need review
   ⚠ Source pull failed: <source> — <error>

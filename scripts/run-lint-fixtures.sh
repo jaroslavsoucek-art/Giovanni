@@ -43,6 +43,10 @@ run_one() {
         digest-state-size)
             env_overrides=(GIOVANNI_DIGEST_STATE_LIMIT_BYTES=200)
             ;;
+        silence-counter-verified)
+            # Pinned clock: the pass fixture's stamps are fresh only relative to this date.
+            env_overrides=(GIOVANNI_SNAPSHOT_DATE=2026-05-20)
+            ;;
     esac
 
     local exit_code=0

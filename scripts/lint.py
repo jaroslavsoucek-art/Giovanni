@@ -85,6 +85,12 @@ DEFAULT_CONFIG: dict[str, Any] = {
     # An ACTIVE shard that nobody has touched in this long is either stale or
     # finished. Either way it needs a human decision — refresh or retire.
     "shard_stale_days": 45,
+    # A "N days of silence" claim in L1 / an active shard must carry a
+    # `[verified YYYY-MM-DD]` stamp no older than this (silence-counter-verified).
+    "silence_stamp_max_days": 7,
+    # Extra silence keywords for the fork's working language. The English
+    # defaults in the rule always apply.
+    "silence_keywords": [],
     # Constitution / structural
     "require_anchor_ids": True,
     # Deliverables lifecycle registry (opt-in — checks activate only when
