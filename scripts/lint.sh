@@ -52,7 +52,8 @@ ONLY_CHECK=""
 LIST_MODE=0
 while [ $# -gt 0 ]; do
     case "$1" in
-        --check) ONLY_CHECK="$2"; shift 2 ;;
+        --check) [ $# -ge 2 ] || { echo "Usage: scripts/lint.sh --check <id>  (ids: scripts/lint.sh --list)" >&2; exit 2; }
+                 ONLY_CHECK="$2"; shift 2 ;;
         --list)  LIST_MODE=1; shift ;;
         --help|-h)
             sed -n '1,41p' "$0" | sed 's/^# \?//'
@@ -65,6 +66,8 @@ done
 cd "${REPO_ROOT}"
 
 TOTAL_FINDINGS=0
+PY_INTERNAL=0
+py_rc=0
 
 KNOWLEDGE_DIR="${GIOVANNI_KNOWLEDGE_DIR:-knowledge}"
 MEMORY_DIR="${GIOVANNI_MEMORY_DIR:-memory}"
@@ -188,11 +191,11 @@ check_hook_syntax() {
     done
 }
 
-# script-syntax — every scripts/*.sh passes `bash -n`
+# script-syntax — every scripts/*.sh and scripts/git-hooks/* passes `bash -n`
 check_script_syntax() {
     local id="script-syntax"
     local file err
-    for file in scripts/*.sh; do
+    for file in scripts/*.sh scripts/git-hooks/*; do
         [ -f "$file" ] || continue
         if ! bash -n "$file" 2>/dev/null; then
             err=$(bash -n "$file" 2>&1 | head -1)
@@ -227,6 +230,23 @@ if [ "${LIST_MODE}" = 1 ]; then
     exit 0
 fi
 
+# ---------- Validate --check id ----------
+# A typo in the id used to run nothing and print "Lint clean." — a pass that
+# checked zero rules. Unknown id = internal error (exit 2). ONLY_IS_BASH lets a
+# bash-only check skip lint.py entirely.
+
+ONLY_IS_BASH=0
+if [ -n "${ONLY_CHECK}" ]; then
+    for entry in "${BASH_CHECKS[@]}"; do
+        [ "${entry%%|*}" = "${ONLY_CHECK}" ] && { ONLY_IS_BASH=1; break; }
+    done
+    if [ "${ONLY_IS_BASH}" = 0 ] \
+        && ! python3 "${SCRIPT_DIR}/lint.py" --list 2>/dev/null | awk '{print $1}' | grep -qxF "${ONLY_CHECK}"; then
+        echo "Unknown check id (or lint.py unavailable): ${ONLY_CHECK} — see scripts/lint.sh --list" >&2
+        exit 2
+    fi
+fi
+
 for entry in "${BASH_CHECKS[@]}"; do
     IFS='|' read -r id fn <<< "${entry}"
     run_check "${id}" "${fn}"
@@ -241,12 +261,24 @@ if [ -f "${LINT_PY}" ]; then
     else
         py_args=("--repo-root" "${REPO_ROOT}")
         [ -n "${ONLY_CHECK}" ] && py_args+=("--check" "${ONLY_CHECK}")
-        py_out=$(python3 "${LINT_PY}" "${py_args[@]}" 2>&1) || true
+        py_out=""
+        py_findings=0
+        if [ "${ONLY_IS_BASH}" = 0 ]; then
+            py_out=$(python3 "${LINT_PY}" "${py_args[@]}" 2>&1)
+            py_rc=$?
+        fi
         if [ -n "${py_out}" ]; then
             echo "${py_out}"
             py_findings=$(echo "${py_out}" | grep -cE '^\[(CRITICAL|HIGH|MEDIUM|LOW)\]' 2>/dev/null || true)
             [ -z "${py_findings}" ] && py_findings=0
             TOTAL_FINDINGS=$((TOTAL_FINDINGS + py_findings))
+        fi
+        # A crashed lint.py must not read as clean. This used to be `|| true`:
+        # a traceback outside any rule (bad config, missing dependency) exited
+        # non-zero with zero findings, the summary printed "Lint clean.", and
+        # the pre-push gate and CI both waved the commit through.
+        if [ "${py_rc}" -ge 2 ] || { [ "${py_rc}" -ne 0 ] && [ "${py_findings}" -eq 0 ]; }; then
+            PY_INTERNAL=1
         fi
     fi
 fi
@@ -256,6 +288,12 @@ fi
 echo ""
 if [ "${TOTAL_FINDINGS}" -gt 0 ]; then
     echo "Total findings: ${TOTAL_FINDINGS}"
+fi
+if [ "${PY_INTERNAL}" = 1 ]; then
+    echo "lint.py internal error (exit ${py_rc}): Python checks incomplete — see ERROR lines above"
+    exit 2
+fi
+if [ "${TOTAL_FINDINGS}" -gt 0 ]; then
     exit 1
 fi
 echo "Lint clean."

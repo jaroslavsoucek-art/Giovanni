@@ -49,7 +49,7 @@ If any pre-flight fails, the orchestrator does NOT proceed and does NOT update s
 3. **Step 4 parallel fan-out.** Single message, N `Task` calls to `source-puller` agents (one per configured source). Each gets the source-specific identifier, `window_start`, `window_end`, and any `extra_context` (e.g. `last_run_sha` for version-control). If `--source <name>` was passed, fan-out reduces to a single agent for that source.
 4. **Steps 5-10** inline — synthesis, triage, brief auto-gen, shadow lookback, profile refresh signals, drift detection — per workflow doc.
 5. **Step 12 render** to chat. Then **Step 11 shadow generation** (runs AFTER render — invisibility is binding, see `docs/prediction.md`).
-6. **State update** — write `memory/digest_state.md` with new `last_run_timestamp`, `last_run_sha`, shadow stats. **Do NOT auto-commit.**
+6. **State update** — write `memory/digest_state.md` with `last_run_timestamp = window_end` (from Step 3, never the time of writing), `last_run_sha`, shadow stats. **Do NOT auto-commit.**
 7. **Hand off** to drift response sub-flow per workflow doc (principal reacts with `confirm` / `ignore Nd` / `patch ...`).
 
 ## Debug mode (`--source <name>`)

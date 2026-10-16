@@ -6,9 +6,10 @@
 #   1. Make .claude/hooks/*.sh executable (Claude Code triggers them via
 #      Edit/Write/SessionStart events — see .claude/settings.json for the
 #      trigger mapping).
-#   2. Install git pre-commit hook running `scripts/lint.sh`, and a pre-push
-#      hook running lint + the fixture self-test. Existing hooks are backed
-#      up to .git/hooks/<name>.bak.
+#   2. Install the git pre-commit hook from scripts/git-hooks/pre-commit
+#      (regenerate INDEX / MAP / REGISTRY from HEAD + staged, then run
+#      `scripts/lint.sh`), and a pre-push hook running lint + the fixture
+#      self-test. Existing hooks are backed up to .git/hooks/<name>.bak.
 #
 # The Claude Code hook trigger config (.claude/settings.json) is owned by
 # the user / fork — this script does not modify it. It only ensures the
@@ -50,7 +51,10 @@ for f in scripts/*.sh; do
 done
 echo "  scripts/: shell scripts marked executable"
 
-# ----- 3. install git pre-commit running lint.sh -----
+# ----- 3. install git pre-commit from scripts/git-hooks/pre-commit -----
+#
+# The hook body lives in a tracked file, not in a heredoc here: it is long enough to
+# need its reasons next to it, and a tracked file gets `bash -n` from the lint.
 
 if [ "${SKIP_PRECOMMIT}" -eq 1 ]; then
     echo "  (skipping pre-commit install per --skip-precommit)"
@@ -61,44 +65,18 @@ GIT_HOOKS_DIR=$(git rev-parse --git-path hooks 2>/dev/null || echo ".git/hooks")
 [ -d "${GIT_HOOKS_DIR}" ] || mkdir -p "${GIT_HOOKS_DIR}"
 
 PRECOMMIT="${GIT_HOOKS_DIR}/pre-commit"
-NEW_CONTENT=$(cat <<'EOF'
-#!/usr/bin/env bash
-# Giovanni governance pre-commit: run scripts/lint.sh on staged tree.
-# Override: GIOVANNI_SKIP_LINT=1 git commit ... (or --no-verify).
-set -uo pipefail
-
-if [ "${GIOVANNI_SKIP_LINT:-0}" = "1" ]; then
-    exit 0
-fi
-
-REPO_ROOT=$(git rev-parse --show-toplevel)
-LINT="${REPO_ROOT}/scripts/lint.sh"
-
-[ -x "${LINT}" ] || { echo "WARN: scripts/lint.sh not executable — skipping lint" >&2; exit 0; }
-
-if ! "${LINT}"; then
-    echo "" >&2
-    echo "Pre-commit lint failed. Fix findings or:" >&2
-    echo "  GIOVANNI_SKIP_LINT=1 git commit ..." >&2
-    echo "  git commit --no-verify ..." >&2
-    exit 1
-fi
-exit 0
-EOF
-)
+PRECOMMIT_SRC="scripts/git-hooks/pre-commit"
+[ -f "${PRECOMMIT_SRC}" ] || { echo "ERROR: ${PRECOMMIT_SRC} missing" >&2; exit 2; }
 
 # Back up existing pre-commit if it differs
-if [ -f "${PRECOMMIT}" ]; then
-    EXISTING=$(cat "${PRECOMMIT}")
-    if [ "${EXISTING}" != "${NEW_CONTENT}" ]; then
-        cp "${PRECOMMIT}" "${PRECOMMIT}.bak"
-        echo "  pre-commit: existing hook backed up → ${PRECOMMIT}.bak"
-    fi
+if [ -f "${PRECOMMIT}" ] && ! cmp -s "${PRECOMMIT}" "${PRECOMMIT_SRC}"; then
+    cp "${PRECOMMIT}" "${PRECOMMIT}.bak"
+    echo "  pre-commit: existing hook backed up → ${PRECOMMIT}.bak"
 fi
 
-printf '%s\n' "${NEW_CONTENT}" > "${PRECOMMIT}"
+cp "${PRECOMMIT_SRC}" "${PRECOMMIT}"
 chmod +x "${PRECOMMIT}"
-echo "  pre-commit: installed (runs scripts/lint.sh; override via GIOVANNI_SKIP_LINT=1)"
+echo "  pre-commit: installed (regen INDEX/MAP/REGISTRY from HEAD+staged, then scripts/lint.sh; override lint via GIOVANNI_SKIP_LINT=1)"
 
 # ----- 4. install git pre-push: last gate before the work leaves the machine -----
 #

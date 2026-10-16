@@ -24,12 +24,20 @@
 # Portable: bash 3.2 (macOS) + Linux.
 
 _load_exports_from() {
-  local file="$1"
+  local file="$1" had_u=0
   [ -f "$file" ] || return 0
+  # A caller running `set -euo pipefail` (most pull scripts) dies on an rc line like
+  # `export X="$UNSET_VAR/y"`: `|| true` does not catch an unbound-variable expansion,
+  # and `2>/dev/null` hides the message, so the script just exits 127 with no reason
+  # given. Drop -u for the duration of the eval, then restore it.
+  case $- in *u*) had_u=1; set +u ;; esac
   # Only `export NAME=VALUE` lines — skip aliases, function defs, shell-isms.
   while IFS= read -r line; do
     eval "$line" 2>/dev/null || true
   done < <(grep -E '^[[:space:]]*export[[:space:]]+[A-Z_][A-Z0-9_]*=' "$file" 2>/dev/null || true)
+  # if/fi, not `[ ... ] && set -u`: with had_u=0 that returns 1 and kills a `set -e` caller.
+  if [ "$had_u" = 1 ]; then set -u; fi
+  return 0
 }
 
 _load_exports_from "$HOME/.zshenv"

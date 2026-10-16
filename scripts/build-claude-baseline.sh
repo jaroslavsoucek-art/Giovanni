@@ -84,7 +84,10 @@ for event in sorted(h):
     for entry in h[event]:
         for hook in entry.get("hooks", []):
             cmd = hook.get("command")
-            cmds.append(cmd.split()[-1] if cmd else hook.get("type", "?"))
+            # The $CLAUDE_PROJECT_DIR anchor is plumbing, not identity: strip it so the
+            # baseline names the hook the same way whether or not a fork has anchored it.
+            path = cmd.split()[-1].replace('"$CLAUDE_PROJECT_DIR"/', "").replace("$CLAUDE_PROJECT_DIR/", "") if cmd else None
+            cmds.append(path or hook.get("type", "?"))
     print(f"- **{event}** ({len(cmds)}): " + ", ".join(f"`{c}`" for c in sorted(cmds)))
 PY
         echo

@@ -279,7 +279,11 @@ resolved_shard_retirement_days: 90
 
 **PostToolUse hooks must return `hookSpecificOutput.additionalContext`, not a plain echo.** Stdout from a PostToolUse hook lands in the transcript; `additionalContext` lands in the agent's context. The difference decides whether the agent learns that a generated file changed under it — a regeneration notice nobody reads is a stale `INDEX.md` in the next commit. SessionStart hooks are the exception: their stdout is injected, so a plain `printf` is correct there.
 
-`scripts/install-hooks.sh` is the other half: chmod, plus the two git-side gates — pre-commit (lint) and pre-push (lint + fixture self-test). The two layers are independent: Claude Code hooks fire on tool use, git hooks fire on commit and push. Pre-push matters most for forks working directly on main, where it is the last gate before the shared branch.
+`scripts/install-hooks.sh` is the other half: chmod, plus the two git-side gates — pre-commit (regenerate the indexes from HEAD + staged, then lint that tree) and pre-push (lint + fixture self-test). The two layers are independent: Claude Code hooks fire on tool use, git hooks fire on commit and push. Pre-push matters most for forks working directly on main, where it is the last gate before the shared branch.
+
+**Every hook command is anchored on `$CLAUDE_PROJECT_DIR`.** The harness runs a command hook in the session's current working directory. A session that `cd`s into another repository would otherwise resolve `.claude/hooks/x.sh` there, get exit 127 (a non-blocking error), and run with every hook silently off, the write gate included, until it changed directory back.
+
+**The editor hooks are a convenience; the pre-commit regen is the guarantee.** The two `post-*-edit` hooks match `Edit|Write`, so any change made another way (a shell edit, a subagent, a cloud session, a human) never triggers them. The source implementation found its indexes stale at pre-push that way, more than once. `scripts/git-hooks/pre-commit` regenerates from the tree the commit will create, so it sees every change regardless of the tool, and it ignores other sessions' unstaged edits in the same working tree.
 
 ---
 
@@ -303,7 +307,7 @@ Bash-side (in `scripts/lint.sh`, all critical):
 | `map-stale` | `memory/MAP.md` matches `build-memory-map.sh --dry` ([SKIP] on shallow clones) |
 | `registry-stale` | `deliverables/REGISTRY.md` matches `build-deliverables-registry.py --dry` (opt-in — only when `_registry.yaml` exists) |
 | `hook-syntax` | All `.claude/hooks/*.sh` pass `bash -n` |
-| `script-syntax` | All `scripts/*.sh` pass `bash -n` |
+| `script-syntax` | All `scripts/*.sh` and `scripts/git-hooks/*` pass `bash -n` |
 
 Python-side pluggable rules (`scripts/lint_rules/*.py`):
 
@@ -369,7 +373,9 @@ Staleness checks and the regen scripts depend on full git history (last-commit d
 
 ### Pre-commit integration
 
-`scripts/install-hooks.sh` installs `.git/hooks/pre-commit` that runs `scripts/lint.sh`. Override: `GIOVANNI_SKIP_LINT=1 git commit ...`.
+`scripts/install-hooks.sh` installs `.git/hooks/pre-commit` from `scripts/git-hooks/pre-commit`. It builds a throwaway worktree at HEAD with the staged diff applied, regenerates INDEX / MAP / REGISTRY there (staging only real changes, not a new timestamp), and runs `scripts/lint.sh` on that tree. Override the lint gate: `GIOVANNI_SKIP_LINT=1 git commit ...`. The reasons for each design choice, with the incidents behind them, are in the hook's header.
+
+**Exit codes are a contract.** `lint.sh` exits 0 (clean), 1 (findings) or 2 (internal error). An unknown `--check` id and a `lint.py` that crashes outside any rule are both exit 2. Before this was enforced, both printed "Lint clean." and exited 0: a typo'd check id checked nothing, and a crash in config loading let the pre-push gate and CI pass a commit nobody had linted.
 
 ---
 

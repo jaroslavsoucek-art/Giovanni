@@ -30,7 +30,7 @@ The 12 steps are sanitized from the source AI Chief of Staff implementation. Ste
 
 Parse `memory/digest_state.md` for:
 
-- `last_run_timestamp` — start of pull window (ISO 8601 UTC)
+- `last_run_timestamp` — upper bound of the previous run's window = lower bound of this one (ISO 8601 UTC)
 - `last_run_sha` — git rev at last run (for version-control source delta)
 - `active_acks[]` — drift flags the principal hasn't resolved yet, with expiry dates
 - `last_shadow_review_date` — for cadence flag in Step 12 render
@@ -452,8 +452,10 @@ Drift items are numbered so the principal can reference `#N` in their response; 
 
 ### Update `memory/digest_state.md`
 
-- `last_run_timestamp = now()` (ISO 8601 UTC)
+- `last_run_timestamp = window_end` from Step 3 — **not** `now()` (ISO 8601 UTC)
 - `last_run_sha = <git rev-parse HEAD>`
+
+The window is meant to be contiguous: each run starts exactly where the previous one ended. Writing `now()` here breaks that silently. Everything that happened between the end of the pull window and the moment the state is written falls into a gap that no run ever pulls. In the source implementation, one run closed its window at 05:10 and wrote its state at 05:45. That left a 35-minute hole across every lane, and nothing reported it because each run looked complete on its own terms.
 - `source_health` — per source: consecutive failure count, and **one terse sentence** on the last failure. Reset to 0 on any successful pull, including a recovery after a passed probe.
 - Move expired acks (from Step 1) to `## Expired acks` section
 - Update `shadow_generation_stats`:

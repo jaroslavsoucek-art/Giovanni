@@ -297,6 +297,10 @@ def main(argv: list[str]) -> int:
             print(f"  {check_id}")
         return 0
 
+    if args.check and args.check not in {cid for cid, _fn in rules}:
+        print(f"ERROR: unknown check id: {args.check} (see --list)", file=sys.stderr)
+        return 2
+
     cfg = load_config(repo)
     ctx = LintContext(repo=repo, config=cfg)
 

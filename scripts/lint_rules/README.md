@@ -85,7 +85,7 @@ Plus bash-side checks (in `scripts/lint.sh`, not Python plugins):
 | `map-stale` | `memory/MAP.md` matches `build-memory-map.sh --dry` ([SKIP] on shallow clones) |
 | `registry-stale` | `deliverables/REGISTRY.md` matches `build-deliverables-registry.py --dry` (opt-in — only when `_registry.yaml` exists) |
 | `hook-syntax` | Every `.claude/hooks/*.sh` passes `bash -n` |
-| `script-syntax` | Every `scripts/*.sh` passes `bash -n` |
+| `script-syntax` | Every `scripts/*.sh` and `scripts/git-hooks/*` passes `bash -n` |
 
 ## Self-test fixtures
 

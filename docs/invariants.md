@@ -32,7 +32,7 @@ Unenforced invariants get an id in the same shape, so promoting one to code is a
 | `map-stale` | `memory/MAP.md` matches what the generator would produce now | high | lint.sh |
 | `registry-stale` | `deliverables/REGISTRY.md` is fresh against `_registry.yaml` | high | lint.sh |
 | `hook-syntax` | every `.claude/hooks/*.sh` parses (`bash -n`) | critical | lint.sh |
-| `script-syntax` | every `scripts/*.sh` parses | critical | lint.sh |
+| `script-syntax` | every `scripts/*.sh` and `scripts/git-hooks/*` parses | critical | lint.sh |
 | `adversarial-verdict-format` | review output carries a verdict in the declared shape | medium | lint.py |
 | `branch-out-no-recommendation` | branch-out artifacts present trade-offs, never a recommended move | high | lint.py |
 | `constitution-anchors` | every H2/H3 in the constitution has a stable `{#anchor}` | medium | lint.py |

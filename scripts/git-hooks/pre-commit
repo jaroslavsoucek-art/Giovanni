@@ -1,0 +1,184 @@
+#!/usr/bin/env bash
+# Giovanni pre-commit — installed by scripts/install-hooks.sh.
+#
+#   1. Regenerate the generated indexes (knowledge INDEX, memory MAP, deliverables
+#      REGISTRY) from HEAD + the staged changes, and stage the result.
+#   2. Run scripts/lint.sh as the blocking gate, on that same HEAD + staged tree.
+#
+# Override the lint gate: GIOVANNI_SKIP_LINT=1 git commit ... (or --no-verify).
+# The regen step never blocks.
+#
+# Known residue: after a partial commit (`git commit -- <paths>`) the regenerated file
+# goes into the commit through git's temporary index, but the main index keeps the old
+# version (`MM` in git status). `git restore --staged <file>` lines it up.
+#
+# WHY REGEN LIVES HERE, NOT ONLY IN THE EDITOR HOOKS
+# The PostToolUse hooks (post-memory-edit.sh, post-knowledge-edit.sh) match Edit|Write.
+# Anything else that changes a file walks past them: an edit through the shell (sed,
+# heredoc, a python one-liner, which an agent in an auto mode often prefers), a
+# subagent, a cloud session, a human in an editor. In the source implementation the
+# indexes went stale that way and were found only by the pre-push lint, then fixed by
+# hand. A git hook sees every commit regardless of which tool made the change.
+#
+# WHY HEAD + STAGED, NOT THE WORKING TREE
+# The generators read files, not the index. Two sessions sharing one working tree (a
+# scheduled digest and an interactive session, say) means a regen from the working
+# tree picks up the other session's unstaged edits, and the committed index then
+# describes a tree that never existed at any commit. That happened in the source: a
+# commit carried another session's uncommitted shard dates, and CI flagged the map
+# stale. So the regen runs in a throwaway detached worktree at HEAD with the staged
+# diff applied, which is exactly the tree the commit will create. If that worktree
+# cannot be built, the hook falls back to the working tree and says so.
+#
+# WHY GIT_INDEX_FILE IS UNSET INSIDE THE WORKTREE
+# git exports GIT_INDEX_FILE=.git/index (a relative path) to hooks. Inside the temp
+# worktree that path points nowhere (<wt>/.git is a file there, not a directory), so
+# `git apply --index` fails. In the source that failure was swallowed and the hook
+# quietly regenerated from the working tree, which is the very state this hook exists
+# to avoid. Everything run inside the worktree therefore unsets GIT_INDEX_FILE,
+# GIT_DIR and GIT_WORK_TREE. The `git diff --cached` and `git add` in the main repo
+# keep them, because a partial commit (`git commit -- <paths>`) uses a temporary index.
+#
+# WHY THE LINT GATE RUNS IN THE SAME WORKTREE
+# Linting the working tree while regenerating from HEAD + staged makes the two disagree
+# whenever another session has unstaged changes: the lint regenerates the map with that
+# session's files in it, finds the (correct) committed map "stale", and blocks the
+# commit. Linting the tree being committed is also the honest gate: the working tree is
+# not what lands. The machine-local lint config (docs/governance.config.yaml, untracked
+# in the framework repo because its denylist names the source domain) is copied in, or
+# the domain-leak check would run with an empty denylist and pass.
+#
+# WHY ANY CHANGE UNDER THE SOURCE DIRS TRIGGERS ALL GENERATORS
+# The source started with a precise list of which paths feed which generator. The
+# list rotted twice in a month (the map also reads the constitution's line count and
+# a newer memory subdirectory), and each time a commit went out with a stale map. A
+# regen that changes nothing stages nothing, so running it more often costs a second,
+# not correctness.
+
+set -uo pipefail
+
+REPO_ROOT=$(git rev-parse --show-toplevel)
+cd "${REPO_ROOT}"
+
+KNOWLEDGE_DIR="${GIOVANNI_KNOWLEDGE_DIR:-knowledge}"
+MEMORY_DIR="${GIOVANNI_MEMORY_DIR:-memory}"
+DELIVERABLES_DIR="${GIOVANNI_DELIVERABLES_DIR:-deliverables}"
+
+INDEX_OUT="${KNOWLEDGE_DIR}/INDEX.md"
+MAP_OUT="${MEMORY_DIR}/MAP.md"
+REG_OUT="${DELIVERABLES_DIR}/REGISTRY.md"
+
+# ---------- 1. regen generated indexes from HEAD + staged ----------
+
+STAGE_WT=""
+cleanup() {
+    [ -n "${STAGE_WT}" ] || return 0
+    (unset GIT_INDEX_FILE GIT_DIR GIT_WORK_TREE; git worktree remove --force "${STAGE_WT}") >/dev/null 2>&1 || rm -rf "${STAGE_WT}"
+    (unset GIT_INDEX_FILE GIT_DIR GIT_WORK_TREE; git worktree prune) >/dev/null 2>&1 || true
+}
+trap cleanup EXIT
+
+# Build HEAD + staged in a temp worktree. Returns 1 (STAGE_WT stays empty) on any failure.
+build_stage_worktree() {
+    git rev-parse --verify HEAD >/dev/null 2>&1 || return 1
+    local wt
+    wt=$(mktemp -d "${TMPDIR:-/tmp}/giovanni-pre-commit.XXXXXX") || return 1
+    if ! (unset GIT_INDEX_FILE GIT_DIR GIT_WORK_TREE; git worktree add --detach -q "${wt}" HEAD) >/dev/null 2>&1; then
+        rm -rf "${wt}"; return 1
+    fi
+    if ! git diff --cached --binary --quiet; then
+        if ! git diff --cached --binary | (unset GIT_INDEX_FILE GIT_DIR GIT_WORK_TREE; git -C "${wt}" apply --index --whitespace=nowarn) 2>/dev/null; then
+            (unset GIT_INDEX_FILE GIT_DIR GIT_WORK_TREE; git worktree remove --force "${wt}") >/dev/null 2>&1 || rm -rf "${wt}"
+            return 1
+        fi
+    fi
+    STAGE_WT="${wt}"
+}
+
+# Same normalisation as scripts/lint.sh normalize_generated_doc — change both together.
+norm() {
+    sed -E -e 's/^> Generated: .+$/> Generated: <NORM>/' -e 's/[[:space:]]+$//'
+}
+
+# regen <generator> <generated file> [interpreter]
+regen() {
+    local gen="$1" out="$2" interp="${3:-}" tmp err
+    tmp=$(mktemp "${TMPDIR:-/tmp}/giovanni-regen.XXXXXX") || return 0
+    err=$(mktemp "${TMPDIR:-/tmp}/giovanni-regen-err.XXXXXX") || { rm -f "${tmp}"; return 0; }
+    local dir="${STAGE_WT:-${REPO_ROOT}}"
+    if ! ( cd "${dir}" && unset GIT_INDEX_FILE GIT_DIR GIT_WORK_TREE \
+           && if [ -n "${interp}" ]; then "${interp}" "${gen}" --dry; else bash "${gen}" --dry; fi ) > "${tmp}" 2> "${err}"; then
+        echo "⚠  pre-commit: ${gen} --dry failed — ${out} may be stale (the lint gate will say). $(head -1 "${err}")" >&2
+        rm -f "${tmp}" "${err}"; return 0
+    fi
+    # Stage when the regen differs from the index (= what gets committed), ignoring the
+    # "> Generated:" stamp the way the lint does. Comparing against the working tree is
+    # not enough: an editor hook may have refreshed it while the index still holds the old
+    # version. Comparing the stamp would restage both indexes on every commit for nothing.
+    if ! diff -q <(norm < "${tmp}") <(git cat-file blob ":${out}" 2>/dev/null | norm) >/dev/null 2>&1; then
+        cp "${tmp}" "${out}"
+        git add -- "${out}"
+        local src="HEAD+staged"; [ -n "${STAGE_WT}" ] || src="working tree (fallback)"
+        echo "pre-commit: ${out} regenerated from ${src} and staged"
+        # Keep the worktree identical to what will be committed, for the lint gate below.
+        if [ -n "${STAGE_WT}" ]; then cp "${tmp}" "${STAGE_WT}/${out}"; fi
+    fi
+    rm -f "${tmp}" "${err}"
+}
+
+STAGED=$(git -c core.quotepath=off diff --cached --name-only --diff-filter=ACMRD)
+GEN_RE="^(${KNOWLEDGE_DIR}/|${MEMORY_DIR}/|\.claude/|CLAUDE\.md$|${DELIVERABLES_DIR}/_registry\.yaml$)"
+
+# One HEAD+staged worktree serves both the regen and the lint gate.
+if [ -n "${STAGED}" ] && ! build_stage_worktree; then
+    echo "⚠  pre-commit: could not build the HEAD+staged worktree — regen and lint run on the working tree instead." >&2
+    UNSTAGED=$(git -c core.quotepath=off diff --name-only -- "${KNOWLEDGE_DIR}" "${MEMORY_DIR}" "${DELIVERABLES_DIR}/_registry.yaml" 2>/dev/null \
+        | grep -vxF -e "${INDEX_OUT}" -e "${MAP_OUT}" -e "${REG_OUT}" || true)
+    if [ -n "${UNSTAGED}" ]; then
+        echo "⚠  pre-commit: unstaged changes in generator sources — the regenerated index may include them:" >&2
+        echo "${UNSTAGED}" | sed 's/^/     /' >&2
+    fi
+fi
+
+NEED_INDEX=0; NEED_MAP=0; NEED_REG=0
+if [ -n "${STAGED}" ] && echo "${STAGED}" | grep -qE "${GEN_RE}"; then
+    [ -f "${INDEX_OUT}" ] && [ -f scripts/build-knowledge-index.sh ] && NEED_INDEX=1
+    [ -f "${MAP_OUT}" ] && [ -f scripts/build-memory-map.sh ] && NEED_MAP=1
+    [ -f "${DELIVERABLES_DIR}/_registry.yaml" ] && [ -f scripts/build-deliverables-registry.py ] \
+        && command -v python3 >/dev/null 2>&1 && NEED_REG=1
+fi
+
+# Shallow clone: `git log -1 -- <file>` attributes old files to the graft commit, so the
+# INDEX / MAP dates would be wrong. Skip them and say so; the registry does not read git.
+if [ "$(git rev-parse --is-shallow-repository 2>/dev/null)" = true ] && [ $((NEED_INDEX + NEED_MAP)) -gt 0 ]; then
+    echo "⚠  pre-commit: shallow clone — INDEX/MAP regen skipped (git dates unreliable). Run 'git fetch --unshallow' and commit again." >&2
+    NEED_INDEX=0; NEED_MAP=0
+fi
+
+[ "${NEED_INDEX}" -eq 1 ] && regen scripts/build-knowledge-index.sh "${INDEX_OUT}"
+[ "${NEED_MAP}" -eq 1 ] && regen scripts/build-memory-map.sh "${MAP_OUT}"
+[ "${NEED_REG}" -eq 1 ] && regen scripts/build-deliverables-registry.py "${REG_OUT}" python3
+
+# ---------- 2. lint gate, on the tree being committed ----------
+
+if [ "${GIOVANNI_SKIP_LINT:-0}" = "1" ]; then
+    exit 0
+fi
+
+LINT_ROOT="${STAGE_WT:-${REPO_ROOT}}"
+if [ -n "${STAGE_WT}" ] && [ -f docs/governance.config.yaml ] \
+    && ! git ls-files --error-unmatch docs/governance.config.yaml >/dev/null 2>&1; then
+    mkdir -p "${STAGE_WT}/docs" && cp docs/governance.config.yaml "${STAGE_WT}/docs/governance.config.yaml"
+fi
+
+LINT="${LINT_ROOT}/scripts/lint.sh"
+[ -f "${LINT}" ] || { echo "WARN: scripts/lint.sh missing — skipping lint" >&2; exit 0; }
+
+if ! (cd "${LINT_ROOT}" && unset GIT_INDEX_FILE GIT_DIR GIT_WORK_TREE && LINT_REPO_ROOT="${LINT_ROOT}" bash "${LINT}"); then
+    echo "" >&2
+    echo "Pre-commit lint failed. Fix findings or:" >&2
+    echo "  GIOVANNI_SKIP_LINT=1 git commit ..." >&2
+    echo "  git commit --no-verify ..." >&2
+    exit 1
+fi
+exit 0

@@ -1,6 +1,6 @@
 ---
 description: Quarterly audit of recent shadow hypotheses — routes to prediction-runtime in shadow-review mode. Enforces adversarial lookback discipline.
-allowed-tools: Task, Read, Glob, Grep, Write
+allowed-tools: Task, Read, Glob, Grep, Write, Edit
 ---
 
 # /shadow-review
@@ -61,7 +61,8 @@ Before spawning `prediction-runtime`:
    The `exclude_resolved_after` cohort filter carries the COI exclusion into the agent: files with `resolved_date` after that timestamp are dropped from the sample, not reviewed.
 3. **Wait for agent return.** The agent processes the cohort: applies adversarial lookback per hypothesis, fills `adversarial_check` + `resolved_reasoning` + `resolved_date` in each YAML, moves files to `resolved/<YYYY-MM>/` or `expired/<YYYY-MM>/`, builds the comparison table, identifies concerning patterns, appends to audit log.
 4. **Relay agent output verbatim** to chat. Include the audit log pointer and the principal-action hint.
-5. **Do NOT commit.** Principal reviews comparison table + concerning patterns, decides whether to dispute any verdicts, and commits the audit log + moved YAMLs in batch.
+5. **Record the review date.** Set `- last_shadow_review_date: <YYYY-MM-DD>` in `memory/digest_state.md` to the date of this run's audit-log entry. Keep the date as the third whitespace-separated field of that line (any comment goes after it): `session-start-digest.sh` reads it with `awk '{print $3}'`. Without this step the cadence reminder never clears. The session-start hook and the digest both read this field, and in the source implementation nothing wrote it, so after the first review the "overdue" flag stayed on until someone set the date by hand.
+6. **Do NOT commit.** Principal reviews comparison table + concerning patterns, decides whether to dispute any verdicts, and commits the audit log + moved YAMLs in batch.
 
 ## Adversarial lookback enforcement
 
@@ -76,6 +77,7 @@ If the orchestrator detects post-hoc that any moved YAML has an empty `adversari
   - `memory/shadow/resolved/<YYYY-MM>/*.yaml` — hypotheses moved from pending with filled verdict fields
   - `memory/shadow/expired/<YYYY-MM>/*.yaml` — hypotheses moved from pending with `status: expired`
   - `memory/calibration/audit-log.md` — audit entry appended
+  - `memory/digest_state.md` — `last_shadow_review_date` (one line, nothing else in the file)
 - **No mutation to `actor-scores.yaml`** — that's `/calibration-report`'s job. `/shadow-review` records verdicts in individual YAMLs; aggregation happens at calibration.
 - **No auto-commit.** Principal commits in batch.
 
