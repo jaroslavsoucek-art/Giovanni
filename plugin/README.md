@@ -39,6 +39,10 @@ Hooks, agents and the git gates need Claude Code. Installed from the Claude dire
 
 The plugin is the `plugin/` folder of [jaroslavsoucek-art/Giovanni](https://github.com/jaroslavsoucek-art/Giovanni). The repository root carries the marketplace manifest, the CI, the framework-level docs and a synthetic filled instance under `examples/lattice-finance/` that shows what a running Giovanni looks like.
 
+## Privacy
+
+No server, no telemetry, nothing sent to the author. What the plugin reads, what it writes into your repository (stakeholder profiles are personal data; keep the repository private) and what leaves your machine: [`PRIVACY.md`](PRIVACY.md).
+
 ## License
 
 MIT. See the `license` field in `.claude-plugin/plugin.json` and the `LICENSE` file at the repository root.
