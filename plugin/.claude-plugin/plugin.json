@@ -1,8 +1,7 @@
 {
-  "$schema": "https://json.schemastore.org/claude-code-plugin.json",
   "name": "giovanni",
   "displayName": "Giovanni",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "AI Chief of Staff runtime: 4-layer memory with hard limits, daily digest with drift detection, stakeholder trajectories, invisible shadow hypotheses, adversarial-default review, and a governance lint that fails the build on contradictions. State lives in your repo; the mechanism lives here.",
   "author": {
     "name": "Jaroslav Souček",

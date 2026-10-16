@@ -42,7 +42,7 @@ Per knowledge/README.md "How to amend safely" — pre-commit checklist:
 Pre-commit lint will check:
   - constitution-anchors (every H2/H3 has {#anchor-id})
   - domain-leak (if denylist configured in governance.config.yaml)
-Run manually before commit: bash "${CLAUDE_PLUGIN_ROOT}/scripts/lint.sh"
+Run the plugin lint (scripts/lint.sh) manually before committing.
 EOF
 )
 if grep -qE '^##.*SUPERSEDED' "${CONST_PATH}" 2>/dev/null; then
