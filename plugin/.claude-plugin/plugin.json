@@ -11,15 +11,13 @@
   "homepage": "https://github.com/jaroslavsoucek-art/Giovanni",
   "repository": "https://github.com/jaroslavsoucek-art/Giovanni",
   "license": "MIT",
-  "keywords": ["chief-of-staff", "memory", "digest", "governance", "stakeholders", "prediction", "adversarial-review"],
-  "agents": [
-    "./agents/adversarial-reviewer.md",
-    "./agents/consistency-checker.md",
-    "./agents/deliverable-reviewer.md",
-    "./agents/market-radar.md",
-    "./agents/prediction-runtime.md",
-    "./agents/profile-bootstrap.md",
-    "./agents/researcher.md",
-    "./agents/source-puller.md"
+  "keywords": [
+    "chief-of-staff",
+    "memory",
+    "digest",
+    "governance",
+    "stakeholders",
+    "prediction",
+    "adversarial-review"
   ]
 }

@@ -64,4 +64,4 @@ Each new agent adds:
 - A maintenance burden (description has to stay in sync with body)
 - Surface area for scope creep (agents tend to grow capabilities over time)
 
-Bar for adding a new agent: the work is genuinely bounded, parallelizable OR pollution-prone, and reused across enough scenarios to justify the overhead. **If you're tempted to add an agent for a single use case, do the work inline first and revisit after 3 occurrences.** A new agent also needs a line in `.claude-plugin/plugin.json` (`agents` is an explicit list) and a row here (lint: `agent-roster-match`).
+Bar for adding a new agent: the work is genuinely bounded, parallelizable OR pollution-prone, and reused across enough scenarios to justify the overhead. **If you're tempted to add an agent for a single use case, do the work inline first and revisit after 3 occurrences.** A new agent is one file in `agents/` (the plugin scans the directory — do **not** list agents in `plugin.json`; an explicit list made the inventory report zero agents) and a row here (lint: `agent-roster-match`). Nothing but agent definitions may live in `agents/`: the validator reads every `.md` there as one.

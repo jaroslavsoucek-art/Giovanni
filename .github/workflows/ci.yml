@@ -56,8 +56,12 @@ jobs:
               pdir = root / src
               assert (pdir / ".claude-plugin/plugin.json").is_file(), f"{src}: no plugin.json"
               pj = json.loads((pdir / ".claude-plugin/plugin.json").read_text())
-              for agent in pj.get("agents", []):
-                  assert (pdir / agent).is_file(), f"agents entry missing: {agent}"
+              assert "agents" not in pj, "plugin.json must not list agents explicitly — the inventory then reports 0; the agents/ scan finds them"
+              agents = sorted((pdir / "agents").glob("*.md"))
+              assert agents, "agents/ is empty"
+              for a in agents:
+                  head = a.read_text().split("\n", 12)
+                  assert head[0] == "---" and any(l.startswith("name:") for l in head), f"{a.name}: no frontmatter name — would not load as an agent"
               hooks = json.loads((pdir / "hooks/hooks.json").read_text())["hooks"]
               for event, entries in hooks.items():
                   for e in entries:
@@ -66,7 +70,7 @@ jobs:
                           assert (pdir / script).is_file(), f"{event}: hook script missing: {script}"
               skills = [d for d in (pdir / "skills").iterdir() if d.is_dir()]
               assert skills and all((d / "SKILL.md").is_file() for d in skills), "skills/ dir without SKILL.md"
-              print(f"{entry['name']}: {len(pj.get('agents', []))} agents, {len(skills)} skills, hooks for {sorted(hooks)}")
+              print(f"{entry['name']}: {len(agents)} agents, {len(skills)} skills, hooks for {sorted(hooks)}")
           PY
 
       - name: Framework lint (bash checks + Python rules)
