@@ -131,5 +131,9 @@ jobs:
           test -x .git/hooks/pre-commit && test -x .git/hooks/pre-push || { echo "::error::git hooks not installed"; exit 1; }
           test "$(cat .git/giovanni-plugin-root)" = "$CLONE/plugin" || { echo "::error::plugin root marker wrong: $(cat .git/giovanni-plugin-root)"; exit 1; }
           # A second run changes nothing.
-          bash plugin/scripts/init-fork.sh --yes --skip-regen | grep -q "exists — kept" || { echo "::error::init-fork is not idempotent"; exit 1; }
+          # Capture, then grep: piping straight into `grep -q` lets grep close the pipe
+          # on the first match, the script dies of SIGPIPE on its next echo, and
+          # pipefail reports the pass as a failure.
+          SECOND_RUN=$(bash plugin/scripts/init-fork.sh --yes --skip-regen)
+          grep -q "exists — kept" <<<"${SECOND_RUN}" || { echo "::error::init-fork is not idempotent"; exit 1; }
           echo "init-fork smoke test passed."
