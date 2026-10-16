@@ -99,6 +99,7 @@ A probe-confirmed outage lasting many runs is an **infrastructure problem, not a
 - **Two identical errors = stop.** Same tool, same error text, twice in one run → that source ends as `ERROR`. No third attempt, no "let me try a different query and see". Hygiene gets `⚠ <source> stopped after 2 identical errors: <error>`; `source_health` increments. The fallback channel is a different lane and may be used once.
 - **Bounded queries, always.** Every list/search call carries an explicit cap and a field projection — never default all-fields. At most ~3 pages per source per run; past that, `[... +N more — narrow the window]`. **An unbounded call is a defect of the run regardless of what it returned.** Observed cost of ignoring this: three unbounded queries on the main thread, ~350 KB of result each, in a run whose useful output was a dozen bullets.
 - **Result size.** A single tool result over ~50 KB does not belong on the main thread. It belongs in an agent with a narrower query.
+- **A cap that cuts coverage is a quality gap, not a saving.** Caps exist to stop waste: repeat retries, unbounded dumps, a dead lane polled again. They never exist to read less of what the config says to read. A source with an enumerated target list (channels, threads, tracked items) gets a budget sized from that list, `<configured targets> + headroom`, never a flat constant. In the source implementation, a flat ~40-call budget cut off the end of a 47-channel list, and the core channels were at the end. Three more documented cases traded quality for budget: a comment budget that left eight risk-log items unread, a direct-message lane read through search that missed a message with three asks in it, and a mentions lane dropped after two failures, which left a prediction to expire without ground truth. Cost reports exist to find operations with zero yield, not to lower a number.
 
 ### 4c. Spawn — one source per agent
 
@@ -122,6 +123,15 @@ Rules:
 - Within a shared backend, either one dedicated agent does its sources in sequence, or the main thread does them one call per message.
 - Do not make main-thread calls to a backend while an agent is in flight against it.
 - **Guard:** verify the response answers the request — asked for id X, got id X; asked for issues, got issue schema. A mismatch is retried sequentially, never trusted.
+
+### 4e. Lane honesty — every lane says what it actually covered
+
+A lane that reports less than it did is a defect. A lane that reports more than it did is worse, because nobody goes looking.
+
+- **Every lane ends with a coverage line:** `coverage: <read>/<configured> <unit>`. Examples: `coverage: 22/22 tracked items`, `coverage: 45/47 channels — 2 ERROR`. Truncated, skipped and errored targets count as not read. The main thread renders any shortfall as `⚠ <source> partial: N/M` in System hygiene and does not treat that source's silence as "nothing happened".
+- **Targets come from the config, not the prompt.** A lane reads its target list from `memory/digest_sources.md` itself. A list copied into a spawn prompt is a snapshot. In the source, an item that started being tracked after the prompt was written was missing from every run, by construction.
+- **Test the guard by breaking it.** A reconciliation check is real only once you have seen it fire on a truncated input. In the source, one run had two silent degradations of the same shape: (1) a lane piped lint output through `tail -5`, listed 3 of 5 findings and printed "Total findings: 5"; (2) a discovery query with a limit above the API's real page size returned a truncated result as if it were complete. The first fix for (1) was itself a no-op on macOS. It used GNU `\+` in BSD `sed`, the capture failed silently, and the guard never evaluated. A test against a truncated output caught it before production did.
+- **Deterministic, enumerable pulls belong in a script, not an agent.** When the work is "for each of these N ids, fetch the fields and the comment tail", a script does it in one process, enforces a wall-clock deadline where a clock exists, and prints its own `checked N/M`. In the source, 20 items × 2 calls took 16 s in a script. An agent on the same set ran 58 minutes, returned nothing and had to be killed, so the run lost the comment streams it existed for. The agent's cap ("~30 pulls, ~40 tool calls, mind the clock") did not hold: it was counted in units the agent does not count, against a clock it cannot read. Keep agents for pulls that need judgement about what to read next.
 
 ### Why parallel
 
@@ -445,6 +455,7 @@ System hygiene (flags only when applicable)
   ⚠ <N> shadow hypotheses expired without ground truth (specificity gate review needed)
   ⚠ Shadow volume hard-fail (>25) — triage heuristics need review
   ⚠ Source pull failed: <source> — <error>
+  ⚠ <source> partial: <N>/<M> <unit> — <why> (Step 4e; silence from this source is not evidence)
   ⚠ Degraded mode: source-puller fallback used (sequential pull)
   ⚠ Mirrored external tool/skill library sync >7d stale (optional — only if the fork mirrors one)
 ```

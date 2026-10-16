@@ -100,9 +100,10 @@ Return ONLY this structure (no preamble, no closing summary, no "Here are…"):
 - bullet 1
 - bullet 2
 - ...
+- coverage: <read>/<asked> <unit>
 ```
 
-Max 500 lines. If the source would exceed, truncate and append `[... +N more — re-run with narrower window]` as the final bullet.
+The last bullet is always the coverage line (see Hard rules). Max 500 lines. If the source would exceed, truncate and append `[... +N more — re-run with narrower window]` as the final bullet.
 
 ## Hard rules
 
@@ -112,6 +113,7 @@ Max 500 lines. If the source would exceed, truncate and append `[... +N more —
 - **Read-only.** No memory writes, no file edits, no commits.
 - **No synthesis.** Bullets are raw, structured findings — main thread synthesizes after merge.
 - **No coverage faking.** If 5 of 25 sources unreachable, report 5/25 unreachable bullets.
+- **End with a coverage line:** `coverage: <read>/<asked> <unit>`. It counts the targets you were given (feeds, channels, threads, item ids) that you actually read in full. A truncated, skipped or errored target is not read. Reporting 47/47 after stopping at 40 is the exact failure this line exists to expose. If your call budget would truncate the target list, say so in this line. Do not quietly read the first N.
 - **Bounded queries only.** Every list/search call carries an explicit result cap and a field projection — never default all-fields, never "fetch it all and filter locally". At most ~3 pages; past that, end with `[... +N more — narrow the window]`. An unbounded call is a defect of the run regardless of what it returned.
 - **Retry cap = 1**, and only for a transient failure (auth, timeout, 5xx, a payload that doesn't match the request). A 404, an empty result, or a schema mismatch after a clean retry is a *result*. **Two identical errors = stop** and return `ERROR: <tool> failed twice with <error>` — no third attempt, no improvising a different query to see if it slips through.
 - **Verify the response answers the request.** Asked for id X, got id X; asked for issues, got issue schema. Shared backends cross-wire under concurrency, and a wrong payload does not announce itself. On mismatch: one sequential retry, then `ERROR`. Never return data you cannot tie to your own request.
