@@ -14,36 +14,21 @@
 # GIOVANNI_EPHEMERAL=1 for any other throwaway environment you want guarded.
 
 set +e
-
 if [ -z "${CLAUDE_CODE_REMOTE:-}" ] && [ "${GIOVANNI_EPHEMERAL:-0}" != "1" ]; then
     exit 0
 fi
-
-# Project = $CLAUDE_PROJECT_DIR (exported to hook processes), never this script's own
-# location: installed as a plugin, the script lives in the plugin cache, not in the repo.
+[ -n "${CLAUDE_PLUGIN_ROOT:-}" ] || exit 0
 REPO_ROOT="${CLAUDE_PROJECT_DIR:-$(git rev-parse --show-toplevel 2>/dev/null || pwd)}"
 cd "${REPO_ROOT}" || exit 0
-
 DIRTY=$(git status --porcelain 2>/dev/null | head -5)
 AHEAD=$(git rev-list --count @{u}..HEAD 2>/dev/null)
 [ -z "${AHEAD}" ] && AHEAD=0
-
 if [ -z "${DIRTY}" ] && [ "${AHEAD}" -eq 0 ]; then
     exit 0
 fi
-
 MSG="⚠ Ephemeral session with unsaved work: "
 [ -n "${DIRTY}" ] && MSG="${MSG}dirty tree (git status). "
 [ "${AHEAD}" -gt 0 ] && MSG="${MSG}${AHEAD} commit(s) unpushed. "
 MSG="${MSG}This environment does not survive the session — commit and push before it ends."
-
-if command -v python3 >/dev/null 2>&1; then
-    python3 -c "
-import json, sys
-print(json.dumps({'systemMessage': sys.argv[1]}))
-" "${MSG}"
-else
-    printf '%s\n' "${MSG}"
-fi
-
+python3 "${CLAUDE_PLUGIN_ROOT}/hooks/lib/hookutil.py" system "${MSG}"
 exit 0

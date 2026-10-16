@@ -14,26 +14,19 @@
 # branch backlog.
 #
 # Always exits 0. Output goes to stdout (consumed as additionalContext)
-# OR as a structured systemMessage if jq is available.
 
 set +e
-
-# Project = $CLAUDE_PROJECT_DIR (exported to hook processes), never this script's own
-# location: installed as a plugin, the script lives in the plugin cache, not in the repo.
+# Run only under Claude Code: the helpers live at a literal path under the plugin root.
+[ -n "${CLAUDE_PLUGIN_ROOT:-}" ] || exit 0
 REPO_ROOT="${CLAUDE_PROJECT_DIR:-$(git rev-parse --show-toplevel 2>/dev/null || pwd)}"
-
 THRESHOLD="${GIOVANNI_BRANCH_WARN_THRESHOLD:-1}"
 MAIN_BRANCH="${GIOVANNI_MAIN_BRANCH:-main}"
-
 cd "${REPO_ROOT}" || exit 0
 git rev-parse --git-dir > /dev/null 2>&1 || exit 0
-
 branches=$(git for-each-ref --format='%(refname:short)' \
     'refs/heads/claude/*' \
     "refs/remotes/origin/claude/*" 2>/dev/null | sort -u)
-
 [ -z "${branches}" ] && exit 0
-
 unmerged_lines=""
 unmerged_count=0
 while IFS= read -r ref; do
@@ -45,16 +38,7 @@ while IFS= read -r ref; do
         unmerged_count=$((unmerged_count + 1))
     fi
 done <<< "${branches}"
-
 [ "${unmerged_count}" -lt "${THRESHOLD}" ] && exit 0
-
 msg="⚠ UNMERGED CLAUDE SESSION BRANCHES (${unmerged_count}):\n${unmerged_lines}\nMerge: git merge origin/claude/<name>  |  Delete: git push origin --delete claude/<name>"
-
-if command -v jq > /dev/null 2>&1; then
-    jq -nc --arg msg "${msg}" '{systemMessage: $msg}'
-else
-    # Fall back to plain stdout
-    printf '%b\n' "${msg}"
-fi
-
+python3 "${CLAUDE_PLUGIN_ROOT}/hooks/lib/hookutil.py" system "$(printf '%b' "${msg}")"
 exit 0

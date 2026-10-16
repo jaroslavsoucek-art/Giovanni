@@ -18,101 +18,33 @@
 #   GIOVANNI_SKIP_DECISION_CHECK=1 git commit <args>
 
 set +e
-
 if [ "${GIOVANNI_SKIP_DECISION_CHECK:-0}" = "1" ]; then
     exit 0
 fi
-
-# ---------------------------------------------------------------------------
-# Self-filter: when wired as a Claude Code PreToolUse hook, the matcher
-# ("Bash") fires on EVERY Bash tool call — not just on `git commit`. Without
-# this guard a staged invalid decision record blocks unrelated commands
-# (ls, grep, and so on), not just the commit. Parse the hook JSON from stdin
-# (python3 — no jq dependency, consistent with post-knowledge-edit.sh) and
-# exit 0 unless the command is actually a git commit invocation.
-#
-# If stdin is a TTY, empty, or not hook JSON (direct execution / pre-commit
-# path), fall through to the staged-file check unchanged.
-INPUT=""
+[ -n "${CLAUDE_PLUGIN_ROOT:-}" ] || exit 0
+# Self-filter: as a PreToolUse hook on Bash we see every command; gate only `git commit`.
 if [ ! -t 0 ]; then
-    INPUT=$(cat 2>/dev/null || true)
-fi
-if [ -n "${INPUT}" ] && command -v python3 >/dev/null 2>&1; then
-    VERDICT=$(printf '%s' "${INPUT}" | python3 -c "
-import json, re, sys
-raw = sys.stdin.read()
-try:
-    d = json.loads(raw)
-except Exception:
-    print('fallthrough'); sys.exit(0)
-if not isinstance(d, dict):
-    print('fallthrough'); sys.exit(0)
-cmd = (d.get('tool_input') or {}).get('command') or ''
-# Tolerant of flags / paths / compound commands:
-#   git commit -m <msg>; git -C <path> commit; cd x && git commit
-if re.search(r'(^|[;&|]\s*)git(\s+-C\s+\S+)?\s+commit\b', cmd):
-    print('gate')
-else:
-    print('skip')
-" 2>/dev/null)
+    VERDICT=$(python3 "${CLAUDE_PLUGIN_ROOT}/hooks/lib/hookutil.py" commit-gate 2>/dev/null)
     if [ "${VERDICT}" = "skip" ]; then
         exit 0
     fi
-    # 'gate', 'fallthrough', or empty (python failed) → run the check below.
 fi
-
-# Project = $CLAUDE_PROJECT_DIR (exported to hook processes), never this script's own
-# location: installed as a plugin, the script lives in the plugin cache, not in the repo.
 REPO_ROOT="${CLAUDE_PROJECT_DIR:-$(git rev-parse --show-toplevel 2>/dev/null || pwd)}"
-
 MEMORY_DIR="${GIOVANNI_MEMORY_DIR:-memory}"
-
-# Read staged files
 STAGED=$(git -C "${REPO_ROOT}" diff --cached --name-only --diff-filter=ACM 2>/dev/null \
     | grep "^${MEMORY_DIR}/decisions/.*\.md$")
 [ -z "${STAGED}" ] && exit 0
-
 VIOLATIONS=()
-
 while IFS= read -r FILE; do
     [ -f "${REPO_ROOT}/${FILE}" ] || continue
-
-    # Extract section content
-    CONTENT=$(awk '
-        /^## Trigger conditions/ { capturing=1; next }
-        capturing && /^## / { exit }
-        capturing { print }
-    ' "${REPO_ROOT}/${FILE}")
-
-    STRIPPED=$(printf '%s' "${CONTENT}" | sed 's/<!--[^>]*-->//g' | tr -d '[:space:]')
-
-    if [ -z "${STRIPPED}" ] || printf '%s' "${CONTENT}" | grep -qiE '<EMPTY|<TBD|<TODO|^[[:space:]]*TBD[[:space:]]*$|^[[:space:]]*TODO[[:space:]]*$'; then
-        # Check frontmatter field as fallback
-        FM_TRIGGER=$(awk '
-            BEGIN { in_fm = 0 }
-            /^---$/ {
-                if (in_fm) { exit }
-                in_fm = 1
-                next
-            }
-            in_fm && /^trigger_conditions:/ {
-                sub("^trigger_conditions:[ \t]*", "")
-                print
-                exit
-            }
-        ' "${REPO_ROOT}/${FILE}")
-        # FM_TRIGGER empty / [] / "" → violation
-        FM_STRIPPED=$(printf '%s' "${FM_TRIGGER}" | tr -d '[:space:]')
-        if [ -z "${FM_STRIPPED}" ] || [ "${FM_STRIPPED}" = "[]" ] || [ "${FM_STRIPPED}" = '""' ] || [ "${FM_STRIPPED}" = "''" ]; then
-            VIOLATIONS+=("${FILE}")
-        fi
+    STATUS=$(python3 "${CLAUDE_PLUGIN_ROOT}/hooks/lib/hookutil.py" trigger-conditions "${REPO_ROOT}/${FILE}")
+    if [ "${STATUS}" = "empty" ]; then
+        VIOLATIONS+=("${FILE}")
     fi
 done <<< "${STAGED}"
-
 if [ "${#VIOLATIONS[@]}" -eq 0 ]; then
     exit 0
 fi
-
 {
     echo "Decision-record discipline check failed."
     echo ""
@@ -128,5 +60,4 @@ fi
     echo "Override: GIOVANNI_SKIP_DECISION_CHECK=1 git commit <args>"
     echo "Or:       git commit --no-verify <args>"
 } >&2
-
 exit 2

@@ -26,7 +26,7 @@ Then fill the constitution, the stakeholder profiles and the digest sources. The
 
 ## What the plugin runs, reads and sends
 
-- **Hooks** are shell scripts that run locally. They read the current repository (git status, staged files, the memory state files) and need `git` and `python3` on the path. They make no network calls and send nothing anywhere.
+- **Hooks** are plain shell scripts that run locally. They read the current repository (git status, staged files, the memory state files) and call two Python helpers in `hooks/lib/` for JSON parsing, date arithmetic and the write-gate decision. They need `git` and `python3` on the path, make no network calls and send nothing anywhere.
 - **Skills and agents** read and write files inside the repository the session is open in. `researcher` and `market-radar` use Claude Code's web search and fetch tools when you invoke them. `source-puller` reads whatever MCP connectors you configure yourself (chat, tasks, mail, calendar); the plugin ships none.
 - **The external write gate** (`hooks/block-external-writes.sh`) turns every write-type MCP tool call into an explicit per-action confirmation and denies writes to channels you demote to read-only. Reads pass. The permission half of the gate (`permissions.ask` / `permissions.deny`) is written into your project's `.claude/settings.json` by `/giovanni:init`; a plugin cannot ship it.
 - No credentials, no telemetry, no package installs, no `npx`/`uvx` launchers.
