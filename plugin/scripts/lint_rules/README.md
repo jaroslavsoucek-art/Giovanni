@@ -72,12 +72,12 @@ bash scripts/lint.sh --check <CHECK_ID>
 | `l1-strikethrough-ratio` | medium / critical | Strikethrough ratio in L1 (warn 2 %, fail 5 %) |
 | `no-percentages-in-predictions` | high | Predictive artifacts use the three-tier enum, never numeric probabilities |
 | `shadow-expired-pending` | medium / high | Pending shadow hypotheses not past `horizon_at`; resolved ones carry a filled `adversarial_check` |
-| `slash-command-registry` | low | `.claude/commands/README.md` registry table in sync with command files |
+| `slash-command-registry` | low | `skills/README.md` registry table in sync with command files |
 | `stakeholder-frontmatter` | medium | Stakeholder profiles match the documented frontmatter schema (required fields, enums, slug ↔ filename) |
 | `stakeholder-slug-exists` | medium | `key_stakeholders` slugs resolve to profile files |
 | `topic-shard-frontmatter` | medium | Topic shards have required frontmatter fields |
 | `silence-counter-verified` | high / medium | A "N days of silence" claim in L1 / an active shard carries `[verified YYYY-MM-DD]` ≤ `silence_stamp_max_days`, or is a past fact with no counter |
-| `rules-register-pointers` | medium | Every `docs/invariants.md#<id>` pointer in `CLAUDE.md` / `CLAUDE.template.md` resolves to a Behavioral rules entry |
+| `rules-register-pointers` | medium | Every `docs/invariants.md#<id>` pointer in `CLAUDE.md` / `templates/CLAUDE.template.md` resolves to a Behavioral rules entry |
 
 Plus bash-side checks (in `scripts/lint.sh`, not Python plugins):
 
@@ -86,7 +86,7 @@ Plus bash-side checks (in `scripts/lint.sh`, not Python plugins):
 | `index-stale` | `knowledge/INDEX.md` matches `build-knowledge-index.sh --dry` ([SKIP] on shallow clones) |
 | `map-stale` | `memory/MAP.md` matches `build-memory-map.sh --dry` ([SKIP] on shallow clones) |
 | `registry-stale` | `deliverables/REGISTRY.md` matches `build-deliverables-registry.py --dry` (opt-in — only when `_registry.yaml` exists) |
-| `hook-syntax` | Every `.claude/hooks/*.sh` passes `bash -n` |
+| `hook-syntax` | Every `hooks/*.sh` passes `bash -n` |
 | `script-syntax` | Every `scripts/*.sh` and `scripts/git-hooks/*` passes `bash -n` |
 
 ## Self-test fixtures

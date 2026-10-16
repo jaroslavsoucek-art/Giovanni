@@ -2,7 +2,7 @@
 
 Giovanni's operational subagents. Each lives at `agents/<name>.md` in the plugin (this roster sits in `docs/` because a plugin's `agents/` directory may hold nothing but agent definitions) and is spawned via the `Agent` tool as **`giovanni:<name>`** — the plugin namespaces every agent, so `subagent_type: giovanni:prediction-runtime`, never the bare name. The roster below keeps the bare names because that is what the files are called; prefix when you spawn.
 
-The framework-building **architect agents** (memory-architect, governance-architect, …) are not here. They ran once, during Giovanni's own bootstrap, and live in the framework repo's `.claude/agents/`; a fork or a plugin install never needs them.
+The framework-building **architect agents** (memory-architect, governance-architect, …) are not here. They ran once, during Giovanni's own bootstrap, and live in the framework repo's `agents/`; a fork or a plugin install never needs them.
 
 Design philosophy + invocation patterns: see [`docs/agents.md`](agents.md).
 

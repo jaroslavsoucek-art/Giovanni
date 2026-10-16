@@ -1,6 +1,6 @@
 # memory/branch-out/ — predictive simulation artifacts
 
-This directory holds **active predictive simulations** (`/branch-out` outputs). Each artifact is a structured trade-off matrix for a high-stakes decision: who the actors are, what moves the principal could make, how each actor would plausibly respond at three confidence tiers, and the consequence dimensions of each move.
+This directory holds **active predictive simulations** (`/giovanni:branch-out` outputs). Each artifact is a structured trade-off matrix for a high-stakes decision: who the actors are, what moves the principal could make, how each actor would plausibly respond at three confidence tiers, and the consequence dimensions of each move.
 
 Branch-outs are the visible half of the predictive layer. The invisible half — **shadow hypotheses** — lives in `memory/shadow/`. Calibration scoring of both lives in `memory/calibration/`.
 
@@ -39,27 +39,27 @@ After **90 days in closed status**, the artifact moves to `memory/branch-out/_ar
 
 These rules are repeated here verbatim from `docs/prediction.md` and the constitution. They are the IP moat. **Do not relax them in your fork.**
 
-1. **No percentages.** Three tiers only: `likely` / `possible-but-surprising` / `unlikely-but-impactful`. Numeric probabilities create false precision. The branch-out template enforces this in cell structure; `scripts/lint_rules/no_percentages_in_predictions.py` enforces it programmatically.
+1. **No percentages.** Three tiers only: `likely` / `possible-but-surprising` / `unlikely-but-impactful`. Numeric probabilities create false precision. The branch-out template enforces this in cell structure; `<plugin>/scripts/lint_rules/no_percentages_in_predictions.py` enforces it programmatically.
 
 2. **Max horizon t+2.** One user move + one actor response (t+1), optionally with a knock-on counter-move (t+2). Anything beyond t+2 is a human strategy session, not agentic prediction.
 
-3. **Hard stop on shallow actors.** If 2+ key actors in the scenario have `profile_depth: shallow` or no profile, `/branch-out` STOPS. No caveat-degraded output. The fix is to deepen profiles first.
+3. **Hard stop on shallow actors.** If 2+ key actors in the scenario have `profile_depth: shallow` or no profile, `/giovanni:branch-out` STOPS. No caveat-degraded output. The fix is to deepen profiles first.
 
-4. **No "recommended move".** Trade-off matrix has five fixed dimensions (`optionality`, `speed`, `leverage`, `trust`, `reversibility`) and no recommendation column. The agent surfaces consequence space; the principal decides. `scripts/lint_rules/branch_out_no_recommendation.py` catches recommendation creep.
+4. **No "recommended move".** Trade-off matrix has five fixed dimensions (`optionality`, `speed`, `leverage`, `trust`, `reversibility`) and no recommendation column. The agent surfaces consequence space; the principal decides. `<plugin>/scripts/lint_rules/branch_out_no_recommendation.py` catches recommendation creep.
 
 5. **Canonical names from registry.** Every move name in a branch-out artifact draws from `canonical-moves.md`. Reuse > coin. New names only via decision record + user confirm. Lexical drift destroys calibration.
 
-6. **Shadow hypotheses invisible at generation.** Hypotheses dropped during the `/branch-out` workflow land in `memory/shadow/pending/` and are NOT surfaced to the principal at generation time. Self-fulfilling / self-preventing prophecy is the failure mode the invisibility rule prevents.
+6. **Shadow hypotheses invisible at generation.** Hypotheses dropped during the `/giovanni:branch-out` workflow land in `memory/shadow/pending/` and are NOT surfaced to the principal at generation time. Self-fulfilling / self-preventing prophecy is the failure mode the invisibility rule prevents.
 
-7. **Adversarial lookback at /shadow-review.** Default prompt is skeptical: "what are the STRONGEST arguments this hypothesis was NOT fulfilled?" Counterweights LLM overconfidence.
+7. **Adversarial lookback at /giovanni:shadow-review.** Default prompt is skeptical: "what are the STRONGEST arguments this hypothesis was NOT fulfilled?" Counterweights LLM overconfidence.
 
-8. **Decision records draft only.** `/branch-out` writes a draft decision record (`memory/decisions/<date>-<slug>.md`) with empty `chosen_move`, `reasoning`, `trigger_conditions`. Agent NEVER commits. Principal fills + commits.
+8. **Decision records draft only.** `/giovanni:branch-out` writes a draft decision record (`memory/decisions/<date>-<slug>.md`) with empty `chosen_move`, `reasoning`, `trigger_conditions`. Agent NEVER commits. Principal fills + commits.
 
 ---
 
 ## How a branch-out gets created
 
-1. Principal runs `/branch-out <situation-slug>` referencing today's digest item.
+1. Principal runs `/giovanni:branch-out <situation-slug>` referencing today's digest item.
 2. Agent loads:
    - `memory/triage-heuristic.yaml`
    - `canonical-moves.md`
@@ -73,7 +73,7 @@ These rules are repeated here verbatim from `docs/prediction.md` and the constit
 8. Agent writes draft decision record to `memory/decisions/<date>-<slug>.md`.
 9. Principal fills decision record + commits separately.
 
-The full `/branch-out` command spec lives at `.claude/commands/branch-out.md`.
+The full `/giovanni:branch-out` command spec lives at `<plugin>/skills/branch-out/SKILL.md`.
 
 ---
 
@@ -113,6 +113,6 @@ If you see any of these in a branch-out artifact, the artifact is **broken**:
 - **Triage heuristic:** `memory/triage-heuristic.yaml`
 - **Shadow hypotheses:** `memory/shadow/README.md`
 - **Calibration scoring:** `memory/calibration/README.md`
-- **Slash command spec:** `.claude/commands/branch-out.md`
+- **Slash command spec:** `<plugin>/skills/branch-out/SKILL.md`
 - **Full predictive-layer documentation:** `docs/prediction.md`
 - **Constitution governance section:** `knowledge/<constitution-file>.md` § "Predictive layer governance"

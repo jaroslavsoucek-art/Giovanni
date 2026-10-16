@@ -1,9 +1,16 @@
 ---
 name: source-puller
 description: Pull a SINGLE source for a specified time window and return structured findings. Use for parallel fan-out in digest workflows. Caller specifies source_type + identifier + window. Returns plain markdown bullets — no synthesis, no prioritization, no recommendation. Generic over source_type enum (chat-platform / email / calendar / project-tracker / version-control / crm / documentation-platform).
-tools: Bash, Read, Grep
 model: sonnet
 ---
+
+<!-- No `tools:` line on purpose. This agent inherits every tool the session has, MCP
+connectors included: which chat / tracker / mail servers exist is a property of the
+project, not of the plugin, and a plugin file is overwritten on update — an allowlist
+here could not be edited by the person who knows the connector names. Read-only
+discipline is enforced where it belongs: the external write gate hook denies or asks on
+every write-shaped mcp__ call, whatever agent makes it. -->
+
 
 # Source Puller — single-source extractor
 

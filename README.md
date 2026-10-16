@@ -1,6 +1,6 @@
 # Giovanni
 
-> Your own AI Chief of Staff — a **generic** assistant anyone can fork, fill, and run. (For teams, [**Boss**](#boss--the-org-layer-on-top) aggregates many Giovannis into one org view.)
+> Your own AI Chief of Staff — a **generic** Claude Code plugin anyone can install, fill, and run. (For teams, [**Boss**](#boss--the-org-layer-on-top) aggregates many Giovannis into one org view.)
 
 ## The problem
 
@@ -30,14 +30,14 @@ resists drift, stakeholders modeled as trajectories, predictions that are
 testable without contaminating themselves, and governance that keeps an AI
 honest instead of agreeable.
 
-Giovanni is a **generic AI Chief of Staff that anyone can stand up for
-themselves.** The repo is the *system layer* — templates, schemas, agents,
-workflows, governance — domain-agnostic on purpose. You fork it, fill it with
-your own constitution, stakeholders, and sources, and run it. Nothing here is
-tied to a company or a domain; the synthetic [Lattice
-fork](examples/lattice-finance/) just shows what a filled one looks like.
-Distilled from a real domain-specific implementation, then sanitized
-clean-room. It's a framework you make real by filling it — not an
+It ships as **one Claude Code plugin** (`plugin/`) — skills, agents, hooks,
+lint, generators, templates — and it operates on **state that lives in your
+repo**: `memory/`, `knowledge/`, `deliverables/`, your governance config,
+your `CLAUDE.md`. The mechanism updates like any plugin; the state is yours,
+in git, forever. Nothing here is tied to a company or a domain; the synthetic
+[Lattice instance](examples/lattice-finance/) just shows what a filled one
+looks like. Distilled from a real domain-specific implementation, then
+sanitized clean-room. It's a framework you make real by filling it — not an
 out-of-the-box product.
 
 ## Boss — the org layer on top
@@ -73,9 +73,9 @@ Giovanni's predictive layer is three pieces, designed against that trap:
 ```mermaid
 flowchart LR
     digest["Daily digest +<br/>stakeholder updates"] -->|"writes silently"| shadow["📦 Shadow hypotheses<br/>memory/shadow/pending/<br/><br/>Invisible to principal.<br/>Not in digest, not in briefing, not in chat."]
-    shadow -->|"+90 days"| review["🔍 /shadow-review<br/>quarterly adversarial lookback<br/>'where did the model miss?'<br/>default-skeptical on uncertainty"]
-    review -->|"per-actor verdict"| calibration["📊 /calibration-report<br/>monthly · per-actor · per-tier<br/>design-target (unvalidated): 60–80 / 20–40 / 5–15 %"]
-    calibration -.tunes.-> branchout["🔮 /branch-out<br/>3 tiers (no percentages)<br/>max t+2 horizon<br/>hard-stop on shallow actors"]
+    shadow -->|"+90 days"| review["🔍 /giovanni:shadow-review<br/>quarterly adversarial lookback<br/>'where did the model miss?'<br/>default-skeptical on uncertainty"]
+    review -->|"per-actor verdict"| calibration["📊 /giovanni:calibration-report<br/>monthly · per-actor · per-tier<br/>design-target (unvalidated): 60–80 / 20–40 / 5–15 %"]
+    calibration -.tunes.-> branchout["🔮 /giovanni:branch-out<br/>3 tiers (no percentages)<br/>max t+2 horizon<br/>hard-stop on shallow actors"]
     situation["High-stakes situation"] -->|"active query"| branchout
     branchout -->|"visible to principal"| principal["👤 Principal acts on<br/>3-tier scenario tree"]
 ```
@@ -84,23 +84,23 @@ flowchart LR
    Three likelihood tiers, **no fake percentages** (numeric probabilities on
    small-N stakeholder predictions are vibes with arithmetic decoration). Max
    `t+2` horizon. **Hard-stop on shallow actors**: if 2+ key actors have <5
-   observed touches, `/branch-out` refuses to run rather than emit
+   observed touches, `/giovanni:branch-out` refuses to run rather than emit
    caveat-degraded "best effort" predictions.
 
 2. **Shadow hypotheses** *(invisible — the moat)* — predictions the principal
    **never sees** during the prediction window. Stored in
    `memory/shadow/pending/`, absent from digests / briefs / chat. They become
-   visible only at `/shadow-review`, after the horizon has passed and the
-   outcome is structurally determined. The quarterly review runs an
+   visible only at `/giovanni:shadow-review`, after the horizon has passed and
+   the outcome is structurally determined. The quarterly review runs an
    **adversarial lookback** — *"what are the strongest arguments this was NOT
    fulfilled?"* — default-skeptical, because generous verdicts inflate
    accuracy and corrupt calibration. `>80%` accuracy triggers an immediate
    re-audit (it usually means tier labels drifted).
 
-3. **Per-actor calibration** *(monthly)* — `/calibration-report` aggregates
-   hit rates **per actor, per tier**. Framework-level accuracy is meaningless;
-   what matters is *which specific stakeholders the model reads well*. The
-   score tunes the triage heuristic that gates branch-out runs.
+3. **Per-actor calibration** *(monthly)* — `/giovanni:calibration-report`
+   aggregates hit rates **per actor, per tier**. Framework-level accuracy is
+   meaningless; what matters is *which specific stakeholders the model reads
+   well*. The score tunes the triage heuristic that gates branch-out runs.
 
 The shadow piece is what *lets you measure* — over months, once enough
 hypotheses resolve — whether the model actually *sees* your stakeholders or
@@ -108,31 +108,38 @@ just generates plausible narrative. The mechanism is designed so you can't
 fake your way through it; that measurement has **not happened yet** (no real
 shadow hypotheses have resolved — see [Status](#status)). The machinery is
 built; the track record is not. Full binding rationale:
-[`docs/prediction.md`](docs/prediction.md).
+[`plugin/docs/prediction.md`](plugin/docs/prediction.md).
 
 ## Architecture
 
 ```mermaid
 flowchart TB
-    P[Principal / you] --> Commands["Slash commands<br/>/digest · /branch-out · /review · /shadow-review · ..."]
-    Commands --> Workers["Worker agents<br/>isolated context, tool-scoped<br/>(source-puller, researcher, adversarial-reviewer, prediction-runtime, ...)"]
+    P[Principal / you] --> Skills["Plugin skills<br/>/giovanni:digest · /giovanni:branch-out · /giovanni:review · /giovanni:shadow-review · ..."]
+    Skills --> Workers["Plugin agents<br/>isolated context, tool-scoped<br/>(giovanni:source-puller, giovanni:researcher, giovanni:adversarial-reviewer, giovanni:prediction-runtime, ...)"]
     Workers --> State
-    subgraph State["Framework state — commit-tracked"]
+    subgraph State["Your repo — commit-tracked state"]
       direction LR
       M["Memory<br/>4-layer:<br/>MAP → shortcut → shards → deep"]
       K["Living constitution<br/>knowledge/<br/>anchored, supersedes-pointer"]
       ST["Stakeholder profiles<br/>per-actor time-series"]
     end
-    State --> Workflows["Workflows<br/>daily digest · branch-out · shadow lookback · calibration"]
-    Workflows -.feeds back.-> State
-    Governance["Governance<br/>lint · hooks · INDEX/MAP auto-regen<br/>hard limits · audit cadence"] -.governs.- State
+    State --> Procedures["Procedures<br/>daily digest · branch-out · shadow lookback · calibration"]
+    Procedures -.feeds back.-> State
+    Governance["Plugin governance<br/>lint · hooks · INDEX/MAP auto-regen<br/>hard limits · audit cadence"] -.governs.- State
     Governance -.governs.- Workers
 ```
 
-## See it filled — the Lattice Finance fork
+Two directories, one rule: **`plugin/` is mechanism, your repo is state.**
+The plugin's hooks and scripts never derive the project from their own
+location — they read `$CLAUDE_PROJECT_DIR`, which Claude Code hands every
+hook — and nothing in the plugin is written to at run time. Update the plugin
+and your memory does not move; delete the plugin and your memory is still a
+git repo full of Markdown.
+
+## See it filled — the Lattice Finance instance
 
 Reading templates is abstract. [`examples/lattice-finance/`](examples/lattice-finance/)
-is a **complete filled fork** on a synthetic domain (Alex Park / Lattice
+is a **complete filled instance** on a synthetic domain (Alex Park / Lattice
 Finance — a Series A treasury-automation SaaS): a real constitution, four
 stakeholder profiles as trajectories, topic shards, decision records, a
 predictive layer (branch-out + shadow + calibration), runtime digest config,
@@ -141,8 +148,8 @@ into a coherent operational instance — and it is **validated in CI** on every
 commit:
 
 ```bash
-python3 scripts/lint.py            --repo-root examples/lattice-finance   # all governance rules pass
-python3 scripts/run-digest-dryrun.py --repo-root examples/lattice-finance # the fork is digest-ready
+python3 plugin/scripts/lint.py              --repo-root examples/lattice-finance   # all governance rules pass
+python3 plugin/scripts/run-digest-dryrun.py --repo-root examples/lattice-finance   # the instance is digest-ready
 ```
 
 ## Who this is for
@@ -159,50 +166,73 @@ filling Giovanni with your domain context and running it for months.
 
 ## Quick start
 
-```bash
-# 1. Fork — "Use this template" on GitHub, or clone:
-git clone https://github.com/jaroslavsoucek-art/Giovanni.git my-chief-of-staff
-cd my-chief-of-staff
-git remote set-url origin <your-private-repo-url>   # stakeholder data is sensitive — keep it private
+**As a plugin** — into any repo (new or existing):
 
-# 2. Scaffold the runtime from templates (copies, creates dirs, regenerates indexes):
-bash scripts/init-fork.sh
+```bash
+# 1. In a Claude Code session, add this repo as a marketplace and install the plugin:
+/plugin marketplace add jaroslavsoucek-art/Giovanni
+/plugin install giovanni@giovanni
+
+# 2. Open the repo that will hold your state (a private one — stakeholder data is sensitive) and scaffold:
+/giovanni:init
 
 # 3. Fill it — the multi-hour part: constitution, stakeholders, sources.
-$EDITOR docs/setup-guide.md
 ```
 
-`init-fork.sh` is the mechanical half of "fork in <30 minutes." Filling it
-with real domain content — and running the predictive layer long enough to
-produce accuracy signals — takes weeks; that's the actual work, walked
-through in [`docs/setup-guide.md`](docs/setup-guide.md).
+`/giovanni:init` creates `memory/`, `knowledge/`, `deliverables/`,
+`docs/governance.config.yaml`, the permission half of `.claude/settings.json`
+and the `CLAUDE.md` operating contract (beside your own `CLAUDE.md` if you have
+one, with a one-line import). It never overwrites a file you have filled. Then
+`bash <plugin>/scripts/install-hooks.sh` adds the git pre-commit (regenerate
+indexes, lint) and pre-push gates.
+
+**As a fork** — if you want the framework source next to your state (to
+contribute back, or to run a pinned version):
+
+```bash
+git clone https://github.com/jaroslavsoucek-art/Giovanni.git my-chief-of-staff
+cd my-chief-of-staff
+git remote set-url origin <your-private-repo-url>
+bash plugin/scripts/init-fork.sh          # same scaffold, from ./plugin
+claude plugin marketplace add "$PWD"      # register ./plugin as a local marketplace …
+claude plugin install giovanni@giovanni --scope project   # … and load it in this repo
+```
+
+Either way, filling it with real domain content — and running the predictive
+layer long enough to produce accuracy signals — takes weeks; that's the actual
+work, walked through in [`plugin/docs/setup-guide.md`](plugin/docs/setup-guide.md).
 
 ## Status
 
 **Structurally validated end-to-end; not yet run against a real domain.**
 8/8 specialist architects shipped; all layers have templates, schemas, agents,
-workflows, and lint integration. The bundled [Lattice
-fork](examples/lattice-finance/) proves the templates compose into a
+procedures, and lint integration. The bundled [Lattice
+instance](examples/lattice-finance/) proves the templates compose into a
 lint-clean, digest-ready operational instance, and CI
 ([`.github/workflows/ci.yml`](.github/workflows/ci.yml)) enforces that on
-every commit — plus a fresh-clone `init-fork.sh` smoke test.
+every commit — plus a fresh-clone `init-fork.sh` smoke test that scaffolds,
+installs the git gates and re-runs for idempotence. The plugin passes
+`claude plugin validate --strict`.
 
-What that does **not** yet include: a fork to an actual operational domain
-running live `/digest` against real signal; independent cross-validation (the
-same agent built the schemas and filled the synthetic examples — confirmation
-bias is acknowledged and unresolved). The predictive layer's accuracy claims
-are unproven until months of real shadow hypotheses resolve. Hobby project —
-no commercial support, no roadmap promises. Sanitized clean-room extraction
-from a private domain-specific implementation; no proprietary content carried
-over. See [`docs/setup1-complete.md`](docs/setup1-complete.md).
+What that does **not** yet include: an instance in an actual operational
+domain running live `/giovanni:digest` against real signal; independent
+cross-validation (the same agent built the schemas and filled the synthetic
+examples — confirmation bias is acknowledged and unresolved); a listing in
+Anthropic's plugin directory (the plugin is installable from this repo as a
+marketplace today). The predictive layer's accuracy claims are unproven until
+months of real shadow hypotheses resolve. Hobby project — no commercial
+support, no roadmap promises. Sanitized clean-room extraction from a private
+domain-specific implementation; no proprietary content carried over. See
+[`docs/setup1-complete.md`](docs/setup1-complete.md).
 
 ## What's NOT in scope
 
-- **No domain content.** No real stakeholders by name (the Lattice fork is a
-  synthetic test domain), no real decision logs, no project specifics.
-- **No vendor lock-in.** Works with Claude Code today; designed to migrate to
-  platform-native primitives as they ship.
-- **No commercial support.** MIT license; fork at your own risk.
+- **No domain content.** No real stakeholders by name (the Lattice instance is
+  a synthetic test domain), no real decision logs, no project specifics.
+- **No vendor lock-in beyond the plugin format.** The plugin targets Claude
+  Code; the state it operates on is plain Markdown and YAML in your repo, and
+  the lint and generators are shell + Python that run without any harness.
+- **No commercial support.** MIT license; use at your own risk.
 - **No automatic value.** Value comes from filling it with your domain
   context and running it for months.
 
@@ -210,25 +240,25 @@ over. See [`docs/setup1-complete.md`](docs/setup1-complete.md).
 
 | Layer | Where | Purpose |
 |---|---|---|
-| **4-layer memory** | `memory/templates/`, `memory/examples/`, `memory/README.md` | MAP → operational shortcut → topic shards → deep storage. Graduation criteria, hard limits, audit cadence. |
-| **Living constitution** | `knowledge/` | Single source of truth, commit-traceable, anchor IDs, supersedes-pointer, auto-INDEX. |
-| **Per-stakeholder profiles** | `memory/templates/stakeholder.template.md`, `docs/stakeholder-profiles.md` | Sentiment-trajectory time-series, communication style, predicted reactions, 6-value relationship-type enum. |
-| **Daily digest** | `.claude/workflows/daily-digest.md`, `memory/digest-*.template.md`, `docs/digest.md` | 12-step procedure, parallel source-puller fan-out, drift detection with ack expiry, brief auto-gen ≤48h, predictive integration. |
-| **Predictive layer** *(the moat)* | `memory/templates/{branch-out,shadow-hypothesis,calibration-actor-score}.*`, `memory/branch-out/canonical-moves.md`, `docs/prediction.md` | Branch-out (3-tier, no %, hard-stop shallow). Shadow hypotheses (invisible at generation). Per-actor monthly calibration. |
-| **Custom subagents** | `.claude/agents/` | 8 framework architects + 8 operational workers. Generic, model-tagged, tool-scoped, isolated context. |
-| **Slash commands** | `.claude/commands/` | `/digest`, `/branch-out`, `/shadow-review`, `/calibration-report`, `/consistency-check`, `/consistency-review`, `/market-radar`, `/review`, `/redline`. |
-| **Adversarial-as-default review** | `.claude/agents/adversarial-reviewer.md`, `docs/adversarial.md` | `SHIP / REWRITE / KILL` (no compounds), strongest-counter-case requirement, default-critical. |
-| **Governance + lint + CI** | `scripts/lint.{sh,py}`, `scripts/lint_rules/`, `scripts/build-*`, `scripts/init-fork.sh`, `scripts/run-digest-dryrun.py`, `.claude/hooks/`, `.github/workflows/ci.yml` | Pluggable lint (15 Python rules + 5 bash checks — `scripts/lint.sh --list`), INDEX/MAP/REGISTRY auto-regen, hard-limit enforcement, audit cadence, fork scaffolder, digest-readiness harness, CI. |
+| **4-layer memory** | `plugin/skeleton/memory/` (templates, examples, README — copied into your repo by `/giovanni:init`) | MAP → operational shortcut → topic shards → deep storage. Graduation criteria, hard limits, audit cadence. |
+| **Living constitution** | `plugin/skeleton/knowledge/` | Single source of truth, commit-traceable, anchor IDs, supersedes-pointer, auto-INDEX. |
+| **Per-stakeholder profiles** | `plugin/skeleton/memory/templates/stakeholder.template.md`, `plugin/docs/stakeholder-profiles.md` | Sentiment-trajectory time-series, communication style, predicted reactions, 6-value relationship-type enum. |
+| **Daily digest** | `plugin/skills/digest/`, `plugin/skeleton/memory/digest-*.template.md`, `plugin/docs/digest.md` | 12-step procedure, parallel source-puller fan-out, drift detection with ack expiry, brief auto-gen ≤48h, predictive integration. |
+| **Predictive layer** *(the moat)* | `plugin/skeleton/memory/templates/{branch-out,shadow-hypothesis,calibration-actor-score}.*`, `plugin/skeleton/memory/branch-out/canonical-moves.md`, `plugin/docs/prediction.md` | Branch-out (3-tier, no %, hard-stop shallow). Shadow hypotheses (invisible at generation). Per-actor monthly calibration. |
+| **Agents** | `plugin/agents/` (operational, shipped) · `.claude/agents/` (framework architects, not shipped) | 8 operational workers as `giovanni:<name>` — generic, model-tagged, tool-scoped, isolated context. Roster: `plugin/docs/agent-roster.md`. |
+| **Skills** | `plugin/skills/` | `/giovanni:init`, `digest`, `branch-out`, `shadow-review`, `calibration-report`, `consistency-check`, `consistency-review`, `pulse`, `market-radar`, `review`, `redline`. Procedures sit beside the skill that runs them. |
+| **Adversarial-as-default review** | `plugin/agents/adversarial-reviewer.md`, `plugin/skills/review/procedure.md`, `plugin/docs/adversarial.md` | `SHIP / REWRITE / KILL` (no compounds), strongest-counter-case requirement, default-critical. |
+| **Governance + lint + CI** | `plugin/scripts/lint.{sh,py}`, `plugin/scripts/lint_rules/`, `plugin/scripts/build-*`, `plugin/scripts/init-fork.sh`, `plugin/scripts/install-hooks.sh`, `plugin/hooks/`, `.github/workflows/ci.yml` | Pluggable lint (25 Python rules + 5 bash checks — `bash plugin/scripts/lint.sh --list`) that knows the plugin surface from the project state, INDEX/MAP/REGISTRY auto-regen, hard-limit enforcement, audit cadence, scaffolder, digest-readiness harness, CI. |
 
 ## Stats
 
-Loose by design — the live lists are one command away (`bash scripts/lint.sh --list`).
+Loose by design — the live lists are one command away (`bash plugin/scripts/lint.sh --list`, `claude plugin details giovanni`).
 
-- 8 architect agents + 8 operational agents = 16
-- 10 slash commands · 30 lint checks (25 Python rules + 5 bash) · 8 hooks
-- 12 memory templates + 12 worked Lattice examples · 1 living-constitution template · 1 fork operating contract (`CLAUDE.template.md`)
-- 12 docs in `docs/` + 3 workflows in `.claude/workflows/`
-- 1 fully-filled reference fork (`examples/lattice-finance/`) validated in CI
+- 8 architect agents (framework, `.claude/agents/`) + 8 operational agents (plugin) = 16
+- 11 skills · 3 procedures · 30 lint checks (25 Python rules + 5 bash) · 9 hooks
+- 13 memory templates + 12 worked Lattice examples · 1 living-constitution template · 1 operating contract (`plugin/templates/CLAUDE.template.md`)
+- 10 mechanism docs in `plugin/docs/` + 4 framework docs in `docs/`
+- 1 fully-filled reference instance (`examples/lattice-finance/`) validated in CI
 
 ## Contributing
 

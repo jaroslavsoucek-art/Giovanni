@@ -1,6 +1,6 @@
 # Slash commands — design patterns + conventions
 
-Giovanni's invokable surface is nine slash commands. Each is a **thin shell** that wires pre-flight checks + argument parsing + routing to an agent (or to a workflow procedure). This doc is the **why** companion to [`.claude/commands/README.md`](../.claude/commands/README.md) (the registry).
+Giovanni's invokable surface is nine slash commands. Each is a **thin shell** that wires pre-flight checks + argument parsing + routing to an agent (or to a workflow procedure). This doc is the **why** companion to [`skills/README.md`](../skills/README.md) (the registry).
 
 Two audiences:
 
@@ -35,9 +35,9 @@ If a command file grows past ~250 lines of body content, that's a smell. The mec
 
 ### Why this matters
 
-Drift compounds. If the command file embeds 200 lines of business logic, that logic gets out of sync with the agent file's logic — and now there are two sources of truth for "what does `/branch-out` actually do". The thin-shell discipline keeps the agent definition as the single source of truth.
+Drift compounds. If the command file embeds 200 lines of business logic, that logic gets out of sync with the agent file's logic — and now there are two sources of truth for "what does `/giovanni:branch-out` actually do". The thin-shell discipline keeps the agent definition as the single source of truth.
 
-The seven non-workflow commands route to a single agent each. `/digest` and `/consistency-review` are the exceptions — they route to workflow procedures. `/digest` routes to `.claude/workflows/daily-digest.md`, which internally fans out to `source-puller` agents; `/consistency-review` routes to `.claude/workflows/consistency-review.md`, an interactive main-thread triage with no agent spawn. Even there, the command files don't embed the procedures; they point at the workflows.
+The seven non-workflow commands route to a single agent each. `/giovanni:digest` and `/giovanni:consistency-review` are the exceptions — they route to workflow procedures. `/giovanni:digest` routes to `skills/digest/procedure.md`, which internally fans out to `source-puller` agents; `/giovanni:consistency-review` routes to `skills/consistency-review/procedure.md`, an interactive main-thread triage with no agent spawn. Even there, the command files don't embed the procedures; they point at the workflows.
 
 ### Anti-pattern catalogue
 
@@ -56,9 +56,9 @@ Consistency across the nine commands keeps the muscle memory cheap.
 
 | Form | Use for | Example |
 |---|---|---|
-| **Positional** | Required primary arg (one per command max) | `/branch-out <situation-slug>` |
-| **`--flag`** (boolean) | Switch behavior on/off — no value | `/digest --force` |
-| **`--flag value`** or **`--flag=value`** (parameterized) | Pass a value | `/calibration-report --month 2026-04` |
+| **Positional** | Required primary arg (one per command max) | `/giovanni:branch-out <situation-slug>` |
+| **`--flag`** (boolean) | Switch behavior on/off — no value | `/giovanni:digest --force` |
+| **`--flag value`** or **`--flag=value`** (parameterized) | Pass a value | `/giovanni:calibration-report --month 2026-04` |
 
 Both `--flag value` and `--flag=value` are supported. Internally the parser handles both. Document either form in usage examples; the principal can use whichever.
 
@@ -67,13 +67,13 @@ Both `--flag value` and `--flag=value` are supported. Internally the parser hand
 Multi-word values use quoted strings:
 
 ```
-/review draft.md --position "we should renew the contract"
+/giovanni:review draft.md --position "we should renew the contract"
 ```
 
 The parser accepts single or double quotes. Backslash-escape for embedded quotes:
 
 ```
-/review draft.md --position "the \"strategic\" case for X"
+/giovanni:review draft.md --position "the \"strategic\" case for X"
 ```
 
 ### Multi-value
@@ -81,7 +81,7 @@ The parser accepts single or double quotes. Backslash-escape for embedded quotes
 Comma-separated within a single arg:
 
 ```
-/market-radar --market US,EU
+/giovanni:market-radar --market US,EU
 ```
 
 Not space-separated (would parse as positional). Not repeated flags (`--market US --market EU`) — unnecessary syntactic variation.
@@ -91,13 +91,13 @@ Not space-separated (would parse as positional). Not repeated flags (`--market U
 - **Required** args go positional (one per command). If absent → STOP with usage hint.
 - **Optional** args go as flags. Defaults documented in the command file's argument-syntax table.
 
-If a command has multiple "required-ish" args (e.g. `/branch-out` could in principle require both `--situation-slug` and `--from-digest`), pick **one** as positional and the rest as flags. Two positionals creates ordering ambiguity.
+If a command has multiple "required-ish" args (e.g. `/giovanni:branch-out` could in principle require both `--situation-slug` and `--from-digest`), pick **one** as positional and the rest as flags. Two positionals creates ordering ambiguity.
 
 ### What we don't use
 
 - **Short flags** (`-f` for `--force`). Inconsistency cost > brevity savings in a low-frequency command set.
-- **Subcommands** (`/digest run` vs `/digest configure`). Each subcommand would be its own slash command.
-- **Heredocs / multi-line args** at the command level. If a command needs multi-line input, the principal passes a file path (e.g. `/review <path>`).
+- **Subcommands** (`/giovanni:digest run` vs `/giovanni:digest configure`). Each subcommand would be its own slash command.
+- **Heredocs / multi-line args** at the command level. If a command needs multi-line input, the principal passes a file path (e.g. `/giovanni:review <path>`).
 
 ### Argument parsing implementation
 
@@ -139,10 +139,10 @@ A command's pre-flight reads `parsed.positional`, `parsed.flags.get(<name>)`, `p
 ### Standard pre-flight checks
 
 1. **CWD check.** Working directory is a Giovanni repo. Detection signal: presence of canonical files (`memory/digest_sources.md`, `knowledge/<constitution>.md`, or similar). Failure → STOP with diagnostic.
-2. **Agent definition file present.** `.claude/agents/<name>.md` exists. Failure → STOP with the missing path. This catches accidentally-deleted agent files before the `Task` call fails opaquely.
-3. **Required state files / config files present.** Per command — e.g. `/branch-out` requires `memory/triage-heuristic.yaml`; `/market-radar` requires `memory/intel/market-radar/_scope.md`.
-4. **Cadence guards** (if applicable). E.g. `/digest` has a 4 h cadence guard overridable with `--force`. `/calibration-report` enforces month boundary (no in-progress months).
-5. **Empty-cohort short-circuit** (where applicable). E.g. `/shadow-review` STOPs with informational message if no past-horizon pending and filter matches 0 resolved. `/calibration-report` STOPs if no hypotheses match the month.
+2. **Agent definition file present.** `agents/<name>.md` exists. Failure → STOP with the missing path. This catches accidentally-deleted agent files before the `Task` call fails opaquely.
+3. **Required state files / config files present.** Per command — e.g. `/giovanni:branch-out` requires `memory/triage-heuristic.yaml`; `/giovanni:market-radar` requires `memory/intel/market-radar/_scope.md`.
+4. **Cadence guards** (if applicable). E.g. `/giovanni:digest` has a 4 h cadence guard overridable with `--force`. `/giovanni:calibration-report` enforces month boundary (no in-progress months).
+5. **Empty-cohort short-circuit** (where applicable). E.g. `/giovanni:shadow-review` STOPs with informational message if no past-horizon pending and filter matches 0 resolved. `/giovanni:calibration-report` STOPs if no hypotheses match the month.
 
 ### Pre-flight failure behavior
 
@@ -154,15 +154,15 @@ If pre-flight is too restrictive, the principal sees a clear "fix this precondit
 
 ### What pre-flight does NOT check
 
-- **Domain semantics** — that's the agent's job. E.g. `/branch-out` pre-flight does not verify actor profiles are deep enough; that's `prediction-runtime` Step 2 (the hard-stop logic).
-- **Whether the run "should" happen** — e.g. `/market-radar` pre-flight does not pre-decide if a sweep is "worth running". The principal invoked it; the agent runs.
+- **Domain semantics** — that's the agent's job. E.g. `/giovanni:branch-out` pre-flight does not verify actor profiles are deep enough; that's `prediction-runtime` Step 2 (the hard-stop logic).
+- **Whether the run "should" happen** — e.g. `/giovanni:market-radar` pre-flight does not pre-decide if a sweep is "worth running". The principal invoked it; the agent runs.
 - **Output side effects** — pre-flight is read-only. The orchestrator may create directories (e.g. `memory/audits/consistency/` if missing) but does not write content files until the agent runs.
 
 ---
 
 ## 4. Agent routing pattern
 
-Seven of the nine commands route to a single agent via `Task`. The exceptions route to workflow procedures: `/digest` (workflow with parallel agent fan-out) and `/consistency-review` (interactive main-thread triage, no agent spawn).
+Seven of the nine commands route to a single agent via `Task`. The exceptions route to workflow procedures: `/giovanni:digest` (workflow with parallel agent fan-out) and `/giovanni:consistency-review` (interactive main-thread triage, no agent spawn).
 
 ### Single-agent routing (canonical)
 
@@ -179,21 +179,21 @@ The orchestrator passes parsed args as `Task` params. The agent runs in isolated
 
 **Verbatim relay is binding.** The orchestrator does NOT:
 
-- Soften the agent's verdict (especially `/review` / `/redline`)
+- Soften the agent's verdict (especially `/giovanni:review` / `/giovanni:redline`)
 - Add commentary on the agent's findings
 - Suppress findings that seem "harsh"
 - Translate output language (the agent matches the draft / source language)
 
 The orchestrator MAY:
 
-- Add a one-line pointer ("Review via `/consistency-review`")
-- Surface a related-command suggestion ("Run `/shadow-review` if accuracy callout was flagged")
+- Add a one-line pointer ("Review via `/giovanni:consistency-review`")
+- Surface a related-command suggestion ("Run `/giovanni:shadow-review` if accuracy callout was flagged")
 - Append the file path for written artifacts
 
-### Workflow routing (the `/digest` case)
+### Workflow routing (the `/giovanni:digest` case)
 
 ```
-/digest <args>
+/giovanni:digest <args>
   ↓ pre-flight
   ↓ run Step 0-3 of workflow inline (read state, determine sources, calc window)
   ↓ Step 4: parallel fan-out — single message, N Task calls to source-puller agents
@@ -204,11 +204,11 @@ The orchestrator MAY:
   ↓ no auto-commit
 ```
 
-The workflow file (`.claude/workflows/daily-digest.md`) defines the 12 steps. The command file points at the workflow and handles orchestration concerns (parallel fan-out, state update, hand-off to drift response sub-flow). The workflow file is the procedural spec; the command file is the runtime contract.
+The workflow file (`skills/digest/procedure.md`) defines the 12 steps. The command file points at the workflow and handles orchestration concerns (parallel fan-out, state update, hand-off to drift response sub-flow). The workflow file is the procedural spec; the command file is the runtime contract.
 
-`/consistency-review` follows the same shape minus the fan-out: the command file (`.claude/commands/consistency-review.md`) handles pre-flight + argument resolution, then runs the interactive triage procedure from `.claude/workflows/consistency-review.md` in the main thread — per-finding verdicts come from the principal, so there's no agent to spawn.
+`/giovanni:consistency-review` follows the same shape minus the fan-out: the command file (`skills/consistency-review/SKILL.md`) handles pre-flight + argument resolution, then runs the interactive triage procedure from `skills/consistency-review/procedure.md` in the main thread — per-finding verdicts come from the principal, so there's no agent to spawn.
 
-### Parallel fan-out (binding pattern in `/digest` Step 4)
+### Parallel fan-out (binding pattern in `/giovanni:digest` Step 4)
 
 **Single message, N agent calls.** All `source-puller` invocations happen in one orchestrator message. Each agent runs in isolated context. Failure isolation: one source failing doesn't block the others.
 
@@ -218,9 +218,9 @@ This pattern is described in [`docs/agents.md`](agents.md) § 3 (Parallel fan-ou
 
 Some workflows are sequential: agent A's output feeds agent B. The main thread orchestrates — no auto-handoff between agents.
 
-Example: `researcher` produces a constitution patch proposal → main thread reviews → optional `/review` runs `adversarial-reviewer` on the proposal → main thread applies. The chain is principal-driven, not agent-driven.
+Example: `researcher` produces a constitution patch proposal → main thread reviews → optional `/giovanni:review` runs `adversarial-reviewer` on the proposal → main thread applies. The chain is principal-driven, not agent-driven.
 
-Commands do not embed sequential chains. If a workflow requires sequential agent chaining, document it in `.claude/workflows/<name>.md` and have the command point there.
+Commands do not embed sequential chains. If a workflow requires sequential agent chaining, document it in `skills/*/procedure.md<name>.md` and have the command point there.
 
 ---
 
@@ -230,8 +230,8 @@ Three output modes:
 
 | Mode | Use for | Examples |
 |---|---|---|
-| **Chat-only** (ephemeral) | Output that doesn't merit persistence — verdicts, summaries, briefings | `/review`, `/redline`, `/digest` (the digest body itself) |
-| **Persistent artifact (unstaged)** | Output that becomes canonical state | `/branch-out` (artifact + decision draft + shadow), `/shadow-review` (audit log + moved YAMLs), `/calibration-report` (report + actor-scores), `/consistency-check` (audit report + state), `/consistency-review` (state update + accepted diffs), `/market-radar` (memo) |
+| **Chat-only** (ephemeral) | Output that doesn't merit persistence — verdicts, summaries, briefings | `/giovanni:review`, `/giovanni:redline`, `/giovanni:digest` (the digest body itself) |
+| **Persistent artifact (unstaged)** | Output that becomes canonical state | `/giovanni:branch-out` (artifact + decision draft + shadow), `/giovanni:shadow-review` (audit log + moved YAMLs), `/giovanni:calibration-report` (report + actor-scores), `/giovanni:consistency-check` (audit report + state), `/giovanni:consistency-review` (state update + accepted diffs), `/giovanni:market-radar` (memo) |
 | **Both** | Render summary to chat + write artifact | All persistent-artifact commands also relay a summary |
 
 **No command auto-commits.** This is the binding rule that keeps the git log honest.
@@ -244,7 +244,7 @@ Three output modes:
 
 ### How "no auto-commit" plays with workflows
 
-Workflows may write multiple files in one run (e.g. `/digest` writes state + briefs + shadow YAMLs). All of these are written **unstaged**. The principal stages and commits in a batch, typically:
+Workflows may write multiple files in one run (e.g. `/giovanni:digest` writes state + briefs + shadow YAMLs). All of these are written **unstaged**. The principal stages and commits in a batch, typically:
 
 - `chore(digest): daily sync <YYYY-MM-DD>` for state + briefs
 - `decision: <slug>` for accepted drift patches
@@ -256,14 +256,14 @@ The orchestrator surfaces what was written; the principal decides commit groupin
 
 | Command | Path |
 |---|---|
-| `/digest` | `memory/digest_state.md`, `memory/briefs/<file>.md`, `memory/shadow/{pending,resolved,expired}/<file>.yaml` |
-| `/branch-out` | `memory/branch-out/<today>-<slug>.md`, `memory/decisions/<today>-<slug>.md`, `memory/shadow/pending/<file>.yaml` |
-| `/shadow-review` | `memory/calibration/audit-log.md` (append), `memory/shadow/{resolved,expired}/<YYYY-MM>/` (moves) |
-| `/calibration-report` | `memory/calibration/monthly/<YYYY-MM>.md`, `memory/calibration/actor-scores.yaml` |
-| `/consistency-check` | `memory/audits/consistency/<YYYY-MM-DD>.md`, `memory/audits/consistency/_state.md` (append) |
-| `/consistency-review` | `memory/audits/consistency/_state.md` (run entry completed + aggregate precision), accepted diffs applied to target files |
-| `/market-radar` | `memory/intel/market-radar/<YYYY-WW>.md` or `memory/intel/market-radar/focused/<YYYY-MM-DD>_<slug>.md` |
-| `/review`, `/redline` | none by default (optional `memory/intel/adversarial/` if fork opted in) |
+| `/giovanni:digest` | `memory/digest_state.md`, `memory/briefs/<file>.md`, `memory/shadow/{pending,resolved,expired}/<file>.yaml` |
+| `/giovanni:branch-out` | `memory/branch-out/<today>-<slug>.md`, `memory/decisions/<today>-<slug>.md`, `memory/shadow/pending/<file>.yaml` |
+| `/giovanni:shadow-review` | `memory/calibration/audit-log.md` (append), `memory/shadow/{resolved,expired}/<YYYY-MM>/` (moves) |
+| `/giovanni:calibration-report` | `memory/calibration/monthly/<YYYY-MM>.md`, `memory/calibration/actor-scores.yaml` |
+| `/giovanni:consistency-check` | `memory/audits/consistency/<YYYY-MM-DD>.md`, `memory/audits/consistency/_state.md` (append) |
+| `/giovanni:consistency-review` | `memory/audits/consistency/_state.md` (run entry completed + aggregate precision), accepted diffs applied to target files |
+| `/giovanni:market-radar` | `memory/intel/market-radar/<YYYY-WW>.md` or `memory/intel/market-radar/focused/<YYYY-MM-DD>_<slug>.md` |
+| `/giovanni:review`, `/giovanni:redline` | none by default (optional `memory/intel/adversarial/` if fork opted in) |
 
 ---
 
@@ -278,7 +278,7 @@ Three failure modes:
 Examples:
 
 - `ERROR: not in a Giovanni repo (no memory/digest_sources.md). Reinvoke from repo root.`
-- `ERROR: prediction-runtime agent definition missing. Cannot run /branch-out.`
+- `ERROR: prediction-runtime agent definition missing. Cannot run /giovanni:branch-out.`
 - `ERROR: --month <YYYY-MM> is in the future or current. Calibration aggregates completed months only.`
 
 The principal fixes the precondition and reinvokes.
@@ -289,16 +289,16 @@ The agent returns a structured error. The orchestrator surfaces it verbatim.
 
 **No retry from orchestrator.** Retry logic belongs to the principal (re-invoke with adjusted args) or to the agent's internal logic (the agent decides whether to retry an external fetch).
 
-**No graceful degradation that hides failure.** If `/digest` Step 4 has one source fail, that source's section in Step 12 render shows the error explicitly. Honest reporting > coverage theater.
+**No graceful degradation that hides failure.** If `/giovanni:digest` Step 4 has one source fail, that source's section in Step 12 render shows the error explicitly. Honest reporting > coverage theater.
 
 ### Cadence guard hit
 
-`/digest` `--force` overrides; `/shadow-review` `--force-review-now` overrides the COI guard (by excluding recent resolutions from the cohort, not by reviewing them); `/calibration-report` and `/consistency-check` don't have hard cadence guards (only advisories).
+`/giovanni:digest` `--force` overrides; `/giovanni:shadow-review` `--force-review-now` overrides the COI guard (by excluding recent resolutions from the cohort, not by reviewing them); `/giovanni:calibration-report` and `/giovanni:consistency-check` don't have hard cadence guards (only advisories).
 
 When a cadence guard is hit:
 
-- **STOP** if it's a hard guard (e.g. `/digest` < 4 h).
-- **Advisory** if it's a soft guard (e.g. scope file > 90d stale in `/market-radar`). Continue, but flag.
+- **STOP** if it's a hard guard (e.g. `/giovanni:digest` < 4 h).
+- **Advisory** if it's a soft guard (e.g. scope file > 90d stale in `/giovanni:market-radar`). Continue, but flag.
 
 ---
 
@@ -306,18 +306,18 @@ When a cadence guard is hit:
 
 | Command | Guard type | Default | Override |
 |---|---|---|---|
-| `/digest` | hard | 4 h since last run | `--force` |
-| `/branch-out` | soft warning | stale draft for today exists | confirm at prompt (`y/N`) |
-| `/shadow-review` | advisory | last run < 60 days ago | continue with advisory |
-| `/shadow-review` | hard (COI guard) | any cohort hypothesis `resolved_date` < 48 h ago | `--force-review-now` (excludes recent resolutions from the cohort instead of reviewing them) |
-| `/calibration-report` | hard | month boundary (no future / current) | none — can't aggregate incomplete months |
-| `/calibration-report` | soft warning | report for `<YYYY-MM>` already exists | confirm at prompt (`y/N`) |
-| `/consistency-check` | none (manual cadence) | — | — |
-| `/consistency-review` | none (run after each `/consistency-check` during shadow mode) | — | — |
-| `/market-radar` | advisory | scope file > 90d stale | continue with advisory |
-| `/review`, `/redline` | none | — | — |
+| `/giovanni:digest` | hard | 4 h since last run | `--force` |
+| `/giovanni:branch-out` | soft warning | stale draft for today exists | confirm at prompt (`y/N`) |
+| `/giovanni:shadow-review` | advisory | last run < 60 days ago | continue with advisory |
+| `/giovanni:shadow-review` | hard (COI guard) | any cohort hypothesis `resolved_date` < 48 h ago | `--force-review-now` (excludes recent resolutions from the cohort instead of reviewing them) |
+| `/giovanni:calibration-report` | hard | month boundary (no future / current) | none — can't aggregate incomplete months |
+| `/giovanni:calibration-report` | soft warning | report for `<YYYY-MM>` already exists | confirm at prompt (`y/N`) |
+| `/giovanni:consistency-check` | none (manual cadence) | — | — |
+| `/giovanni:consistency-review` | none (run after each `/giovanni:consistency-check` during shadow mode) | — | — |
+| `/giovanni:market-radar` | advisory | scope file > 90d stale | continue with advisory |
+| `/giovanni:review`, `/giovanni:redline` | none | — | — |
 
-The asymmetry reflects domain reality: `/digest` mutates state in non-trivial ways, so a hard cadence guard prevents accidental double-runs. Adversarial review is read-only, so no guard needed. Calibration enforces month boundary because aggregating an in-progress month would produce wrong rolling averages.
+The asymmetry reflects domain reality: `/giovanni:digest` mutates state in non-trivial ways, so a hard cadence guard prevents accidental double-runs. Adversarial review is read-only, so no guard needed. Calibration enforces month boundary because aggregating an in-progress month would produce wrong rolling averages.
 
 ---
 
@@ -332,20 +332,20 @@ What slash commands must NOT do.
 - **Soften agent output in relay.** Verbatim relay is binding.
 - **Pre-flight that duplicates agent's internal validation.** Pre-flight checks orchestration prerequisites; agents check their own inputs.
 - **Swallow errors silently.** STOP with diagnostic; the principal fixes.
-- **Auto-spawn follow-up workflows.** E.g. `/market-radar` does not auto-spawn `/branch-out` on a drift candidate. The principal decides.
+- **Auto-spawn follow-up workflows.** E.g. `/giovanni:market-radar` does not auto-spawn `/giovanni:branch-out` on a drift candidate. The principal decides.
 - **Recurse from another agent's context.** Slash commands always spawn from main thread.
-- **Mix internal and external sources.** `/digest` pulls internal (chat, email, calendar, project tracker, version control); `/market-radar` pulls external (PR, LinkedIn, trade press). They do NOT cross.
+- **Mix internal and external sources.** `/giovanni:digest` pulls internal (chat, email, calendar, project tracker, version control); `/giovanni:market-radar` pulls external (PR, LinkedIn, trade press). They do NOT cross.
 
 ### Command-specific (highlights — full list in each command file)
 
-- **`/digest`:** no shadow hypotheses in render (binding invisibility); no sequential source pull in main thread
-- **`/branch-out`:** no percentages anywhere; no t+3 predictions; no "recommended move"; no caveat-degraded output when actors are shallow
-- **`/shadow-review`:** no skipping adversarial-check; no defaulting to matched when uncertain; no auto-modify of `actor-scores.yaml` (that's `/calibration-report`)
-- **`/calibration-report`:** no cherry-picking cohort; no generous mixed-verdict aggregation; no auto-applying triage suggestions
-- **`/consistency-check`:** no auto-applying proposed diffs; no running on every session-start during shadow mode; no raising the 10-findings cap
-- **`/consistency-review`:** no "accept all" without reading findings; no skipping the state-file update; no conflating reject (right finding, wrong diff) with false-positive (wrong finding)
-- **`/market-radar`:** no "switch to X" framing for drift candidates; no padding empty memos; no daily cadence
-- **`/review`, `/redline`:** no softening verdicts; no RLHF preambles; no language switching in relay
+- **`/giovanni:digest`:** no shadow hypotheses in render (binding invisibility); no sequential source pull in main thread
+- **`/giovanni:branch-out`:** no percentages anywhere; no t+3 predictions; no "recommended move"; no caveat-degraded output when actors are shallow
+- **`/giovanni:shadow-review`:** no skipping adversarial-check; no defaulting to matched when uncertain; no auto-modify of `actor-scores.yaml` (that's `/giovanni:calibration-report`)
+- **`/giovanni:calibration-report`:** no cherry-picking cohort; no generous mixed-verdict aggregation; no auto-applying triage suggestions
+- **`/giovanni:consistency-check`:** no auto-applying proposed diffs; no running on every session-start during shadow mode; no raising the 10-findings cap
+- **`/giovanni:consistency-review`:** no "accept all" without reading findings; no skipping the state-file update; no conflating reject (right finding, wrong diff) with false-positive (wrong finding)
+- **`/giovanni:market-radar`:** no "switch to X" framing for drift candidates; no padding empty memos; no daily cadence
+- **`/giovanni:review`, `/giovanni:redline`:** no softening verdicts; no RLHF preambles; no language switching in relay
 
 ---
 
@@ -362,9 +362,9 @@ Add a slash command only if:
 1. **Reusable.** The principal will invoke this enough times that argument-parsing + pre-flight saves measurable friction vs ad-hoc agent spawns.
 2. **Orchestration shell adds value.** Pre-flight checks are non-trivial, or the command routes to a multi-step workflow with parallel fan-out.
 3. **Thin.** No embedded mechanics. If the command file is ~250 lines, it's not thin.
-4. **Discoverable.** Added to `.claude/commands/README.md` registry and to this doc.
+4. **Discoverable.** Added to `skills/README.md` registry and to this doc.
 
-Template structure: see `.claude/commands/README.md` § Adding a new slash command.
+Template structure: see `skills/README.md` § Adding a new slash command.
 
 ---
 
@@ -372,7 +372,7 @@ Template structure: see `.claude/commands/README.md` § Adding a new slash comma
 
 `scripts/lint_rules/slash_command_registry.py` validates:
 
-- Every file in `.claude/commands/*.md` (excluding `README.md`) is listed in the README's registry table
+- Every `skills/<name>/SKILL.md` is listed in the registry table of `skills/README.md` (and a project's own `.claude/commands/*.md` in its own README)
 - Every entry in the registry table corresponds to a file
 - Drift (file added but not registered, file removed but row remains) surfaces as a finding
 
@@ -382,9 +382,9 @@ Severity: low. The lint catches presentation drift, not semantic correctness —
 
 ## Cross-references
 
-- **Command registry:** [`.claude/commands/README.md`](../.claude/commands/README.md)
-- **Daily digest workflow:** [`.claude/workflows/daily-digest.md`](../.claude/workflows/daily-digest.md)
-- **Adversarial review workflow:** [`.claude/workflows/adversarial-review.md`](../.claude/workflows/adversarial-review.md)
+- **Command registry:** [`skills/README.md`](../skills/README.md)
+- **Daily digest workflow:** [`skills/digest/procedure.md`](../skills/digest/procedure.md)
+- **Adversarial review workflow:** [`skills/review/procedure.md`](../skills/review/procedure.md)
 - **Agent design patterns:** [`docs/agents.md`](agents.md)
 - **Predictive layer doc:** [`docs/prediction.md`](prediction.md)
 - **Daily digest policy:** [`docs/digest.md`](digest.md)

@@ -8,7 +8,7 @@ Configures which sources the daily digest pulls each run. Edited without
 touching the workflow itself — keeps source mechanics decoupled from
 procedure logic.
 
-The digest workflow (.claude/workflows/daily-digest.md) reads this file at
+The digest procedure (plugin `skills/digest/procedure.md`) reads this file at
 Step 2 and spawns one source-puller agent per entry in Step 4.
 
 ============================================================================
@@ -156,7 +156,7 @@ Each feed is {identifier, filter_policy, tag} with filter_policy one of:
 Each feed's `tag` becomes a bullet prefix (e.g. `[RAID]`) so synthesis and
 drift detection can attribute provenance. The source-puller applies the filter
 policy per feed and splits the 50-item cap across feeds proportionally to
-window volume — see .claude/agents/source-puller.md § project-tracker.
+window volume — see the plugin's `agents/source-puller.md` § project-tracker.
 
 If the tracker has a CLI script (e.g. `scripts/<tracker>-pull.sh`), prefer
 that for stability. Mention the script path in `notes`.

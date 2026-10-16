@@ -4,8 +4,8 @@
 ============================================================================
 THIS IS A TEMPLATE. Copy to memory/digest_state.md and edit as digest runs.
 
-Operational state for the daily digest workflow (.claude/workflows/daily-digest.md).
-The session-start hook (.claude/hooks/session-start-digest.sh) reads from this
+Operational state for the daily digest procedure (plugin `skills/digest/procedure.md`).
+The session-start hook (plugin `hooks/session-start-digest.sh`) reads from this
 file to compute cadence reminders. The digest workflow reads + writes it each run.
 
 Persistence: this file IS committed to git. State changes commit in batch with

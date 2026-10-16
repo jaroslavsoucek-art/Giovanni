@@ -2,7 +2,7 @@
 
 The daily digest is the **operational tempo** of Giovanni. Each run pulls from configured sources, detects drift between memory and reality, generates briefs for upcoming high-prep events, and feeds the predictive layer with shadow lookback + new shadow hypotheses. Without the digest, the rest of the framework is a static archive.
 
-This document is the **policy + rationale** for the digest. The 12-step procedure lives in [`.claude/workflows/daily-digest.md`](../.claude/workflows/daily-digest.md). The state file template is at [`memory/digest-state.template.md`](../memory/digest-state.template.md). The sources config template is at [`memory/digest-sources.template.md`](../memory/digest-sources.template.md).
+This document is the **policy + rationale** for the digest. The 12-step procedure lives in [`skills/digest/procedure.md`](../skills/digest/procedure.md). The state file template is at [`memory/digest-state.template.md`](../memory/digest-state.template.md). The sources config template is at [`memory/digest-sources.template.md`](../memory/digest-sources.template.md).
 
 ---
 
@@ -245,7 +245,7 @@ Tight eligibility = each brief gets the principal's full attention = the brief a
 
 ## Shadow generation discipline
 
-The digest is **not** the primary place to generate shadow hypotheses. The primary place is `/branch-out` (active simulation surfaces multiple hypotheses per simulation). The digest's role is:
+The digest is **not** the primary place to generate shadow hypotheses. The primary place is `/giovanni:branch-out` (active simulation surfaces multiple hypotheses per simulation). The digest's role is:
 
 1. **Catch passive signals** that don't warrant active simulation but have predictable follow-ups
 2. **Feed shadow lookback** at horizon dates (Step 8 = resolve, Step 11 = generate new)
@@ -270,7 +270,7 @@ Hard fail is NOT silent threshold creep. It signals that the digest's triage is 
 
 ### Invisibility is binding
 
-Shadow hypotheses are **invisible** to the principal at generation time. They appear in `memory/shadow/pending/` but are not surfaced in the digest output, brief content, or any other principal-facing channel until `/shadow-review` reveals as a batch.
+Shadow hypotheses are **invisible** to the principal at generation time. They appear in `memory/shadow/pending/` but are not surfaced in the digest output, brief content, or any other principal-facing channel until `/giovanni:shadow-review` reveals as a batch.
 
 This is the **anti-self-fulfilling prophecy** rule — the single most important constraint in the predictive layer. See [`docs/prediction.md`](prediction.md) § Shadow invisibility for the full rationale.
 
@@ -329,7 +329,7 @@ Patterns to recognize and refuse.
 
 ### Running the digest >1×/day
 
-Symptom: principal triggers `/digest` multiple times in the same day. Each run pollutes state (window calculation shifts), eats agent budget, and surfaces the same drift candidates redundantly.
+Symptom: principal triggers `/giovanni:digest` multiple times in the same day. Each run pollutes state (window calculation shifts), eats agent budget, and surfaces the same drift candidates redundantly.
 
 Fix: the workflow's Step 0 cadence guard refuses to run if `last_run_timestamp` is < 4h ago. Override exists (`--force`) for the rare case of "I changed source config, want to verify it works" — but the override should never become routine.
 
@@ -396,12 +396,12 @@ Key bindings to encode in constitution:
 
 ## Cross-references
 
-- **Workflow:** [`.claude/workflows/daily-digest.md`](../.claude/workflows/daily-digest.md)
+- **Workflow:** [`skills/digest/procedure.md`](../skills/digest/procedure.md)
 - **State template:** [`memory/digest-state.template.md`](../memory/digest-state.template.md)
 - **Sources template:** [`memory/digest-sources.template.md`](../memory/digest-sources.template.md)
-- **Session-start hook:** [`.claude/hooks/session-start-digest.sh`](../.claude/hooks/session-start-digest.sh)
-- **Source-puller agent:** [`.claude/agents/source-puller.md`](../.claude/agents/source-puller.md)
-- **Profile-bootstrap agent:** [`.claude/agents/profile-bootstrap.md`](../.claude/agents/profile-bootstrap.md)
+- **Session-start hook:** [`hooks/session-start-digest.sh`](../hooks/session-start-digest.sh)
+- **Source-puller agent:** [`agents/source-puller.md`](../agents/source-puller.md)
+- **Profile-bootstrap agent:** [`agents/profile-bootstrap.md`](../agents/profile-bootstrap.md)
 - **Brief template:** [`memory/templates/brief.template.md`](../memory/templates/brief.template.md)
 - **Shadow hypothesis template:** [`memory/templates/shadow-hypothesis.template.md`](../memory/templates/shadow-hypothesis.template.md)
 - **Triage heuristic:** [`memory/triage-heuristic.template.yaml`](../memory/triage-heuristic.template.yaml)

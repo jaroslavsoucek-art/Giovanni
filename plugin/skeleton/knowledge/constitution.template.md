@@ -167,7 +167,7 @@ A draft that doesn't acknowledge its strongest counter-case is REWRITE-or-KILL t
 
 ### Suspend conditions {#suspend-conditions}
 
-Adversarial review is suspended in three contexts (workflow doc `.claude/workflows/adversarial-review.md` carries the executable rules):
+Adversarial review is suspended in three contexts (procedure `<plugin>/skills/review/procedure.md`, formerly `.claude/workflows/adversarial-review.md` carries the executable rules):
 
 1. Brainstorming / early-stage exploration — adversarial pushback suppresses generative work
 2. Moments of distress — review is not crisis support
@@ -177,7 +177,7 @@ Adversarial review is suspended in three contexts (workflow doc `.claude/workflo
 
 Forks may disable adversarial-as-default by editing this section and the corresponding agent description. **This reverses the framework's core IP design choice.** See `docs/adversarial.md §4` for the recommended alternative path (suspend per-draft via trigger semantics; keep policy at default-adversarial).
 
-**Source:** `.claude/agents/adversarial-reviewer.md` + `.claude/workflows/adversarial-review.md` + `docs/adversarial.md`
+**Source:** plugin `agents/adversarial-reviewer.md` + `skills/review/procedure.md` + `docs/adversarial.md`
 
 ---
 
@@ -229,11 +229,11 @@ Every `/digest` invocation verifies CWD is the Giovanni repo root, state file ex
 
 ### Cross-references {#cross-references}
 
-- Workflow: `.claude/workflows/daily-digest.md`
+- Procedure: plugin `skills/digest/procedure.md`
 - Policy: `docs/digest.md`
 - State template: `memory/digest-state.template.md`
 - Sources template: `memory/digest-sources.template.md`
-- Session-start hook: `.claude/hooks/session-start-digest.sh`
+- Session-start hook: plugin `hooks/session-start-digest.sh`
 - Lint rule: `scripts/lint_rules/digest_state_freshness.py`
 - Example: `memory/examples/digest.example.md`
 

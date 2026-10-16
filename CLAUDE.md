@@ -37,41 +37,39 @@ The recurring job here is not the original extraction, it is keeping up: the sou
 
 ## Specialist architects
 
-Custom subagents live in `.claude/agents/`. Each has a narrow scope (memory, governance, digest, prediction, stakeholder, adversarial, subagent-roster, slash-command). They read source, output templates + schema explanation to their domain in this repo.
+Custom subagents live in `.claude/agents/` (architects only — the operational agents ship in `plugin/agents/`). Each has a narrow scope (memory, governance, digest, prediction, stakeholder, adversarial, subagent-roster, slash-command). They read source, output templates + schema explanation to their domain in `plugin/`.
 
 Specialist agents do NOT modify the source implementation. Ever, for any reason.
 
 ## Output structure
 
+Two trees, one rule: **`plugin/` is the product (mechanism), everything else is the framework around it.** A fork or a plugin install gets `plugin/` and nothing else from here; its state (`memory/`, `knowledge/`, …) is scaffolded into *their* repo by `/giovanni:init`.
+
 ```
 Giovanni/
-├── CLAUDE.template.md (the FORK's operating contract — init-fork swaps it in for this file)
-├── memory/
-│   ├── README.md (schema explanation)
-│   ├── templates/ (operational-memory, topic-shard, stakeholder, decision-record, brief, etc.)
-│   └── examples/ (worked example using synthetic domain)
-├── knowledge/
-│   ├── README.md
-│   └── constitution.template.md
-├── .claude/
-│   ├── agents/ (generic specialist agents)
-│   ├── commands/ (generic slash commands)
-│   ├── hooks/ (auto-regen, audit warnings, etc.)
-│   └── workflows/ (digest, branch-out, audit, etc.)
-├── docs/
-│   ├── invariants.md (the register: what the repo asserts, and what enforces it)
-│   ├── setup-guide.md (how to fork + customize for your domain)
-│   ├── customization.md (per-layer customization points)
-│   ├── test-domain.md (synthetic 2nd domain for pseudo-fork validation)
-│   └── origin.md (where this came from)
-├── scripts/ (auto-regen, audit cadence checks)
-└── examples/ (filled fork on synthetic domain)
+├── .claude-plugin/marketplace.json   (this repo is the marketplace; one plugin: ./plugin)
+├── plugin/                           (THE PLUGIN — `claude plugin validate --strict` must pass)
+│   ├── .claude-plugin/plugin.json
+│   ├── skills/<name>/SKILL.md        (slash commands as /giovanni:<name>; procedures beside them)
+│   ├── agents/                       (operational agents, spawned as giovanni:<name>)
+│   ├── hooks/hooks.json + *.sh       (anchored on ${CLAUDE_PLUGIN_ROOT}; project = $CLAUDE_PROJECT_DIR)
+│   ├── scripts/                      (lint + rules + fixtures, generators, init-fork, install-hooks, git hooks)
+│   ├── docs/                         (mechanism docs: governance, digest, prediction, invariants, agent roster, …)
+│   ├── templates/                    (CLAUDE.template.md, settings, governance config, mcp)
+│   └── skeleton/                     (memory/, knowledge/, deliverables/ — what init copies into a project)
+├── .claude/agents/                   (framework architects — not shipped)
+├── docs/                             (framework docs: origin, source-port-log, test-domain, setup1-complete)
+├── scripts/source-path.sh            (where the live source implementation is; machine-local pointer)
+├── examples/lattice-finance/         (filled instance on the synthetic domain, validated in CI)
+└── CLAUDE.md                         (this file — meta-builder mode)
 ```
+
+Paths inside `plugin/` are plugin-relative; the hooks and scripts never derive the project from their own location.
 
 ## Definition of done (whole project)
 
 Giovanni is "done enough" when:
-1. Repo can be cloned + customized for a new domain in <30 minutes (`docs/setup-guide.md` walks through).
+1. A repo can be scaffolded for a new domain in <30 minutes — `/giovanni:init` from the installed plugin, or `plugin/scripts/init-fork.sh` in a fork clone (`plugin/docs/setup-guide.md` walks through).
 2. Pseudo-fork test passes — templates filled for synthetic 2nd domain produce coherent operational artifacts.
 3. All 8 specialist agents have generic versions.
 4. At least 1 end-to-end workflow runs (e.g. daily digest) on a clean fork.
@@ -80,9 +78,9 @@ Not "done": specific cohort course material, marketing site, paid SaaS. Those ar
 
 ## What this repo is NOT
 
-- Not a personal assistant (assistant lives in the fork, not the framework).
-- Not a Claude Code marketplace listing.
-- Not opinionated on Claude Code vs Antigravity vs other harnesses — design for portability.
+- Not a personal assistant (the assistant lives in the instance — a repo with Giovanni's state in it — not in the framework).
+- Not a paid product and not a store listing beyond the marketplace this repo is. The plugin is MIT and installable from here; a directory submission is a decision, not a default (2026-10-16).
+- Portable where it costs nothing: the state is Markdown + YAML, the lint and generators run without any harness. The plugin format itself is Claude Code's — that is the one vendor dependency, taken knowingly.
 
 ## Commit style
 

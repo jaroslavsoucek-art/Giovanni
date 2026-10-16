@@ -63,7 +63,7 @@ The cap is binding. Branch-outs that try to model t+3 produce confident-sounding
 **Enforcement.**
 
 - Branch-out template frontmatter has `horizon: t+1 | t+2` (no t+3 option)
-- The `/branch-out` workflow refuses to generate t+3 predictions
+- The `/giovanni:branch-out` workflow refuses to generate t+3 predictions
 
 ---
 
@@ -75,7 +75,7 @@ When the agent tries to predict the behavior of an actor with no profile — or 
 
 The temptation is to say "I can still generate predictions; I'll just caveat them." This is **the dangerous version**. The caveated output looks like a real prediction, gets relied upon, and corrupts both the decision and the calibration record.
 
-Hard stop means: if 2+ key actors are shallow / missing, **/branch-out STOPS**. The output is:
+Hard stop means: if 2+ key actors are shallow / missing, **/giovanni:branch-out STOPS**. The output is:
 
 ```
 ⚠️ Insufficient actor models for branch-out.
@@ -94,7 +94,7 @@ No degraded prediction. No "best effort". The fix is to deepen profiles first.
 
 **Enforcement.**
 
-- The `/branch-out` command spec includes the hard-stop logic
+- The `/giovanni:branch-out` command spec includes the hard-stop logic
 - The branch-out template lists actor `profile_depth` requirements in the schema
 
 ---
@@ -130,14 +130,14 @@ A prediction surfaced to the principal during the prediction window does one of 
 
 Either way, the prediction loop is broken. The agent's track record becomes a record of how its surfaced predictions changed behavior, not a record of how accurate its predictions are.
 
-The fix is to **NEVER show shadow hypotheses to the principal at generation time**. They live in `memory/shadow/pending/`. They are not quoted in digests. They are not mentioned in 1:1 briefs. They are not surfaced in branch-out output. They become visible only at `/shadow-review`, after the horizon date has passed and the outcome is structurally determined.
+The fix is to **NEVER show shadow hypotheses to the principal at generation time**. They live in `memory/shadow/pending/`. They are not quoted in digests. They are not mentioned in 1:1 briefs. They are not surfaced in branch-out output. They become visible only at `/giovanni:shadow-review`, after the horizon date has passed and the outcome is structurally determined.
 
 This is the **anti-self-fulfilling prophecy** rule. It is the single most important binding constraint in the entire framework, and it is the constraint most likely to be relaxed by well-meaning users who think "the principal should know what the agent thinks". They should not — at least not in the prediction window.
 
 **Enforcement.**
 
 - The shadow hypothesis template includes the invisibility rule as a binding inline comment
-- The /branch-out workflow stores shadow hypotheses to `memory/shadow/pending/` but does not include them in the output
+- The /giovanni:branch-out workflow stores shadow hypotheses to `memory/shadow/pending/` but does not include them in the output
 - Documentation, agent definitions, and constitution all reiterate the rule
 
 ---
@@ -146,7 +146,7 @@ This is the **anti-self-fulfilling prophecy** rule. It is the single most import
 
 **Why default-skeptical when matching outcomes.**
 
-When `/shadow-review` resolves a pending hypothesis, the agent could read the signal generously ("close enough to match") or strictly ("technically the signal didn't match the prediction"). Default-generous reads inflate accuracy artificially, corrupt calibration, and over time create a confident system that is in fact poorly calibrated.
+When `/giovanni:shadow-review` resolves a pending hypothesis, the agent could read the signal generously ("close enough to match") or strictly ("technically the signal didn't match the prediction"). Default-generous reads inflate accuracy artificially, corrupt calibration, and over time create a confident system that is in fact poorly calibrated.
 
 The adversarial lookback prompt is binding:
 
@@ -154,13 +154,13 @@ The adversarial lookback prompt is binding:
 
 The agent constructs the falsification case before being allowed to record "matched". If the falsification case is weak, matched stands. If it has merit, the verdict flips to falsified. **Default rule on uncertainty: falsified.** Generosity in verdict equals motivated reasoning equals calibration corruption.
 
-This is uncomfortable. The framework deliberately runs the agent's predictions against an adversarial reviewer (the agent itself, primed adversarially). High-accuracy months should be celebrated less than they are scrutinized — `overall_accuracy > 80%` triggers an immediate `/shadow-review` because it usually means tier labels have drifted or verdicts are motivated.
+This is uncomfortable. The framework deliberately runs the agent's predictions against an adversarial reviewer (the agent itself, primed adversarially). High-accuracy months should be celebrated less than they are scrutinized — `overall_accuracy > 80%` triggers an immediate `/giovanni:shadow-review` because it usually means tier labels have drifted or verdicts are motivated.
 
 **Enforcement.**
 
 - The shadow hypothesis template includes the adversarial-check prompt verbatim
-- `/shadow-review` workflow spec includes the default-skeptical framing
-- `/calibration-report` template includes the >80% accuracy guard rail
+- `/giovanni:shadow-review` workflow spec includes the default-skeptical framing
+- `/giovanni:calibration-report` template includes the >80% accuracy guard rail
 
 ---
 
@@ -176,12 +176,12 @@ Per-actor aggregation, per-tier, surfaces these patterns:
 - **`possible-but-surprising` hit rate per actor** — is the agent labeling non-default moves correctly?
 - **`unlikely-but-impactful` hit rate per actor** — is the rare-but-consequential tier label accurate?
 
-The monthly /calibration-report aggregates these, identifies bias-watch flags, and surfaces threshold suggestions for the triage heuristic. The agent **surfaces**; the principal **applies**.
+The monthly /giovanni:calibration-report aggregates these, identifies bias-watch flags, and surfaces threshold suggestions for the triage heuristic. The agent **surfaces**; the principal **applies**.
 
 **Enforcement.**
 
 - `memory/calibration/actor-scores.yaml` is the canonical state — schema enforces per-tier breakdown
-- `/calibration-report` workflow updates the YAML and writes monthly markdown report
+- `/giovanni:calibration-report` workflow updates the YAML and writes monthly markdown report
 - Healthy ranges (60-80% likely, 20-40% possible-but-surprising, 5-15% unlikely-but-impactful) are documented in the calibration README and the monthly report template
 
 ---
@@ -199,7 +199,7 @@ The registry includes 50+ moves across 6 relationship types (asymmetric-power-up
 **Enforcement.**
 
 - `memory/branch-out/canonical-moves.md` is append-only — new names only via decision record
-- `/branch-out` workflow loads the registry and reuses existing names
+- `/giovanni:branch-out` workflow loads the registry and reuses existing names
 
 ---
 
@@ -208,7 +208,7 @@ The registry includes 50+ moves across 6 relationship types (asymmetric-power-up
 The four components chain into one prediction loop:
 
 ```
-1. /branch-out <slug>
+1. /giovanni:branch-out <slug>
      ├─ loads stakeholder profiles + canonical moves
      ├─ runs actor depth check → STOP if 2+ shallow
      ├─ generates moves (canonical names) → predictions (3-tier) → trade-off matrix
@@ -220,14 +220,14 @@ The four components chain into one prediction loop:
 
 3. [silently] Days pass; horizon dates arrive
 
-4. /shadow-review (quarterly)
+4. /giovanni:shadow-review (quarterly)
      ├─ pulls 10-20 resolved + past-horizon hypotheses
      ├─ runs adversarial lookback per hypothesis → verdict (matched/falsified/mixed/expired)
      ├─ moves files: pending → resolved/<YYYY-MM>/ or expired/<YYYY-MM>/
      ├─ appends to memory/calibration/audit-log.md (does NOT touch actor-scores.yaml)
      └─ output: shadow review audit log
 
-5. /calibration-report (monthly)
+5. /giovanni:calibration-report (monthly)
      ├─ aggregates the month's resolved hypotheses
      ├─ computes per-actor + per-tier accuracy
      ├─ updates memory/calibration/actor-scores.yaml (sole writer of the YAML)
@@ -267,7 +267,7 @@ Fix: refuse. The principal should not know what the agent predicted in the shado
 ### Calibration manipulation
 
 Symptom: adversarial-check verdicts consistently lean matched even when the signal was ambiguous; `overall_accuracy > 80%` without callout. 
-Fix: trigger `/shadow-review` immediately. Re-evaluate verdicts adversarially. Default-skeptical, not default-confirming.
+Fix: trigger `/giovanni:shadow-review` immediately. Re-evaluate verdicts adversarially. Default-skeptical, not default-confirming.
 
 ### Depth-shallow override
 
@@ -281,7 +281,7 @@ Fix: refuse. Threshold values change only via deliberate review (and decision re
 
 ### Trigger conditions empty
 
-Symptom: decision records spawned by /branch-out have empty `trigger_conditions` field. 
+Symptom: decision records spawned by /giovanni:branch-out have empty `trigger_conditions` field. 
 Fix: `scripts/lint_rules/decision_trigger_conditions.py` catches this. Empty trigger conditions = decision theatre — no signal to revisit on. Principal must fill before commit.
 
 ### Tier-label drift
@@ -307,9 +307,9 @@ Fix: the tiers are no longer testing what they should. Re-read actor profile, re
   - `memory/shadow/README.md`
   - `memory/calibration/README.md`
 - **Slash commands:**
-  - `.claude/commands/branch-out.md`
-  - `.claude/commands/shadow-review.md`
-  - `.claude/commands/calibration-report.md`
+  - `skills/branch-out/SKILL.md`
+  - `skills/shadow-review/SKILL.md`
+  - `skills/calibration-report/SKILL.md`
 - **Lint rules:**
   - `scripts/lint_rules/no_percentages_in_predictions.py`
   - `scripts/lint_rules/shadow_expired_pending.py`

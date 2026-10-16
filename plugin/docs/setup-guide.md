@@ -1,10 +1,10 @@
-# Setup Guide — Fork Giovanni for Your Domain
+# Setup Guide — Stand Up Giovanni for Your Domain
 
 > **Status:** WIP stub. This guide iterates as Setup2 (first real fork) surfaces actual fork-and-fill friction. Treat each section as "best current intent" — if your experience diverges, flag it and we'll update.
 
-Giovanni is a **methodology framework**, not a working AI Chief of Staff. To get value from it, you fork the repo, fill it with your own domain content (constitution, stakeholder profiles, source configurations), and run the workflows.
+Giovanni is a **methodology framework**, not a working AI Chief of Staff. To get value from it, you install the plugin into a repo of your own, scaffold the state layers, fill them with your domain content (constitution, stakeholder profiles, source configurations), and run the skills.
 
-This guide walks through the fork-and-fill process. Expect 4-8 hours of focused work to reach "first useful `/digest` run", and several weeks of iteration before the predictive layer (branch-out / shadow / calibration) starts producing accuracy signals.
+This guide walks through the install-and-fill process. Expect 4-8 hours of focused work to reach "first useful `/giovanni:digest` run", and several weeks of iteration before the predictive layer (branch-out / shadow / calibration) starts producing accuracy signals.
 
 ## Prerequisites
 
@@ -14,23 +14,39 @@ This guide walks through the fork-and-fill process. Expect 4-8 hours of focused 
 - A domain you operate in with: ≥5 named stakeholders, ≥1 multi-month strategic horizon, ≥3 configurable signal sources (chat / email / calendar / project tracker / etc.)
 - ~4-8 hours initial setup time
 
-## Step 1 — Fork the repo
+## Step 1 — Install the plugin and scaffold a repo
 
-```bash
-# Clone Giovanni
-git clone https://github.com/jaroslavsoucek-art/Giovanni.git <your-domain>-cos
-cd <your-domain>-cos
+**Plugin install** (the default — any repo, new or existing):
 
-# Set your own remote
-git remote remove origin
-git remote add origin <your-private-repo-url>
+```
+/plugin marketplace add jaroslavsoucek-art/Giovanni
+/plugin install giovanni@giovanni
 ```
 
-**Recommendation:** make this a private repo. Stakeholder profiles contain operational predictions and pattern observations about real people. See [`docs/stakeholder-profiles.md`](stakeholder-profiles.md) § Privacy considerations.
+then, in a Claude Code session opened in the repo that will hold your state:
+
+```
+/giovanni:init
+```
+
+`init` copies the templates to their runtime names (`knowledge/constitution.md`, `memory/CLAUDE_MEMORY.md`, `memory/digest_sources.md`, `memory/digest_state.md`, `memory/triage-heuristic.yaml`, `docs/governance.config.yaml`, `.claude/settings.json`), creates the memory subdirectories, writes the `CLAUDE.md` operating contract (beside your own `CLAUDE.md` as `docs/CLAUDE.giovanni.md` if you have one — import it with one `@docs/CLAUDE.giovanni.md` line), regenerates `INDEX.md` / `MAP.md`, and runs the lint once so you see the fill-in list. It never overwrites a file you have filled; re-run it any time.
+
+**Fork clone** (if you want the framework source next to your state — to contribute back, or to pin a version):
+
+```bash
+git clone https://github.com/jaroslavsoucek-art/Giovanni.git <your-domain>-cos
+cd <your-domain>-cos
+git remote set-url origin <your-private-repo-url>
+bash plugin/scripts/init-fork.sh                      # the same scaffold, from ./plugin
+claude plugin marketplace add "$PWD"                  # register ./plugin as a local marketplace
+claude plugin install giovanni@giovanni --scope project
+```
+
+**Recommendation:** make the state repo private. Stakeholder profiles contain operational predictions and pattern observations about real people. See [`docs/stakeholder-profiles.md`](stakeholder-profiles.md) § Privacy considerations.
 
 ## Step 2 — Fill the constitution
 
-Open `knowledge/constitution.template.md`, rename to `knowledge/constitution.md` (or `<domain>_constitution.md`), and replace placeholders with your domain content:
+Open `knowledge/constitution.md` (init copied it from the plugin's `skeleton/knowledge/constitution.template.md`; rename to `<domain>_constitution.md` if you like and set `constitution_file` in `docs/governance.config.yaml`) and replace placeholders with your domain content:
 
 - **Identity & scope** — what initiative this constitution governs
 - **Operating principles** — non-negotiable rules (e.g. "we don't sell to companies without a finance team", "platform + entity pricing, never per-seat")
@@ -61,26 +77,13 @@ Required body sections (workflow stress-tested):
 
 **Time:** ~30 min per profile for first-pass depth (`partial`). Deepen iteratively as interactions accumulate.
 
-**Tool:** invoke `profile-bootstrap` agent for any stakeholder you want auto-populated from chat/email/calendar/project-tracker signal. See [`.claude/agents/profile-bootstrap.md`](../.claude/agents/profile-bootstrap.md).
+**Tool:** invoke `profile-bootstrap` agent for any stakeholder you want auto-populated from chat/email/calendar/project-tracker signal. See [`agents/profile-bootstrap.md`](../agents/profile-bootstrap.md).
 
-## Step 4 — Configure runtime state files from templates
+## Step 4 — Configure the runtime state files
 
-**Important:** Giovanni's templates use hyphens (`digest-sources.template.md`), runtime files use underscores (`digest_sources.md`). Naming is inconsistent — match runtime paths shown below exactly, don't auto-rename.
+`/giovanni:init` already created the three runtime files from the plugin's templates (note the naming: templates use hyphens, runtime files use underscores — `memory/digest_sources.md`, `memory/digest_state.md`, `memory/triage-heuristic.yaml`; match these exactly). What is left is filling them.
 
-Copy three template files to their runtime locations:
-
-```bash
-# Digest sources config (runtime file uses underscore!)
-cp memory/digest-sources.template.md memory/digest_sources.md
-
-# Digest state (runtime file uses underscore!)
-cp memory/digest-state.template.md memory/digest_state.md
-
-# Triage heuristic (runtime keeps hyphen — different convention)
-cp memory/triage-heuristic.template.yaml memory/triage-heuristic.yaml
-```
-
-Verification: `bash scripts/lint.sh` should still be clean. `/digest` pre-flight will read `memory/digest_sources.md` and `memory/digest_state.md`. `/branch-out` pre-flight will read `memory/triage-heuristic.yaml`.
+Verification: `bash <plugin>/scripts/lint.sh` should still be clean apart from placeholder findings. `/giovanni:digest` pre-flight will read `memory/digest_sources.md` and `memory/digest_state.md`. `/giovanni:branch-out` pre-flight will read `memory/triage-heuristic.yaml`.
 
 ### Configure digest sources
 
@@ -103,44 +106,44 @@ Open `memory/triage-heuristic.yaml`. Default thresholds (3 active branch-outs/da
 
 ### Configure digest state
 
-`memory/digest_state.md` starts essentially empty. First `/digest --force` run will prompt for a manual seed `last_run_timestamp` (e.g. "start window 7 days ago") and populate the rest.
+`memory/digest_state.md` starts essentially empty. First `/giovanni:digest --force` run will prompt for a manual seed `last_run_timestamp` (e.g. "start window 7 days ago") and populate the rest.
 
 **Time:** ~30 min initial config + tuning over first 2 weeks.
 
-## Step 5 — Wire MCP tools to source-puller
+## Step 5 — Point source-puller at your connectors
 
-`source-puller` agent is generic — it doesn't know your actual MCP server identifiers. Fork-time wiring:
+`giovanni:source-puller` is generic — it does not know your MCP server names, and as a plugin agent it inherits **every tool the session has** (there is deliberately no `tools:` allowlist in its frontmatter: a plugin file is overwritten on update, so an allowlist there could never be edited by the person who knows the connector names). The wiring lives in your repo:
 
-1. Edit `.claude/agents/source-puller.md` frontmatter `tools:` list, append your MCP tool identifiers (e.g. `mcp__<chat-server>__read_channel`).
+1. In `memory/digest_sources.md`, give each source the MCP tool (or script) that pulls it — the `source_type` → tool mapping the puller reads at run time.
 
-   **Use a named server, never a generated id.** Some harnesses expose connectors as `mcp__<uuid>__tool`, valid for one machine and one install. Pinned into an agent, it breaks in the worst available way: the tool is not found, the agent reports the source unavailable, and the digest renders a clean "no signal" for a connector that was working the whole time. Declare the server in `.mcp.json` so it resolves by name. Lint rule `mcp-uuid-pin` enforces this.
-2. Update body's "Tool routing per source_type" section to map your `source_type` enum values to actual MCP tool calls
+   **Use a named server, never a generated id.** Some harnesses expose connectors as `mcp__<uuid>__tool`, valid for one machine and one install. Pinned into a config, it breaks in the worst available way: the tool is not found, the agent reports the source unavailable, and the digest renders a clean "no signal" for a connector that was working the whole time. Declare the server in your project's `.mcp.json` so it resolves by name (`templates/mcp.template.json` in the plugin shows the shape). Lint rule `mcp-uuid-pin` enforces this for anything under `.claude/`.
+2. If a source needs a script rather than an MCP tool, keep the script in your repo and name it in the same place.
 
 **Write gate:** wire **read-only** tools first. Wire write-capable tools (post / send / publish / update) only after adopting the external write gate — reads are free, writes require per-action confirmation, and an ambiguous instruction is never publish authorization. See [`docs/governance.md`](governance.md) § "External write gate" and the constitution template's `{#external-write-gate}` section (enumerate your gated destinations there before the first write-capable tool goes live).
 
 **Time:** ~15-30 min if your MCP tools are already configured. Hours if not.
 
-## Step 6 — Install hooks + verify lint
+## Step 6 — Install the git gates + verify lint
 
 ```bash
-bash scripts/install-hooks.sh
-bash scripts/lint.sh
+bash <plugin>/scripts/install-hooks.sh     # git pre-commit (regen + lint) and pre-push; <plugin> = `claude plugin list` root, or ./plugin in a fork clone
+bash <plugin>/scripts/lint.sh
 ```
 
-`scripts/init-fork.sh` already copied `.claude/settings.template.json` → `.claude/settings.json`. **Open it before your first real session.** That file is what makes the hooks fire at all, and it carries the permission half of the external write gate:
+The Claude Code hooks need no installing — they ship in the plugin's `hooks/hooks.json` and fire in every session where the plugin is enabled. `/giovanni:init` already copied `templates/settings.template.json` → `.claude/settings.json`. **Open it before your first real session.** It carries what a plugin cannot — the permission half of the external write gate:
 
 - `permissions.ask` — write verbs on every `mcp__*` connector. Keep the verb globs; add ones your connectors use that aren't listed.
 - `permissions.deny` — starts empty. Add a channel here when you demote it (see `docs/governance.md` § Channel demotion), together with `readonly_channels` in `docs/governance.config.yaml`.
-- `hooks` — delete a block to disable that hook. Keep `block-external-writes.sh` unless you have a specific reason; it is the only thing standing between an ambiguous instruction and a published page.
+- no `hooks` block — the plugin's hooks would run twice. `block-external-writes.sh` is the only thing standing between an ambiguous instruction and a published page; the way to lose it is to disable the plugin, which is deliberate.
 
-Expected: lint clean (your fork starts with empty `memory/topics/`, `memory/decisions/`, etc. — only constitution + stakeholders + sources populated).
+Expected: lint clean (your instance starts with empty `memory/topics/`, `memory/decisions/`, etc. — only constitution + stakeholders + sources populated).
 
 If lint fails, see [`docs/governance.md`](governance.md) § "Lint framework" for rule-by-rule debugging.
 
-## Step 7 — First `/digest` run
+## Step 7 — First `/giovanni:digest` run
 
 ```
-/digest --force
+/giovanni:digest --force
 ```
 
 (`--force` overrides the 4 h cadence guard on first run.)
@@ -154,34 +157,34 @@ Expected output sections:
 
 **First run is exploratory.** Iterate sources config based on signal quality. Within 1-2 weeks, signal-to-noise should stabilize.
 
-## Step 8 — First `/branch-out`
+## Step 8 — First `/giovanni:branch-out`
 
 When you have a high-stakes decision coming up with ≥2 deep-profile stakeholders:
 
 ```
-/branch-out <situation-slug>
+/giovanni:branch-out <situation-slug>
 ```
 
 The simulation produces a per-actor moves table + trade-off matrix. **No "recommended move"** — the matrix is generative, you decide. See [`docs/prediction.md`](prediction.md) § "8 binding principles".
 
-**Critical:** if `/branch-out` hard-stops because ≥2 actors are shallow, **deepen profiles first**. Don't override.
+**Critical:** if `/giovanni:branch-out` hard-stops because ≥2 actors are shallow, **deepen profiles first**. Don't override.
 
-## Step 9 — Monthly `/calibration-report`
+## Step 9 — Monthly `/giovanni:calibration-report`
 
 After 30 days of digest runs (shadow hypotheses accumulating):
 
 ```
-/calibration-report
+/giovanni:calibration-report
 ```
 
 Produces per-actor accuracy aggregation. Initial reports are noisy due to small N — useful patterns emerge after 60-90 days.
 
-## Step 10 — Quarterly `/shadow-review`
+## Step 10 — Quarterly `/giovanni:shadow-review`
 
 After 90 days:
 
 ```
-/shadow-review
+/giovanni:shadow-review
 ```
 
 Manual audit of resolved shadow hypotheses with adversarial lookback. **Default to skeptical** — see [`docs/prediction.md`](prediction.md) § "Adversarial lookback".
@@ -222,16 +225,16 @@ Some forks inherit a skill/convention library from an employer or upstream engin
 |---|---|
 | 1 | Constitution drafted but revising weekly; 5-10 profiles bootstrapped; first digest runs noisy; first branch-out maybe |
 | 2 | Sources config stabilized; signal-to-noise improving; first shadow hypotheses resolving; 10-15 profiles |
-| 3 | First /calibration-report (noisy but useful); first /shadow-review (small N); constitution stable |
+| 3 | First /giovanni:calibration-report (noisy but useful); first /giovanni:shadow-review (small N); constitution stable |
 | 6 | Predictive layer producing actionable accuracy patterns; calibration noticing per-actor bias; routine drift detection working |
 | 12 | Framework is operational tempo; minimum viable maintenance |
 
 ## Failure modes
 
 - **Constitution bloat** — if you exceed 1500 lines, you're putting decision content where it should be in `memory/decisions/`. Graduate sections out.
-- **Profile shallow-stuck** — if a key stakeholder's profile stays `shallow` for >30 days, something is broken in your signal access. Investigate before next /branch-out involving them.
+- **Profile shallow-stuck** — if a key stakeholder's profile stays `shallow` for >30 days, something is broken in your signal access. Investigate before next /giovanni:branch-out involving them.
 - **Triage volume explosion** — if active branch-outs >3/day OR shadow >25/day, threshold creep. Don't silently raise thresholds; force re-evaluation per [`memory/triage-heuristic.template.yaml`](../memory/triage-heuristic.template.yaml).
-- **Calibration overconfidence** — if monthly overall accuracy >80%, suspect motivated reasoning, not victory. Run `/shadow-review` immediately.
+- **Calibration overconfidence** — if monthly overall accuracy >80%, suspect motivated reasoning, not victory. Run `/giovanni:shadow-review` immediately.
 - **Drift flag noise** — if 80% of digest drift flags are noise (false positives), tighten source configs and constitution scope.
 
 ## What to do when this guide is wrong
@@ -258,7 +261,7 @@ This guide is WIP — written from the architect-side, not from a real fork. If 
 - Real fork-time wiring time for MCP tools per source_type — is "15-30 min" realistic?
 - Real first-month constitution revision cadence — is weekly the right rhythm?
 - Real shadow hypothesis volume per day — does the default triage heuristic hold up?
-- Real adversarial-reviewer adoption — do principals actually invoke `/review` before sending?
+- Real adversarial-reviewer adoption — do principals actually invoke `/giovanni:review` before sending?
 - Real calibration utility — does the monthly report change behavior or just gather dust?
 
 These get answered in Setup2 retrospectives. This guide updates accordingly.

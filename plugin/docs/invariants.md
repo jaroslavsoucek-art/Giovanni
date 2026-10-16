@@ -31,7 +31,7 @@ Unenforced invariants get an id in the same shape, so promoting one to code is a
 | `index-stale` | `knowledge/INDEX.md` matches what the generator would produce now | high | lint.sh |
 | `map-stale` | `memory/MAP.md` matches what the generator would produce now | high | lint.sh |
 | `registry-stale` | `deliverables/REGISTRY.md` is fresh against `_registry.yaml` | high | lint.sh |
-| `hook-syntax` | every `.claude/hooks/*.sh` parses (`bash -n`) | critical | lint.sh |
+| `hook-syntax` | every `hooks/*.sh` parses (`bash -n`) | critical | lint.sh |
 | `script-syntax` | every `scripts/*.sh` and `scripts/git-hooks/*` parses | critical | lint.sh |
 | `adversarial-verdict-format` | review output carries a verdict in the declared shape | medium | lint.py |
 | `branch-out-no-recommendation` | branch-out artifacts present trade-offs, never a recommended move | high | lint.py |
@@ -39,7 +39,7 @@ Unenforced invariants get an id in the same shape, so promoting one to code is a
 | `decision-trigger-conditions` | every decision record has non-empty `trigger_conditions` | high | lint.py |
 | `deliverables-registry` | every `deliverables/` item has a lifecycle entry | medium | lint.py |
 | `digest-state-freshness` | `memory/digest_state.md` is not stale beyond threshold | medium | lint.py |
-| `domain-leak` | no prior-domain proper nouns in `memory/`, `knowledge/`, `.claude/` | high | lint.py |
+| `domain-leak` | no prior-domain proper nouns in the project's `memory/`, `knowledge/`, `.claude/` | high | lint.py |
 | `hooks-portable-date` | hooks use no single-platform commands | high | lint.py |
 | `l1-size` | L1 operational memory within its line budget | high / critical | lint.py |
 | `l1-strikethrough-ratio` | strikethrough in L1 below threshold (soft-delete creep) | medium | lint.py |
@@ -49,19 +49,19 @@ Unenforced invariants get an id in the same shape, so promoting one to code is a
 | `stakeholder-frontmatter` | stakeholder profiles carry the required fields | medium | lint.py |
 | `stakeholder-slug-exists` | every referenced stakeholder slug resolves to a profile | medium | lint.py |
 | `topic-shard-frontmatter` | topic shards carry the required frontmatter | medium | lint.py |
-| `workflow-route-table` | route table ↔ `.claude/workflows` + `.claude/commands`, both directions | medium | lint.py |
+| `workflow-route-table` | route table ↔ `skills/*/procedure.md` + `skills/`, both directions | medium | lint.py |
 | `l1-byte-size` | L1 within its byte budget (the cap line count is blind to) | high | lint.py |
 | `digest-state-size` | `digest_state.md` is a state file, not a journal | medium | lint.py |
 | `topic-shard-stale` | an active shard must not freeze — refresh or retire | medium | lint.py |
 | `resolved-shard-status` | `_resolved/` holds only resolved shards; resolved shards get filed | medium | lint.py |
 | `agent-roster-match` | agent files ↔ roster rows ↔ declared model | medium | lint.py |
-| `mcp-uuid-pin` | no install-specific MCP server ids in `.claude/` | high | lint.py |
+| `mcp-uuid-pin` | no install-specific MCP server ids in the plugin's agents / skills / hooks or the project's `.claude/` | high | lint.py |
 | `silence-counter-verified` | a "N days of silence" claim in L1 / an active shard carries a fresh `[verified YYYY-MM-DD]` stamp, or is written as a past fact without a counter | high / medium | lint.py |
-| `rules-register-pointers` | every `docs/invariants.md#<id>` pointer in `CLAUDE.md` / `CLAUDE.template.md` resolves to a Behavioral rules entry | medium | lint.py |
+| `rules-register-pointers` | every `docs/invariants.md#<id>` pointer in `CLAUDE.md` / `templates/CLAUDE.template.md` resolves to a Behavioral rules entry | medium | lint.py |
 
 ## Enforced by hook
 
-Hooks warn or gate in the moment. They are **additive** to lint, never a substitute: a hook only fires if the session is running, and `.claude/settings.json` is a file a user can edit. Lint stays the check of record.
+Hooks warn or gate in the moment. They are **additive** to lint, never a substitute: a hook only fires if the session is running and the plugin is enabled, and a plugin is something a user can disable. Lint stays the check of record.
 
 | Hook | Invariant | Kind |
 |---|---|---|
@@ -83,8 +83,8 @@ Hooks warn or gate in the moment. They are **additive** to lint, never a substit
 | `audit-full` | section-by-section L1 review, shard graduation, archival | 35 d | hook warns |
 | `shard-retirement` | resolved shards move to `topics/_resolved/` | 60 d | full audit |
 | `shadow-review` | shadow hypotheses audited for calibration | 90 d | hook warns |
-| `calibration-report` | actor-score calibration written up | monthly | `/calibration-report` |
-| `consistency-check` | 8 semantic drift checks the linter cannot reach, incl. knowledge↔knowledge and outbound published pages | weekly | `/consistency-check` |
+| `calibration-report` | actor-score calibration written up | monthly | `/giovanni:calibration-report` |
+| `consistency-check` | 8 semantic drift checks the linter cannot reach, incl. knowledge↔knowledge and outbound published pages | weekly | `/giovanni:consistency-check` |
 | `re-grounding` | every FACT promoted to canon or shipped in a deliverable has a primary anchor verified this cycle | at the two gates | constitution amendment · deliverable ship |
 
 ---
@@ -122,7 +122,7 @@ Rules whose full reasoning already lives in another doc (`docs/governance.md` fo
 
 - **Rule:** citing message N of a thread? Name the thread's last message too (author + time) and say whether it supersedes N. The newest relevant statement wins.
 - **Why:** in the source, a position was cited as current a week after its own author had retracted it in the same thread. Both messages were in one tool result, and the later one had been quoted correctly twenty minutes earlier. Memory was not the failure, because the whole thread was in context. It was motivated retrieval: the item was already ranked high, the thread was searched for support for the rank rather than for its current state, and reading stopped at the most useful sentence.
-- **Enforced by:** puller contract (`→ tail: <author> <ts>` on every thread bullet, `.claude/agents/source-puller.md`) and digest Step 5. No lint: it needs to read meaning.
+- **Enforced by:** puller contract (`→ tail: <author> <ts>` on every thread bullet, `agents/source-puller.md`) and digest Step 5. No lint: it needs to read meaning.
 
 ### `asymmetric-test`
 
@@ -145,7 +145,7 @@ Rules whose full reasoning already lives in another doc (`docs/governance.md` fo
 ### `shared-backend-serialise`
 
 - **Rule:** parallelise across backends, serialise within one. Verify that a response answers the request before trusting it.
-- **Why:** concurrent agents on one connector gateway cross-wired their responses. One received another product's data for its own query, and nothing in the payload said "wrong". The full story is in `.claude/workflows/daily-digest.md` § 4d.
+- **Why:** concurrent agents on one connector gateway cross-wired their responses. One received another product's data for its own query, and nothing in the payload said "wrong". The full story is in `skills/digest/procedure.md` § 4d.
 - **Enforced by:** puller hard rule (verify the response answers the request).
 
 ### `branch-landing`

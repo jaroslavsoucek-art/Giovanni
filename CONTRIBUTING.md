@@ -5,9 +5,11 @@ unusual contribution constraints. PRs that miss them get sent back.
 
 ## What Giovanni is
 
-A **methodology framework**, not a working assistant. The runtime lives in
-*forks*, not here. This repo holds templates, schemas, agent definitions,
-workflows, and lint rules — everything domain-agnostic.
+A **methodology framework**, not a working assistant. The mechanism is the
+Claude Code plugin in `plugin/` (skills, agents, hooks, lint, generators,
+templates); the state it operates on lives in *your* repo, scaffolded by
+`/giovanni:init`. This repo holds the plugin, the framework docs and the
+architect agents that built it — everything domain-agnostic.
 
 ## What gets merged
 
@@ -43,7 +45,9 @@ workflows, and lint rules — everything domain-agnostic.
 3. **Test on the synthetic domain** (`docs/test-domain.md` — Alex Park /
    Lattice Finance). If your template breaks against Lattice, redesign before
    submitting.
-4. **Lint must pass**: `./scripts/lint.sh`.
+4. **Lint must pass**: `bash plugin/scripts/lint.sh` and
+   `bash plugin/scripts/run-lint-fixtures.sh`; for anything under `plugin/`,
+   also `claude plugin validate ./plugin --strict`.
 5. **Critical mode is default** for review. No flattery. PRs may get hard
    pushback. Read `docs/adversarial.md` for the review philosophy — SHIP /
    REWRITE / KILL verdicts, strongest-counter-case requirement.
@@ -62,7 +66,7 @@ workflows, and lint rules — everything domain-agnostic.
 - [ ] No country / region references tied to a real program
 - [ ] No vendor names beyond the abstract `<source_type>` enum
 - [ ] No PII anywhere (emails, phone numbers, addresses)
-- [ ] `./scripts/lint.sh` passes
+- [ ] `bash plugin/scripts/lint.sh` passes
 
 ## Code of Conduct
 

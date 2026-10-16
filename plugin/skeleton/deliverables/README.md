@@ -13,7 +13,7 @@ This directory also hosts the **opt-in lifecycle registry** that keeps the direc
 | `deliverables/<file>` | An outbound artifact (any format — md, html, pdf, xlsx, generator scripts). |
 | `deliverables/_registry.yaml` | Lifecycle registry — single source of truth for each artifact's status. Opt-in; see "When to activate". |
 | `deliverables/_registry.template.yaml` | Template for the registry (this repo ships it; copy to `_registry.yaml` at activation). |
-| `deliverables/REGISTRY.md` | Auto-generated, human-readable view of the registry. Built by `scripts/build-deliverables-registry.py`. **Never hand-edit.** |
+| `deliverables/REGISTRY.md` | Auto-generated, human-readable view of the registry. Built by `<plugin>/scripts/build-deliverables-registry.py`. **Never hand-edit.** |
 | `deliverables/_archive/` | Superseded artifacts with zero inbound references. Outside the registry. |
 
 The external write gate applies here: deliverables are the **draft-first** destination. The agent drafts into `deliverables/`, the principal confirms the specific publish/send action. See [`docs/governance.md`](../docs/governance.md) § External write gate.
@@ -48,7 +48,7 @@ entries:
 
 1. **New file in `deliverables/` ⇒ entry in `_registry.yaml`.** The `deliverables-registry` lint rule enforces bidirectional completeness: every file has an entry, every entry points at an existing file. Exempt: `_archive/`, dotfiles, `README.md`, `REGISTRY.md`, `*.template.yaml`.
 2. **Status flip = edit the yaml. NEVER rename or move the file.** Status lives in metadata, not in the path. This is the **anti-link-rot rule**: memory shards, decision records, and knowledge docs hold pointers to deliverable paths. Renaming `pricing-deck.md` to `pricing-deck-FINAL-sent.md` breaks every inbound reference for zero information gain — the registry already knows it was sent.
-3. **After any yaml edit, regenerate:** `python3 scripts/build-deliverables-registry.py`. `REGISTRY.md` is deterministic output (grouped by status, date-descending within group); lint flags it as stale when it doesn't match a `--dry` regeneration.
+3. **After any yaml edit, regenerate:** `python3 <plugin>/scripts/build-deliverables-registry.py`. `REGISTRY.md` is deterministic output (grouped by status, date-descending within group); lint flags it as stale when it doesn't match a `--dry` regeneration.
 4. **`date` is the artifact's creation/send date**, not its last-edit date. It answers "when did this enter the world", which is what you need when triaging what is stale.
 5. **Archive sweep at full-audit cadence.** At each full memory audit (`audit_full_cadence_days`, default 35 — see [`docs/governance.md`](../docs/governance.md) § Audit cadence), sweep `superseded` entries whose files have zero inbound references into `_archive/` and remove their registry entries. Until the sweep, superseded files stay in place so existing pointers keep resolving.
 6. **`sent` artifacts are frozen.** If a sent document needs changes, that's a new draft entry — the sent version is the historical record of what the counterparty actually received.
@@ -65,8 +65,8 @@ To activate:
 
 1. `cp deliverables/_registry.template.yaml deliverables/_registry.yaml`
 2. Replace the example entries with one entry per existing file (one backfill commit).
-3. `python3 scripts/build-deliverables-registry.py`
-4. `bash scripts/lint.sh --check deliverables-registry` — must be clean.
+3. `python3 <plugin>/scripts/build-deliverables-registry.py`
+4. `bash <plugin>/scripts/lint.sh --check deliverables-registry` — must be clean.
 
 Config: `deliverables_dir` in `docs/governance.config.yaml` (default `deliverables`, env override `GIOVANNI_DELIVERABLES_DIR`).
 

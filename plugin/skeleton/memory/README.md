@@ -188,7 +188,7 @@ The `memory/stakeholders/<slug>.md` file schema is owned by `stakeholder-archite
 
 **Retention:** archived after default 90 days dormant. File moves to `memory/stakeholders/_archived/<slug>.md`. Configurable via `docs/governance.config.yaml`.
 
-**Cross-reference contract:** topic shards reference profile slugs in `key_stakeholders`. Lint validates via `scripts/lint_rules/stakeholder_slug_exists.py` (activates only once at least one profile file exists).
+**Cross-reference contract:** topic shards reference profile slugs in `key_stakeholders`. Lint validates via `<plugin>/scripts/lint_rules/stakeholder_slug_exists.py` (activates only once at least one profile file exists).
 
 **Privacy:** profiles contain operational predictions and pattern observations about real people. Decide privacy posture before first commit — see `docs/stakeholder-profiles.md` for options (private repo / `.gitignore` / `git-crypt`).
 
@@ -232,7 +232,7 @@ Before adding content to memory, classify. **Default is NOT L1.** L1 is a restri
 | **Session start** | L0 + L1 auto-load | Every session |
 | **Per-edit** | MAP regen | Hook on any `memory/topics|decisions|briefs|stakeholders|archive` Edit/Write |
 | **14 days** | L1 light audit | **Reconcile L1 against reality** — every dated item checked against the live source (tracker, calendar, thread). Size is a hook trigger, not an audit task |
-| **35 days** | L1 full audit | Step 0: diff the `.claude/` baseline. Then section-by-section review; archive resolved items; graduate hot items to shards |
+| **35 days** | L1 full audit | Step 0: diff the agentic-surface baseline (`<plugin>/scripts/build-claude-baseline.sh --dry`). Then section-by-section review; archive resolved items; graduate hot items to shards |
 | **60 days** | Resolved shard retirement | Move `topics/<slug>.md` to `topics/_resolved/<slug>.md` if `status: resolved` and untouched |
 
 Cadence state lives in `memory/audit_state.md` (one canonical file with last-run dates + thresholds). Session-start hook warns when overdue.
@@ -321,7 +321,7 @@ Memory-architect produces the file-system taxonomy and storage contracts. The fo
 - **Predictive layer internals** (branch-out / shadow / calibration content schemas) → `prediction-architect`
 - **Adversarial review workflow** (how a draft is critiqued before sending) → `adversarial-architect`
 - **Hook scripts** (MAP regen, audit cadence warnings, session-start checks) → `governance-architect`
-- **Slash commands** (`/digest`, `/branch-out`, `/audit`) → `slash-command-architect`
+- **Slash commands** (`/giovanni:digest`, `/giovanni:branch-out`, `/audit`) → `slash-command-architect`
 
 When forking Giovanni for a new domain, the memory layer alone is incomplete — you'll want at least `governance-architect` (constitution + audits) and `stakeholder-architect` (per-person schema) deployed alongside.
 

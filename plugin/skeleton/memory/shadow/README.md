@@ -2,7 +2,7 @@
 
 This directory holds **shadow hypotheses** — testable predictions about specific actor behavior within bounded time windows. Shadow hypotheses are the **invisible half of the predictive layer**: they are NEVER surfaced to the principal at generation time. They exist only to be tested against ground truth at horizon and to feed calibration scoring.
 
-The visible half — `/branch-out` simulations — lives in `memory/branch-out/`.
+The visible half — `/giovanni:branch-out` simulations — lives in `memory/branch-out/`.
 
 ---
 
@@ -37,10 +37,10 @@ Surfacing a prediction to the actor or principal during the prediction window se
 |-------|------------|
 | Generated (status: pending) | Invisible — stored in `pending/`, never quoted in digests / 1:1 prep / drafts |
 | Horizon date reached | Invisible — lint rule `shadow-expired-pending` flags overdue resolution |
-| `/shadow-review` cycle | Visible — surfaced for batch adversarial lookback |
-| Post-review (status: resolved-*) | Visible — but typically only consulted at /calibration-report |
+| `/giovanni:shadow-review` cycle | Visible — surfaced for batch adversarial lookback |
+| Post-review (status: resolved-*) | Visible — but typically only consulted at /giovanni:calibration-report |
 
-A hypothesis the principal sees during the prediction window is **no longer a shadow hypothesis**. It's an active prediction. Move it to `/branch-out` or delete it; do not keep it in `shadow/pending/`.
+A hypothesis the principal sees during the prediction window is **no longer a shadow hypothesis**. It's an active prediction. Move it to `/giovanni:branch-out` or delete it; do not keep it in `shadow/pending/`.
 
 ---
 
@@ -51,9 +51,9 @@ pending/ (status: pending)
    │
    │  horizon_at reached
    │
-   ├──► /shadow-review verdict = matched  → resolved/<YYYY-MM>/ (status: resolved-yes)
-   ├──► /shadow-review verdict = falsified → resolved/<YYYY-MM>/ (status: resolved-no)
-   ├──► /shadow-review verdict = partial  → resolved/<YYYY-MM>/ (status: resolved-mixed)
+   ├──► /giovanni:shadow-review verdict = matched  → resolved/<YYYY-MM>/ (status: resolved-yes)
+   ├──► /giovanni:shadow-review verdict = falsified → resolved/<YYYY-MM>/ (status: resolved-no)
+   ├──► /giovanni:shadow-review verdict = partial  → resolved/<YYYY-MM>/ (status: resolved-mixed)
    └──► no human verdict by horizon+30d  → expired/<YYYY-MM>/ (status: expired)
 ```
 
@@ -65,13 +65,13 @@ Hypotheses MOVE between subdirectories on status change. Filenames stay stable.
 git mv memory/shadow/pending/<id>.yaml memory/shadow/resolved/<YYYY-MM>/<id>.yaml
 ```
 
-Movement is **human-initiated** — either at `/shadow-review` or via the post-horizon expiration sweep. No auto-promotion. The user decides verdicts; the agent assists with the adversarial-check structure.
+Movement is **human-initiated** — either at `/giovanni:shadow-review` or via the post-horizon expiration sweep. No auto-promotion. The user decides verdicts; the agent assists with the adversarial-check structure.
 
 ---
 
 ## Adversarial lookback (BINDING)
 
-At `/shadow-review` cycle, each pending-past-horizon and resolved hypothesis is reviewed with an **adversarial prompt**:
+At `/giovanni:shadow-review` cycle, each pending-past-horizon and resolved hypothesis is reviewed with an **adversarial prompt**:
 
 > What are the STRONGEST arguments this hypothesis was NOT fulfilled, even if the agent initially read the signal as a match?
 
@@ -91,7 +91,7 @@ Vague hypotheses do not get generated. The `specificity_gate` in `memory/triage-
 - `expected_signal.source_channels_min`: at least 1 channel
 - `prediction_one_sentence_specific`: prediction must be a single specific testable claim
 
-If a candidate hypothesis fails any of these, it is **rejected at generation time**, not stored as a vague hypothesis. The /calibration-report tracks specificity_gate rejection counts as a discipline health signal.
+If a candidate hypothesis fails any of these, it is **rejected at generation time**, not stored as a vague hypothesis. The /giovanni:calibration-report tracks specificity_gate rejection counts as a discipline health signal.
 
 ---
 
@@ -106,7 +106,7 @@ A shadow hypothesis SHOULD be generated when:
 
 Common generation triggers:
 
-- A `/branch-out` simulation surfaces predicted moves that are testable within the horizon window
+- A `/giovanni:branch-out` simulation surfaces predicted moves that are testable within the horizon window
 - The daily digest surfaces a passive signal where actor follow-up is predictable
 - A 1:1 brief surfaces an expected actor follow-up the principal won't actively pursue
 
@@ -116,7 +116,7 @@ Common generation triggers:
 - The prediction is vague enough that "matched / falsified" is a coin flip
 - Outcome is already determined by external constraint (contract date, calendar event, decided plan)
 - Horizon would exceed 14 days
-- The principal would change behavior if told the prediction (it belongs in `/branch-out`, not shadow)
+- The principal would change behavior if told the prediction (it belongs in `/giovanni:branch-out`, not shadow)
 
 ---
 
@@ -131,8 +131,8 @@ Shadow hypotheses are **never deleted**. They feed calibration in perpetuity. Af
 - **Template:** `memory/templates/shadow-hypothesis.template.md`
 - **Triage heuristic (specificity_gate):** `memory/triage-heuristic.yaml`
 - **Calibration aggregation:** `memory/calibration/README.md`
-- **/shadow-review slash command:** `.claude/commands/shadow-review.md`
-- **/calibration-report slash command:** `.claude/commands/calibration-report.md`
+- **/giovanni:shadow-review slash command:** `<plugin>/skills/shadow-review/SKILL.md`
+- **/giovanni:calibration-report slash command:** `<plugin>/skills/calibration-report/SKILL.md`
 - **Full predictive-layer documentation:** `docs/prediction.md`
 - **Branch-out artifacts that spawn shadows:** `memory/branch-out/`
 - **Constitution governance section:** `knowledge/<constitution-file>.md` § "Predictive layer governance"
@@ -143,7 +143,7 @@ Shadow hypotheses are **never deleted**. They feed calibration in perpetuity. Af
 
 If you see any of these in operation, the discipline has broken:
 
-- A shadow hypothesis quoted in `/branch-out` output (invisibility violated)
+- A shadow hypothesis quoted in `/giovanni:branch-out` output (invisibility violated)
 - A shadow hypothesis mentioned in a 1:1 brief (invisibility violated)
 - The principal "checking in" on what the agent predicted before horizon (invisibility violated by the principal — agent should refuse)
 - `adversarial_check` field left empty at resolution time (governance breach)

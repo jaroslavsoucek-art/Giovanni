@@ -4,8 +4,8 @@ Every other AI-assistant pattern optimizes for being helpful + agreeable. Giovan
 
 This doc is the **why**. Operational mechanics live in:
 
-- [`.claude/agents/adversarial-reviewer.md`](../.claude/agents/adversarial-reviewer.md) — the executable agent
-- [`.claude/workflows/adversarial-review.md`](../.claude/workflows/adversarial-review.md) — triggers, scope, verdict format, anti-patterns
+- [`agents/adversarial-reviewer.md`](../agents/adversarial-reviewer.md) — the executable agent
+- [`skills/review/procedure.md`](../skills/review/procedure.md) — triggers, scope, verdict format, anti-patterns
 
 ---
 
@@ -176,7 +176,7 @@ The predictive layer (branch-out + shadow hypotheses + calibration) has its own 
 
 > What are the STRONGEST arguments this hypothesis was NOT fulfilled, even if the agent initially read the signal as a match?
 
-Same principle, different surface. The predictive layer applies it inside `/shadow-review`; the draft-review layer applies it inside `adversarial-reviewer`. Both fall out of the same binding rule: **default-skeptical, not default-confirming.**
+Same principle, different surface. The predictive layer applies it inside `/giovanni:shadow-review`; the draft-review layer applies it inside `adversarial-reviewer`. Both fall out of the same binding rule: **default-skeptical, not default-confirming.**
 
 ---
 

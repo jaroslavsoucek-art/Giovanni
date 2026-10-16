@@ -2,11 +2,11 @@
 
 How Giovanni uses custom subagents — when to spawn, how to compose them, what they do and don't do, and how the operational roster integrates with slash commands and digest workflows.
 
-This doc is the "why" companion to [`.claude/agents/README.md`](../.claude/agents/README.md) (the roster).
+This doc is the "why" companion to [`docs/agent-roster.md`](../docs/agent-roster.md) (the roster).
 
 ## 1. Agent vs architect distinction
 
-Two populations live under `.claude/agents/`. They look identical structurally — same frontmatter, same body shape — but their purposes are different.
+Two populations live under `agents/`. They look identical structurally — same frontmatter, same body shape — but their purposes are different.
 
 **Architect agents** are framework-builders. They ran once during Giovanni bootstrap. Each architect owns a subsystem:
 
@@ -17,7 +17,7 @@ Two populations live under `.claude/agents/`. They look identical structurally �
 - `subagent-roster-architect` → operational agent definitions
 - `adversarial-architect` → adversarial review workflow + adversarial-reviewer agent + SHIP/REWRITE/KILL verdict policy
 - `digest-architect` → daily digest workflow (12 steps) + state/sources templates + session-start hook
-- `slash-command-architect` → the 8 bootstrap slash commands + design patterns (`/consistency-review` was added post-bootstrap)
+- `slash-command-architect` → the 8 bootstrap slash commands + design patterns (`/giovanni:consistency-review` was added post-bootstrap)
 
 After bootstrap, architects are frozen. You don't spawn `memory-architect` to do daily work; the templates and docs it produced are what daily work uses. Architects come back online only when the framework itself needs structural revision (rare).
 
@@ -29,10 +29,10 @@ After bootstrap, architects are frozen. You don't spawn `memory-architect` to do
 | `researcher` | "Investigate X" — external research |
 | `profile-bootstrap` | "Bootstrap / refresh stakeholder X" |
 | `deliverable-reviewer` | Pre-share content QA |
-| `consistency-checker` | `/consistency-check` semantic drift sweep |
-| `market-radar` | `/market-radar` external competitive scan |
-| `prediction-runtime` | `/branch-out`, `/shadow-review`, `/calibration-report` |
-| `adversarial-reviewer` | `/review`, `/redline`; `[REVIEW]` tag or "review this" / "redline" / "before sending" |
+| `consistency-checker` | `/giovanni:consistency-check` semantic drift sweep |
+| `market-radar` | `/giovanni:market-radar` external competitive scan |
+| `prediction-runtime` | `/giovanni:branch-out`, `/giovanni:shadow-review`, `/giovanni:calibration-report` |
+| `adversarial-reviewer` | `/giovanni:review`, `/giovanni:redline`; `[REVIEW]` tag or "review this" / "redline" / "before sending" |
 
 The framing matters because confusing the two leads to either over-spawning (treating a one-time framework task as a daily agent) or under-spawning (forgetting an operational agent exists because it's buried alongside frozen architects).
 
@@ -103,7 +103,7 @@ Canonical example — research → adversarial review:
 
 1. `researcher` produces a memory note + proposed constitution patch
 2. Main thread reads the note, decides the patch is non-trivial
-3. Main thread spawns `adversarial-reviewer` (per [`.claude/agents/adversarial-reviewer.md`](../.claude/agents/adversarial-reviewer.md)) with the proposed patch as input
+3. Main thread spawns `adversarial-reviewer` (per [`agents/adversarial-reviewer.md`](../agents/adversarial-reviewer.md)) with the proposed patch as input
 4. Adversarial reviewer returns redline / kill / ship verdict
 5. Main thread applies the patch or rejects it
 
@@ -116,7 +116,7 @@ Canonical example — research → adversarial review:
 **Other chain candidates:**
 
 - `market-radar` flags a drift candidate → main thread spawns `prediction-runtime` with mode=branch-out for the affected situation
-- `profile-bootstrap` returns shallow profile → main thread notes that `/branch-out` requiring that actor will hard-stop, surfaces to principal
+- `profile-bootstrap` returns shallow profile → main thread notes that `/giovanni:branch-out` requiring that actor will hard-stop, surfaces to principal
 
 ## 5. Isolation principle
 
@@ -267,17 +267,17 @@ Agent runs once, output is treated as final. No adversarial review. No spot-chec
 
 ### Slash commands
 
-Slash commands route through `prediction-runtime` (for `/branch-out`, `/shadow-review`, `/calibration-report`) or directly invoke other agents (`/market-radar` → `market-radar`; `/consistency-check` → `consistency-checker`; `/review` and `/redline` → `adversarial-reviewer`). `/consistency-review` is the agent-free exception — it routes to an interactive main-thread workflow (`.claude/workflows/consistency-review.md`), because per-finding verdicts come from the principal.
+Slash commands route through `prediction-runtime` (for `/giovanni:branch-out`, `/giovanni:shadow-review`, `/giovanni:calibration-report`) or directly invoke other agents (`/giovanni:market-radar` → `market-radar`; `/giovanni:consistency-check` → `consistency-checker`; `/giovanni:review` and `/giovanni:redline` → `adversarial-reviewer`). `/giovanni:consistency-review` is the agent-free exception — it routes to an interactive main-thread workflow (`skills/consistency-review/procedure.md`), because per-finding verdicts come from the principal.
 
-Slash command runtime implementation lives in `.claude/commands/*.md` (one file per command). Each file is a thin invocation shell — pre-flight, argument parsing, agent routing. The mechanics live in the agents and workflows. See [`docs/slash-commands.md`](slash-commands.md) for design patterns + argument conventions and [`.claude/commands/README.md`](../.claude/commands/README.md) for the registry.
+Slash command runtime implementation lives in `skills/<name>/SKILL.md` (one directory per skill, invoked as `/giovanni:<name>`). Each file is a thin invocation shell — pre-flight, argument parsing, agent routing. The mechanics live in the agents and workflows. See [`docs/slash-commands.md`](slash-commands.md) for design patterns + argument conventions and [`skills/README.md`](../skills/README.md) for the registry.
 
 ### Daily digest
 
-Daily digest workflow (per [`.claude/workflows/daily-digest.md`](../.claude/workflows/daily-digest.md)) orchestrates parallel fan-out to `source-puller` agents, then synthesizes and routes to:
+Daily digest workflow (per [`skills/digest/procedure.md`](../skills/digest/procedure.md)) orchestrates parallel fan-out to `source-puller` agents, then synthesizes and routes to:
 
 - Drift detection (main thread, against constitution + memory)
 - Stakeholder profile update triggers (spawning `profile-bootstrap` for stakeholders with signal)
-- Branch-out candidate triage (surface for principal to run `/branch-out`)
+- Branch-out candidate triage (surface for principal to run `/giovanni:branch-out`)
 - Pre-meeting brief generation (main thread, against stakeholder profiles)
 - Shadow lookback (silent, internal to digest)
 
@@ -285,12 +285,12 @@ Daily digest workflow (per [`.claude/workflows/daily-digest.md`](../.claude/work
 
 Most hooks are governance plumbing (INDEX/MAP regen, audit cadence warnings). Some hooks invoke agents:
 
-- Session-start hook can surface "shadow-review due" → user runs `/shadow-review`, which spawns prediction-runtime
+- Session-start hook can surface "shadow-review due" → user runs `/giovanni:shadow-review`, which spawns prediction-runtime
 - Memory-edit hook regenerates MAP (doesn't spawn agent — it's a script)
 
 Agents are not the primary hook actors; scripts are. Agents enter when judgment is needed.
 
-**Hook-gap rule (binding design rule):** PostToolUse hooks fire only for main-thread writes — they do NOT fire for subagent writes. Any agent that writes under `memory/` must run `scripts/build-memory-map.sh` as its final step before reporting, or `memory/MAP.md` strands stale and the map-stale lint check fails on the next commit. This is a shared rule stated once in [`.claude/agents/README.md`](../.claude/agents/README.md) and referenced by a one-line post-write step in each writing agent (`profile-bootstrap`, `consistency-checker`, `market-radar`, `prediction-runtime`) — not duplicated as per-agent boilerplate.
+**Hook-gap rule (binding design rule):** PostToolUse hooks fire only for main-thread writes — they do NOT fire for subagent writes. Any agent that writes under `memory/` must run `scripts/build-memory-map.sh` as its final step before reporting, or `memory/MAP.md` strands stale and the map-stale lint check fails on the next commit. This is a shared rule stated once in [`docs/agent-roster.md`](../docs/agent-roster.md) and referenced by a one-line post-write step in each writing agent (`profile-bootstrap`, `consistency-checker`, `market-radar`, `prediction-runtime`) — not duplicated as per-agent boilerplate.
 
 ## 11. Adding a new agent
 
@@ -303,14 +303,14 @@ Process:
 3. **Define the contract.** Inputs the caller must provide. Protocol steps (numbered). Reporting format.
 4. **Define what it does NOT own.** This section is load-bearing — without it, scope creep is inevitable.
 5. **Mental fit test.** Walk through 3 concrete scenarios (real or representative). Does the agent definition give clear, unambiguous behavior for each?
-6. **Add to `.claude/agents/README.md`** roster table. Update CLAUDE.md if the fork's project instructions also reference the roster.
+6. **Add to `docs/agent-roster.md`** roster table. Update CLAUDE.md if the fork's project instructions also reference the roster.
 7. **Lint pass.** `bash scripts/lint.sh` should stay clean. Add frontmatter assertions to lint rules if you've introduced a new agent-shape.
 
 Don't add an agent because it would be cool. Add it because the workflow without it is meaningfully worse.
 
 ## Cross-references
 
-- **Roster table:** [`.claude/agents/README.md`](../.claude/agents/README.md)
+- **Roster table:** [`docs/agent-roster.md`](../docs/agent-roster.md)
 - **Memory system:** [`memory/README.md`](../memory/README.md)
 - **Governance:** [`docs/governance.md`](governance.md)
 - **Stakeholder profiles:** [`docs/stakeholder-profiles.md`](stakeholder-profiles.md)
