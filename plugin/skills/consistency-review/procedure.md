@@ -1,10 +1,10 @@
 # Workflow: Consistency-check review (manual triage)
 
-**Trigger:** `/consistency-review <YYYY-MM-DD>` slash invocation by the principal after a `/consistency-check` run, or "review consistency report" in chat.
+**Trigger:** `/giovanni:consistency-review <YYYY-MM-DD>` slash invocation by the principal after a `/giovanni:consistency-check` run, or "review consistency report" in chat.
 
-**Why:** the `consistency-checker` agent surfaces semantic findings but never applies them. Each finding needs a principal decision: accept proposed diff / reject / defer / mark as false-positive. Verdicts feed back into shadow-mode precision metrics in `memory/audits/consistency/_state.md` — that tally is the evidence base for the shadow-mode promotion decision (see `docs/governance.md`).
+**Why:** the `giovanni:consistency-checker` agent surfaces semantic findings but never applies them. Each finding needs a principal decision: accept proposed diff / reject / defer / mark as false-positive. Verdicts feed back into shadow-mode precision metrics in `memory/audits/consistency/_state.md` — that tally is the evidence base for the shadow-mode promotion decision (see `${CLAUDE_PLUGIN_ROOT}/docs/governance.md`).
 
-This workflow runs **interactively in the main thread** (like `/digest`'s drift response sub-flow) — no agent spawn. The principal is the decision-maker; the orchestrator presents findings, applies accepted diffs, and keeps the bookkeeping honest.
+This workflow runs **interactively in the main thread** (like `/giovanni:digest`'s drift response sub-flow) — no agent spawn. The principal is the decision-maker; the orchestrator presents findings, applies accepted diffs, and keeps the bookkeeping honest.
 
 ## Inputs
 
@@ -85,7 +85,7 @@ If the aggregate block doesn't exist yet (first review), seed it with the fields
 
 ### Step 5 — Propose the batch commit
 
-**No auto-commit** — propose the commit and wait for the principal's explicit go (consistent with the binding no-auto-commit rule in `.claude/commands/README.md`).
+**No auto-commit** — propose the commit and wait for the principal's explicit go (consistent with the binding no-auto-commit rule in `${CLAUDE_PLUGIN_ROOT}/skills/README.md`).
 
 If accepted diffs were applied:
 
@@ -107,7 +107,7 @@ If today's date is **after** `shadow_mode_end_date` in `_state.md`:
 
 1. Compare `precision_rolling` to `promotion_gate_precision_min` (default 0.70).
 2. Compare `runs_reviewed` to `promotion_gate_min_reviewed_runs` (default 3).
-3. If both gates pass → propose the integration PR: surface unreviewed high-severity findings via the session-start hook (the promotion path described in `docs/governance.md`). **Don't auto-implement** — propose to the principal; promotion is a governance decision.
+3. If both gates pass → propose the integration PR: surface unreviewed high-severity findings via the session-start hook (the promotion path described in `${CLAUDE_PLUGIN_ROOT}/docs/governance.md`). **Don't auto-implement** — propose to the principal; promotion is a governance decision.
 4. If the precision gate fails → propose scope narrowing or a check-prompt retune in a separate decision record. Don't promote a noisy signal.
 
 ## False-positive feedback loop
@@ -115,7 +115,7 @@ If today's date is **after** `shadow_mode_end_date` in `_state.md`:
 False-positives are the most informative verdicts — they reveal where a check's prompt or scope is too aggressive. At the end of the shadow-mode window:
 
 - Cluster false-positives by `check-id`.
-- If one check-id dominates → narrow that check's scope in `.claude/agents/consistency-checker.md`.
+- If one check-id dominates → narrow that check's scope in `${CLAUDE_PLUGIN_ROOT}/agents/consistency-checker.md`.
 - For `decided-terms-completeness` FPs specifically → tighten the corresponding registry entries in `memory/audits/consistency/decided-terms.yaml` (`ok_framing` whitelist, exemption regexes) rather than the agent prompt.
 - If false-positives are evenly distributed → general prompt retune.
 
@@ -124,19 +124,19 @@ False-positives are the most informative verdicts — they reveal where a check'
 - Don't apply diffs without per-finding triage.
 - Don't skip the state-file update — the precision tally is the only thing that makes shadow mode meaningful.
 - Don't extend the shadow-mode window without explicit reason (anti-pattern — defeats the gate).
-- Don't run `/consistency-review` on a date with no report — verify the file exists first (the command pre-flight enforces this).
+- Don't run `/giovanni:consistency-review` on a date with no report — verify the file exists first (the command pre-flight enforces this).
 
 ## Anti-patterns
 
 - "Accept all" without reading findings.
 - "Reject all" without distinguishing which proposed diffs were wrong vs which findings were FP — the distinction is what the precision metric measures.
 - Mixing this workflow's commits with unrelated work in the same commit.
-- Reviewing before the `/consistency-check` run finishes — the agent must complete first.
+- Reviewing before the `/giovanni:consistency-check` run finishes — the agent must complete first.
 
 ## Cross-references
 
-- **Command (invocation contract):** `.claude/commands/consistency-review.md`
-- **Producer:** `/consistency-check` → `.claude/agents/consistency-checker.md`
+- **Command (invocation contract):** `${CLAUDE_PLUGIN_ROOT}/skills/consistency-review/SKILL.md`
+- **Producer:** `/giovanni:consistency-check` → `${CLAUDE_PLUGIN_ROOT}/agents/consistency-checker.md`
 - **State file:** `memory/audits/consistency/_state.md`
 - **Decided-terms registry:** `memory/audits/consistency/decided-terms.yaml` (template: `memory/templates/decided-terms.template.yaml`)
-- **Governance policy:** `docs/governance.md` § Consistency checks (shadow mode + promotion criteria)
+- **Governance policy:** `${CLAUDE_PLUGIN_ROOT}/docs/governance.md` § Consistency checks (shadow mode + promotion criteria)

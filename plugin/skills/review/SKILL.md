@@ -1,18 +1,20 @@
 ---
 description: Adversarial review of a draft. Routes to adversarial-reviewer agent. Returns SHIP / REWRITE / KILL verdict + prioritized issues + strongest counter-case. Read-only.
-allowed-tools: Task, Read, Grep, Glob, Bash
+allowed-tools: Agent, Read, Grep, Glob, Bash
+disable-model-invocation: true
+argument-hint: '<draft-path> [--position "..."] [--audience internal|external|mixed]'
 ---
 
-# /review
+# /giovanni:review
 
-Run adversarial review on a draft (decision record, position paper, board material, customer message, fundraise narrative, constitution patch, predictive forecast). This command is a **thin shell** — the adversarial mode policy, four-pass protocol, strongest counter-case requirement, and SHIP/REWRITE/KILL discipline live in the `adversarial-reviewer` agent. This file is the invocation contract.
+Run adversarial review on a draft (decision record, position paper, board material, customer message, fundraise narrative, constitution patch, predictive forecast). This command is a **thin shell** — the adversarial mode policy, four-pass protocol, strongest counter-case requirement, and SHIP/REWRITE/KILL discipline live in the `giovanni:adversarial-reviewer` agent. This file is the invocation contract.
 
 ## Usage
 
 ```
-/review <draft-path>                     # required positional — path to draft file
-/review <draft-path> --position "..."    # optional one-line position statement
-/review <draft-path> --audience external # internal | external | mixed
+/giovanni:review <draft-path>                     # required positional — path to draft file
+/giovanni:review <draft-path> --position "..."    # optional one-line position statement
+/giovanni:review <draft-path> --audience external # internal | external | mixed
 ```
 
 If `<draft-path>` is omitted, the orchestrator looks for the draft inline in the message (paste-mode). If neither is present → STOP with usage hint.
@@ -29,23 +31,23 @@ Quoted strings supported. `--flag=value` and `--flag value` both work.
 
 ## Pre-flight (binding — STOP on failure)
 
-Before spawning `adversarial-reviewer`:
+Before spawning `giovanni:adversarial-reviewer`:
 
 1. **CWD check.** Working directory is a Giovanni repo. Otherwise STOP.
-2. **Agent definition present.** `.claude/agents/adversarial-reviewer.md` exists. Missing → STOP.
+2. **Agent definition present.** `${CLAUDE_PLUGIN_ROOT}/agents/adversarial-reviewer.md` exists. Missing → STOP.
 3. **Draft accessible.** If `<draft-path>` is set: file exists and is readable. Otherwise STOP: `ERROR: cannot read <path>.`
 4. **Trigger sanity check.** If the draft contains explicit out-of-scope markers ("brainstorming", "thinking out loud", "[no review yet]"), surface advisory:
    `WARN: draft contains brainstorming-mode marker. Adversarial review may suppress the exploration that's the point. Proceed? [y/N]`. Default = abort.
 5. **No required state files.** Adversarial review is read-only over the draft and repo — no state files to validate.
 
-If `<draft-path>` is absent AND no draft inline in message → STOP: `ERROR: /review requires either <draft-path> or inline draft block. Usage: /review <relative/path/to/draft>`.
+If `<draft-path>` is absent AND no draft inline in message → STOP: `ERROR: /giovanni:review requires either <draft-path> or inline draft block. Usage: /giovanni:review <relative/path/to/draft>`.
 
 ## Execution flow
 
 1. **Run pre-flight.** STOP on any failure.
-2. **Spawn `adversarial-reviewer`** via `Task` with:
+2. **Spawn `giovanni:adversarial-reviewer`** via `Agent` with:
    ```
-   subagent_type: adversarial-reviewer
+   subagent_type: giovanni:adversarial-reviewer
    path: <draft-path or "inline">
    position: <text or null>
    audience: <internal | external | mixed | null>
@@ -57,7 +59,7 @@ If `<draft-path>` is absent AND no draft inline in message → STOP: `ERROR: /re
    - Constructs strongest counter-case
    - Emits verdict (SHIP / REWRITE / KILL) + prioritized issues
 4. **Relay agent output verbatim** to chat. The verdict body opens with `SHIP`, `REWRITE`, or `KILL` — no softening preamble.
-5. **No persistent artifact by default.** Adversarial review is delivered in-conversation. Forks that opt into persistent logging (per `docs/adversarial.md`) write to `memory/intel/adversarial/<YYYY-MM-DD>_<slug>.md`. The orchestrator does NOT auto-write the log — the principal decides.
+5. **No persistent artifact by default.** Adversarial review is delivered in-conversation. Forks that opt into persistent logging (per `${CLAUDE_PLUGIN_ROOT}/docs/adversarial.md`) write to `memory/intel/adversarial/<YYYY-MM-DD>_<slug>.md`. The orchestrator does NOT auto-write the log — the principal decides.
 6. **Do NOT modify the draft.** Read-only. The principal acts on the verdict.
 
 ## Verdict discipline
@@ -78,7 +80,7 @@ The agent declines adversarial review in three contexts (returns one-line declin
 
 1. **Brainstorming / early-stage exploration** → route to free dialogue, not pushback
 2. **Moments of distress** → adversarial review is not crisis support
-3. **Mechanical execution tasks** (typos, formatting, link-check) → route to `deliverable-reviewer`
+3. **Mechanical execution tasks** (typos, formatting, link-check) → route to `giovanni:deliverable-reviewer`
 
 The principal can override the decline with explicit "yes I want adversarial review on this anyway" — at that point, the agent runs the protocol.
 
@@ -102,11 +104,11 @@ The agent matches the draft's language (Czech draft → Czech verdict; English d
 
 ## Cross-references
 
-- **Agent (executor):** `.claude/agents/adversarial-reviewer.md`
-- **Workflow policy:** `.claude/workflows/adversarial-review.md` (triggers, scope, anti-patterns, calibration)
-- **Related command:** `/redline` (alias emphasizing verbatim strike list)
-- **Adjacent agent:** `deliverable-reviewer` (mechanical content QA — different layer, same artifact OK)
-- **Optional persistent log + lint:** `memory/intel/adversarial/`, `scripts/lint_rules/adversarial_verdict_format.py`
+- **Agent (executor):** `${CLAUDE_PLUGIN_ROOT}/agents/adversarial-reviewer.md`
+- **Workflow policy:** `${CLAUDE_PLUGIN_ROOT}/skills/review/procedure.md` (triggers, scope, anti-patterns, calibration)
+- **Related command:** `/giovanni:redline` (alias emphasizing verbatim strike list)
+- **Adjacent agent:** `giovanni:deliverable-reviewer` (mechanical content QA — different layer, same artifact OK)
+- **Optional persistent log + lint:** `memory/intel/adversarial/`, `${CLAUDE_PLUGIN_ROOT}/scripts/lint_rules/adversarial_verdict_format.py`
 
 ## Anti-patterns (binding)
 

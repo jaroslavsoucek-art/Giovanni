@@ -71,7 +71,7 @@ For every source_type the playbook is the same shape:
   - `wholesale` — emit **ALL items** in the window, no assignee filter. Rationale: an externally-owned decision/risk log feeds the digest unfiltered and tagged, because its items are not assigned to the principal — a project manager's risk/decision log entry about the principal's domain would never survive an assignee filter, yet it's exactly the input the digest needs (role-boundary rule: consume the owner's outputs as inputs).
 - Items from a tagged feed carry the feed's `tag` as a bullet prefix (e.g. `[RAID]`) so synthesis and drift detection can attribute provenance.
 - With multiple feeds, the 50-item cap splits across feeds proportionally to their window volume (caller can override per feed via `extra_context`). Never let one feed starve the others.
-- If the platform exposes a CLI script (`scripts/<tracker>-pull.sh`), prefer that for stable output — pass the window through verbatim and apply feed filter policies at bullet-emission. If exit code ≠ 0 → return `ERROR: project-tracker pull failed — <stderr>` and stop.
+- If the platform exposes a CLI script (`${CLAUDE_PLUGIN_ROOT}/scripts/<tracker>-pull.sh`), prefer that for stable output — pass the window through verbatim and apply feed filter policies at bullet-emission. If exit code ≠ 0 → return `ERROR: project-tracker pull failed — <stderr>` and stop.
 
 ### version-control
 

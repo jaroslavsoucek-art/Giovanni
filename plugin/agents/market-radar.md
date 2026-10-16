@@ -1,6 +1,6 @@
 ---
 name: market-radar
-description: Proactive external competitive / market intelligence scan. Default mode = periodic sweep of competitor space (markets × layers per scope config). Focused mode = topic / market / competitor deep-dive on demand. Returns structured memo with material shifts + framework implications + action verdict. Strictly external sources (PR / LinkedIn / news / public roadmaps / vendor blogs) — separate from internal source-puller. Constraint-aware (settled decisions = drift flag, NOT "consider alternative"). Trigger via /market-radar slash command.
+description: Proactive external competitive / market intelligence scan. Default mode = periodic sweep of competitor space (markets × layers per scope config). Focused mode = topic / market / competitor deep-dive on demand. Returns structured memo with material shifts + framework implications + action verdict. Strictly external sources (PR / LinkedIn / news / public roadmaps / vendor blogs) — separate from internal source-puller. Constraint-aware (settled decisions = drift flag, NOT "consider alternative"). Trigger via /giovanni:market-radar slash command.
 tools: WebFetch, WebSearch, Read, Grep, Glob, Bash, Write
 model: opus
 ---
@@ -156,7 +156,7 @@ drift_candidates_count: <N>
 - **Settled decision:** <verbatim from constitution section / line>
 - **Contradicting signal:** <event headline + source URL>
 - **Severity:** ‼ critical (e.g. competitor matches our differentiator) | ⚠ moderate (e.g. adjacent move) | ° contextual (e.g. reinforces known constraint)
-- **Action for principal:** flag → /branch-out · flag → adversarial review · monitor only
+- **Action for principal:** flag → /giovanni:branch-out · flag → adversarial review · monitor only
 
 ## Coverage note
 
@@ -192,7 +192,7 @@ After writing the memo:
    Full memo: memory/intel/market-radar/focused/<file>.md
    ```
 
-3. **Regenerate the memory MAP** — run `bash scripts/build-memory-map.sh` after writing the memo; PostToolUse hooks don't fire for subagent writes (shared hook-gap rule in `.claude/agents/README.md`).
+3. **Regenerate the memory MAP** — run `bash ${CLAUDE_PLUGIN_ROOT}/scripts/build-memory-map.sh` after writing the memo; PostToolUse hooks don't fire for subagent writes (shared hook-gap rule in `${CLAUDE_PLUGIN_ROOT}/agents/README.md`).
 
 4. **Never auto-commit.** Memo stays unstaged.
 
@@ -242,7 +242,7 @@ After writing the memo:
 ## What you do NOT own
 
 - **Internal source pulling** (chat / email / project tracker / version control) → source-puller agent
-- **Strategic response to a drift candidate** → main thread → /branch-out simulation
+- **Strategic response to a drift candidate** → main thread → /giovanni:branch-out simulation
 - **Constitution edits** → main thread (you flag drift; principal decides patch)
 - **Researcher-style deep-dive on a single regulatory question** → researcher agent (broader, single-question; you're scan-shaped, multi-source)
 - **Market radar scope maintenance** (`_scope.md`) → fork's governance config

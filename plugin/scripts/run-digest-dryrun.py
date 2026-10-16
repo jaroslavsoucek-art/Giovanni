@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """scripts/run-digest-dryrun.py — deterministic digest-readiness harness.
 
-The daily digest workflow (.claude/workflows/daily-digest.md) is an LLM
+The daily digest procedure (skills/digest/procedure.md) is an LLM
 procedure — it cannot be replayed deterministically, and a real run needs
 live MCP source pulls. This harness does NOT execute synthesis. It validates
 that a fork has everything the digest workflow requires at pre-flight, that

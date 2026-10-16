@@ -1,21 +1,23 @@
 ---
 description: Quarterly audit of recent shadow hypotheses — routes to prediction-runtime in shadow-review mode. Enforces adversarial lookback discipline.
-allowed-tools: Task, Read, Glob, Grep, Write, Edit
+allowed-tools: Agent, Read, Glob, Grep, Write, Edit
+disable-model-invocation: true
+argument-hint: "[--sample N] [--actor <slug>] [--window <YYYY-MM>]"
 ---
 
-# /shadow-review
+# /giovanni:shadow-review
 
-Process unresolved past-horizon shadow hypotheses and audit a sample of recently resolved ones for governance compliance. This command is a **thin shell** — the adversarial lookback discipline (binding principle 7) lives in the `prediction-runtime` agent. This file is the invocation contract.
+Process unresolved past-horizon shadow hypotheses and audit a sample of recently resolved ones for governance compliance. This command is a **thin shell** — the adversarial lookback discipline (binding principle 7) lives in the `giovanni:prediction-runtime` agent. This file is the invocation contract.
 
 ## Usage
 
 ```
-/shadow-review                          # default — all past-horizon pending + 10-20 resolved sample (90d window)
-/shadow-review --sample 20              # custom sample size
-/shadow-review --actor <slug>           # focus on hypotheses touching one actor
-/shadow-review --window <YYYY-MM>       # focus on one month's resolved cohort
-/shadow-review --horizon <YYYY-MM-DD>   # review hypotheses with horizon_at <= date
-/shadow-review --force-review-now       # override COI guard — recent resolutions excluded from cohort
+/giovanni:shadow-review                          # default — all past-horizon pending + 10-20 resolved sample (90d window)
+/giovanni:shadow-review --sample 20              # custom sample size
+/giovanni:shadow-review --actor <slug>           # focus on hypotheses touching one actor
+/giovanni:shadow-review --window <YYYY-MM>       # focus on one month's resolved cohort
+/giovanni:shadow-review --horizon <YYYY-MM-DD>   # review hypotheses with horizon_at <= date
+/giovanni:shadow-review --force-review-now       # override COI guard — recent resolutions excluded from cohort
 ```
 
 ## Argument syntax
@@ -32,13 +34,13 @@ All three filter args (`--actor`, `--window`, `--horizon`) can combine.
 
 ## Pre-flight (binding — STOP on failure)
 
-Before spawning `prediction-runtime`:
+Before spawning `giovanni:prediction-runtime`:
 
 1. **CWD check.** Working directory is a Giovanni repo. Otherwise STOP.
-2. **Agent definition present.** `.claude/agents/prediction-runtime.md` exists. Missing → STOP.
+2. **Agent definition present.** `${CLAUDE_PLUGIN_ROOT}/agents/prediction-runtime.md` exists. Missing → STOP.
 3. **Shadow directories present.** `memory/shadow/pending/` exists. (Resolved + expired subdirs are created on first move; not required at pre-flight.) Missing pending dir → STOP: `ERROR: memory/shadow/pending/ missing. The predictive layer hasn't generated any hypotheses yet — nothing to review.`
 4. **Cadence reminder (advisory, not STOP).** If the last entry in `memory/calibration/audit-log.md` is < 60 days ago, surface advisory:
-   `INFO: Last /shadow-review was <N> days ago. Quarterly cadence is the policy; running this often is fine but inflates the cohort.`
+   `INFO: Last /giovanni:shadow-review was <N> days ago. Quarterly cadence is the policy; running this often is fine but inflates the cohort.`
    Continue anyway.
 5. **COI guard (binding).** Scan the candidate cohort (`memory/shadow/resolved/**/*.yaml` matching the filters) for any file with `resolved_date` within the last **48 hours**. If ≥1 exists, **STOP**:
    `⚠ COI guard: <N> hypotheses resolved <48h ago by the same agent. Self-review in temporal proximity risks motivated reasoning. Defer until +48h after the last resolution, or override with --force-review-now.`
@@ -48,9 +50,9 @@ Before spawning `prediction-runtime`:
 ## Execution flow
 
 1. **Run pre-flight.** STOP on any failure.
-2. **Spawn `prediction-runtime`** via `Task` with:
+2. **Spawn `giovanni:prediction-runtime`** via `Agent` with:
    ```
-   subagent_type: prediction-runtime
+   subagent_type: giovanni:prediction-runtime
    mode: shadow-review
    sample: <N or null>
    actor: <slug or null>
@@ -66,7 +68,7 @@ Before spawning `prediction-runtime`:
 
 ## Adversarial lookback enforcement
 
-The `prediction-runtime` agent enforces binding principle 7: each hypothesis gets the explicit adversarial prompt ("What are the STRONGEST arguments this hypothesis was NOT fulfilled?") before verdict-recording. Empty `adversarial_check` field at resolution time is a **governance breach** — the agent surfaces this if it happens (should not, given the agent enforces it).
+The `giovanni:prediction-runtime` agent enforces binding principle 7: each hypothesis gets the explicit adversarial prompt ("What are the STRONGEST arguments this hypothesis was NOT fulfilled?") before verdict-recording. Empty `adversarial_check` field at resolution time is a **governance breach** — the agent surfaces this if it happens (should not, given the agent enforces it).
 
 If the orchestrator detects post-hoc that any moved YAML has an empty `adversarial_check`, it flags the breach in the report output. Lint rule `shadow_expired_pending.py` catches this at commit time.
 
@@ -78,7 +80,7 @@ If the orchestrator detects post-hoc that any moved YAML has an empty `adversari
   - `memory/shadow/expired/<YYYY-MM>/*.yaml` — hypotheses moved from pending with `status: expired`
   - `memory/calibration/audit-log.md` — audit entry appended
   - `memory/digest_state.md` — `last_shadow_review_date` (one line, nothing else in the file)
-- **No mutation to `actor-scores.yaml`** — that's `/calibration-report`'s job. `/shadow-review` records verdicts in individual YAMLs; aggregation happens at calibration.
+- **No mutation to `actor-scores.yaml`** — that's `/giovanni:calibration-report`'s job. `/giovanni:shadow-review` records verdicts in individual YAMLs; aggregation happens at calibration.
 - **No auto-commit.** Principal commits in batch.
 
 ## Principal dispute path
@@ -86,7 +88,7 @@ If the orchestrator detects post-hoc that any moved YAML has an empty `adversari
 If the principal disagrees with an adversarial-check verdict, the dispute path is:
 
 1. Principal edits the YAML directly in `memory/shadow/resolved/<YYYY-MM>/`
-2. Notes `user override per /shadow-review <YYYY-MM-DD>` in `resolved_reasoning`
+2. Notes `user override per /giovanni:shadow-review <YYYY-MM-DD>` in `resolved_reasoning`
 3. Re-commits
 
 The agent **never auto-applies** user disputes. Disputes are user-only edits.
@@ -101,16 +103,16 @@ The agent **never auto-applies** user disputes. Disputes are user-only edits.
 ## Cadence guidance
 
 - **Quarterly** is the policy cadence. Running more often is fine but produces small cohorts.
-- **Triggered runs:** if `/calibration-report` flags `overall_accuracy > 80%`, the report explicitly recommends running `/shadow-review` immediately. That's a high-accuracy red flag (sandbagging or motivated verdicts), not a celebration.
-- **Recovery runs:** after a digest cycle that flagged many past-horizon pending, an off-cycle `/shadow-review` clears operational debt.
+- **Triggered runs:** if `/giovanni:calibration-report` flags `overall_accuracy > 80%`, the report explicitly recommends running `/giovanni:shadow-review` immediately. That's a high-accuracy red flag (sandbagging or motivated verdicts), not a celebration.
+- **Recovery runs:** after a digest cycle that flagged many past-horizon pending, an off-cycle `/giovanni:shadow-review` clears operational debt.
 
 ## Cross-references
 
-- **Agent (executor):** `.claude/agents/prediction-runtime.md` (mode: shadow-review)
-- **Binding principles:** `docs/prediction.md` § 8 binding principles (especially #7 adversarial lookback)
+- **Agent (executor):** `${CLAUDE_PLUGIN_ROOT}/agents/prediction-runtime.md` (mode: shadow-review)
+- **Binding principles:** `${CLAUDE_PLUGIN_ROOT}/docs/prediction.md` § 8 binding principles (especially #7 adversarial lookback)
 - **Templates:** `memory/templates/shadow-hypothesis.template.md`
-- **Calibration aggregation:** `/calibration-report` (`.claude/commands/calibration-report.md`)
-- **Lint rules:** `scripts/lint_rules/shadow_expired_pending.py`, `no_percentages_in_predictions.py`
+- **Calibration aggregation:** `/giovanni:calibration-report` (`${CLAUDE_PLUGIN_ROOT}/skills/calibration-report/SKILL.md`)
+- **Lint rules:** `${CLAUDE_PLUGIN_ROOT}/scripts/lint_rules/shadow_expired_pending.py`, `no_percentages_in_predictions.py`
 
 ## Anti-patterns (binding)
 
@@ -119,5 +121,5 @@ The agent **never auto-applies** user disputes. Disputes are user-only edits.
 - **Defaulting to matched when uncertain** — discipline rule is default-skeptical.
 - **Auto-applying user disputes** (agent override of user verdict) — agent never overrides.
 - **Skipping expired hypotheses** ("they're not real data") — expired is a discipline signal worth tracking.
-- **Modifying `actor-scores.yaml` from this command** — that's `/calibration-report`'s job.
+- **Modifying `actor-scores.yaml` from this command** — that's `/giovanni:calibration-report`'s job.
 - **Auto-committing the audit log + moves** — principal commits in batch.

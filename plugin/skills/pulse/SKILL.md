@@ -1,9 +1,11 @@
 ---
 description: Weekly read of what is actually getting built or done, per work-block — from the tracker, the code, and the docs. State of the work, not the stream of events. Distinct from the digest, which is signal since the last run.
-allowed-tools: Task, Bash, Read, Glob, Grep, Write
+allowed-tools: Agent, Bash, Read, Glob, Grep, Write
+disable-model-invocation: true
+argument-hint: "[since=<YYYY-MM-DD>] [block=<slug>] [quick]"
 ---
 
-# /pulse
+# /giovanni:pulse
 
 **The digest answers "what happened since yesterday". Pulse answers "where does each piece of work actually stand".**
 
@@ -14,10 +16,10 @@ Pulse reads **state**, not events, and reads it from where the work actually lea
 ## Usage
 
 ```
-/pulse                                 # default — all work-blocks, since last pulse
-/pulse since=<YYYY-MM-DD>              # explicit window
-/pulse block=<slug>                    # single work-block
-/pulse quick                           # counts and deltas only, no narrative
+/giovanni:pulse                                 # default — all work-blocks, since last pulse
+/giovanni:pulse since=<YYYY-MM-DD>              # explicit window
+/giovanni:pulse block=<slug>                    # single work-block
+/giovanni:pulse quick                           # counts and deltas only, no narrative
 ```
 
 ## Argument syntax

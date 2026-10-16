@@ -1,19 +1,21 @@
 ---
 description: Run the daily digest — parallel source pull, synthesis, drift detection, brief generation, shadow lookback, render to chat.
-allowed-tools: Task, Read, Write, Edit, Glob, Grep, Bash
+allowed-tools: Agent, Read, Write, Edit, Glob, Grep, Bash
+disable-model-invocation: true
+argument-hint: "[--force] [--source <name>]"
 ---
 
-# /digest
+# /giovanni:digest
 
-Orchestrate the daily digest per `.claude/workflows/daily-digest.md`. This command is a **thin shell** — it sets up pre-flight, parses args, fans out `source-puller` agents in parallel, then hands off to the workflow procedure. The mechanics live in the workflow doc and the agents; this file is the invocation contract.
+Orchestrate the daily digest per `${CLAUDE_PLUGIN_ROOT}/skills/digest/procedure.md`. This command is a **thin shell** — it sets up pre-flight, parses args, fans out `giovanni:source-puller` agents in parallel, then hands off to the workflow procedure. The mechanics live in the workflow doc and the agents; this file is the invocation contract.
 
 ## Usage
 
 ```
-/digest                            # default — full 12-step procedure
-/digest --force                    # override 4 h cadence guard
-/digest --source <name>            # debug mode — run a single source pull only
-/digest --source <name> --force    # both
+/giovanni:digest                            # default — full 12-step procedure
+/giovanni:digest --force                    # override 4 h cadence guard
+/giovanni:digest --source <name>            # debug mode — run a single source pull only
+/giovanni:digest --source <name> --force    # both
 ```
 
 ## Argument syntax
@@ -29,7 +31,7 @@ Quoted strings supported. `--flag=value` and `--flag value` both work.
 
 Before spawning any agent, the orchestrator verifies:
 
-1. **CWD check.** Working directory contains both `memory/digest_sources.md` and `docs/digest.md`. Otherwise STOP:
+1. **CWD check.** Working directory contains both `memory/digest_sources.md` and `${CLAUDE_PLUGIN_ROOT}/docs/digest.md`. Otherwise STOP:
    `ERROR: not in a Giovanni repo (no memory/digest_sources.md). Reinvoke from repo root.`
 2. **State file readable.** `memory/digest_state.md` exists and parses `last_run_timestamp` as ISO 8601. If missing or empty:
    - First run ever → ASK the principal for a manual seed timestamp (e.g. "start window 7 days ago"). Do NOT default.
@@ -38,17 +40,17 @@ Before spawning any agent, the orchestrator verifies:
    `INFO: last digest <Nm> ago — re-running this fast pollutes state. Override with --force.`
 4. **Source config presence.** `memory/digest_sources.md` parses and lists ≥1 source. Empty config is a setup error, not a "quiet day". STOP:
    `ERROR: memory/digest_sources.md has no configured sources. Seed it per memory/digest-sources.template.md.`
-5. **Required agent files present.** `.claude/agents/source-puller.md` (parallel pull) and — if Step 9/10 will reach them — `profile-bootstrap.md`. Missing agent file → STOP with which file is absent.
+5. **Required agent files present.** `${CLAUDE_PLUGIN_ROOT}/agents/source-puller.md` (parallel pull) and — if Step 9/10 will reach them — `profile-bootstrap.md`. Missing agent file → STOP with which file is absent.
 
 If any pre-flight fails, the orchestrator does NOT proceed and does NOT update state. The principal fixes the precondition and reinvokes.
 
 ## Execution flow
 
 1. **Run pre-flight.** STOP on any failure.
-2. **Step 0-3 of `.claude/workflows/daily-digest.md`** inline — read state, determine sources, calculate window.
-3. **Step 4 parallel fan-out.** Single message, N `Task` calls to `source-puller` agents (one per configured source). Each gets the source-specific identifier, `window_start`, `window_end`, and any `extra_context` (e.g. `last_run_sha` for version-control). If `--source <name>` was passed, fan-out reduces to a single agent for that source.
+2. **Step 0-3 of `${CLAUDE_PLUGIN_ROOT}/skills/digest/procedure.md`** inline — read state, determine sources, calculate window.
+3. **Step 4 parallel fan-out.** Single message, N `Agent` calls to `giovanni:source-puller` agents (one per configured source). Each gets the source-specific identifier, `window_start`, `window_end`, and any `extra_context` (e.g. `last_run_sha` for version-control). If `--source <name>` was passed, fan-out reduces to a single agent for that source.
 4. **Steps 5-10** inline — synthesis, triage, brief auto-gen, shadow lookback, profile refresh signals, drift detection — per workflow doc.
-5. **Step 12 render** to chat. Then **Step 11 shadow generation** (runs AFTER render — invisibility is binding, see `docs/prediction.md`).
+5. **Step 12 render** to chat. Then **Step 11 shadow generation** (runs AFTER render — invisibility is binding, see `${CLAUDE_PLUGIN_ROOT}/docs/prediction.md`).
 6. **State update** — write `memory/digest_state.md` with `last_run_timestamp = window_end` (from Step 3, never the time of writing), `last_run_sha`, shadow stats. **Do NOT auto-commit.**
 7. **Hand off** to drift response sub-flow per workflow doc (principal reacts with `confirm` / `ignore Nd` / `patch ...`).
 
@@ -57,14 +59,14 @@ If any pre-flight fails, the orchestrator does NOT proceed and does NOT update s
 When `--source <name>` is set:
 
 - Pre-flight runs as normal.
-- Step 4 spawns a single `source-puller` for the named source only.
+- Step 4 spawns a single `giovanni:source-puller` for the named source only.
 - Output is the raw bullets returned by the agent — no synthesis, no drift detection, no briefs, no shadow.
 - State file is NOT updated (this run is not a "real" digest).
 - Use for tuning source identifiers / suppression patterns / volume caps. Then re-run the full digest.
 
 ## Output behavior
 
-- **Render target:** chat (ephemeral). The digest body itself is not committed — committing daily digests pollutes git history without value. See `docs/digest.md` § Anti-patterns.
+- **Render target:** chat (ephemeral). The digest body itself is not committed — committing daily digests pollutes git history without value. See `${CLAUDE_PLUGIN_ROOT}/docs/digest.md` § Anti-patterns.
 - **Persistent artifacts:** `memory/digest_state.md` (overwritten), `memory/briefs/<file>.md` (one per eligible event, idempotent refresh), `memory/shadow/pending/<file>.yaml` (any new hypotheses), `memory/shadow/resolved/<YYYY-MM>/` (lookback movements), `memory/shadow/expired/<YYYY-MM>/` (expired horizon movements). All written **unstaged**.
 - **No auto-commit.** Principal reviews + commits in batch.
 
@@ -86,18 +88,18 @@ Default cadence is implicit "approximately daily" — the workflow's design is a
 
 ## Cross-references
 
-- **Workflow procedure:** `.claude/workflows/daily-digest.md` (the 12 steps)
-- **Policy / rationale:** `docs/digest.md` (why daily, anti-patterns, multi-domain calibration)
+- **Workflow procedure:** `${CLAUDE_PLUGIN_ROOT}/skills/digest/procedure.md` (the 12 steps)
+- **Policy / rationale:** `${CLAUDE_PLUGIN_ROOT}/docs/digest.md` (why daily, anti-patterns, multi-domain calibration)
 - **State template:** `memory/digest-state.template.md`
 - **Sources config template:** `memory/digest-sources.template.md`
-- **Source-puller agent:** `.claude/agents/source-puller.md`
-- **Predictive layer dependencies:** `docs/prediction.md` (shadow invisibility, adversarial lookback)
-- **Drift ack flow:** `docs/digest.md` § Ack flow
+- **Source-puller agent:** `${CLAUDE_PLUGIN_ROOT}/agents/source-puller.md`
+- **Predictive layer dependencies:** `${CLAUDE_PLUGIN_ROOT}/docs/prediction.md` (shadow invisibility, adversarial lookback)
+- **Drift ack flow:** `${CLAUDE_PLUGIN_ROOT}/docs/digest.md` § Ack flow
 
 ## Anti-patterns (binding)
 
 - **Skipping pre-flight to "save time"** — the four checks exist because each has caught a real failure mode. Skip = corrupted state.
 - **Auto-committing the state file update** — the principal commits in batch. Auto-commit pollutes git log.
-- **Surfacing shadow hypotheses in render** — they are invisible at generation time per `docs/prediction.md` § Shadow invisibility. Lint catches this.
+- **Surfacing shadow hypotheses in render** — they are invisible at generation time per `${CLAUDE_PLUGIN_ROOT}/docs/prediction.md` § Shadow invisibility. Lint catches this.
 - **Sequential source pull** in main thread context — pollutes main with raw tool output. Always fan-out, even for one source.
 - **Adding "recommended action" to drift flags** — the principal chooses `confirm | ignore | patch`. The orchestrator surfaces the choice, does not pre-select.

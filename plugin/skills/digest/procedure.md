@@ -1,7 +1,7 @@
 # Workflow: Daily Digest
 
-**Trigger:** `/digest` (slash command). Runs the procedure below.
-**Companion docs:** [`docs/digest.md`](../../docs/digest.md) (policy + rationale), [`docs/prediction.md`](../../docs/prediction.md) (binding rules the predictive steps enforce), [`docs/governance.md`](../../docs/governance.md) (cadence + ack mechanics).
+**Trigger:** `/giovanni:digest` (slash command). Runs the procedure below.
+**Companion docs:** [`${CLAUDE_PLUGIN_ROOT}/docs/digest.md`](${CLAUDE_PLUGIN_ROOT}/docs/digest.md) (policy + rationale), [`${CLAUDE_PLUGIN_ROOT}/docs/prediction.md`](${CLAUDE_PLUGIN_ROOT}/docs/prediction.md) (binding rules the predictive steps enforce), [`${CLAUDE_PLUGIN_ROOT}/docs/governance.md`](${CLAUDE_PLUGIN_ROOT}/docs/governance.md) (cadence + ack mechanics).
 **State file:** `memory/digest_state.md` (per `memory/digest-state.template.md`).
 **Sources config:** `memory/digest_sources.md` (per `memory/digest-sources.template.md`).
 
@@ -17,7 +17,7 @@ The 12 steps are sanitized from the source AI Chief of Staff implementation. Ste
 
 ## Step 0 — Pre-flight checks
 
-1. **CWD check.** Verify the working directory is the Giovanni repo root (presence of `memory/digest_sources.md` + `docs/digest.md`). If neither exists, STOP with one-line error: `ERROR: not in a Giovanni repo (no memory/digest_sources.md). Reinvoke from repo root.`
+1. **CWD check.** Verify the working directory is the Giovanni repo root (presence of `memory/digest_sources.md` + `${CLAUDE_PLUGIN_ROOT}/docs/digest.md`). If neither exists, STOP with one-line error: `ERROR: not in a Giovanni repo (no memory/digest_sources.md). Reinvoke from repo root.`
 2. **State file readable.** `memory/digest_state.md` exists and `last_run_timestamp` parses as ISO 8601. If missing or empty:
    - **First run ever:** ASK the principal for a manual seed timestamp (e.g. "start window 7 days ago"). Do NOT default — operating window is meaningful.
    - **Corrupt / missing field:** STOP with diagnostic line pointing at the template.
@@ -103,7 +103,7 @@ A probe-confirmed outage lasting many runs is an **infrastructure problem, not a
 
 ### 4c. Spawn — one source per agent
 
-**Single message, N agent calls.** Spawn `source-puller` agents in parallel — one per live source — as one message with N `Agent` tool calls.
+**Single message, N agent calls.** Spawn `giovanni:source-puller` agents in parallel — one per live source — as one message with N `Agent` tool calls.
 
 Each invocation gets exactly:
 
@@ -111,7 +111,7 @@ Each invocation gets exactly:
 - `source_identifier`, `window_start`, `window_end`
 - Optional `extra_context` (e.g. `last_run_sha` for version control)
 
-Agents return structured markdown bullets per `.claude/agents/source-puller.md`. They do not synthesize, prioritize, or recommend — the main thread does that in Step 5.
+Agents return structured markdown bullets per `${CLAUDE_PLUGIN_ROOT}/agents/source-puller.md`. They do not synthesize, prioritize, or recommend — the main thread does that in Step 5.
 
 ### 4d. Shared-backend serialization
 
@@ -199,8 +199,8 @@ For each new signal / situation from Step 5 (post-synthesis, pre-drift):
 
 5. **Output to Step 12 render:**
 
-   - Active candidates: numbered list with launch hint `/branch-out <slug>`
-   - Shadow-only: **NEVER rendered.** Silent (binding rule from `docs/prediction.md` § Shadow invisibility).
+   - Active candidates: numbered list with launch hint `/giovanni:branch-out <slug>`
+   - Shadow-only: **NEVER rendered.** Silent (binding rule from `${CLAUDE_PLUGIN_ROOT}/docs/prediction.md` § Shadow invisibility).
    - Passive: standard bullets in relevant sections (chat / email / project-tracker lines).
 
 ---
@@ -244,7 +244,7 @@ The fork's `digest_sources.md` `calendar.suppress_title_matching` and `digest_so
    - What would be a win
    - Predictive layer (if any) — branch-out artifacts, decision drafts pending the meeting
 
-5. **Do NOT auto-commit.** Leave the brief file unstaged. Principal reviews + commits in batch (see Step 12 and `docs/digest.md` § Anti-patterns).
+5. **Do NOT auto-commit.** Leave the brief file unstaged. Principal reviews + commits in batch (see Step 12 and `${CLAUDE_PLUGIN_ROOT}/docs/digest.md` § Anti-patterns).
 
 ---
 
@@ -265,7 +265,7 @@ For each pending shadow hypothesis:
       - `search_terms` keyword hit in any source bullet, AND
       - `source_channels` matched — or mismatched while the substance matched (a substance match on the wrong channel stays in Bucket A and resolves as `matched-with-caveat` below; it does not fall out of the bucket)
 
-      Apply adversarial evaluation (binding rule from `docs/prediction.md` § Adversarial lookback):
+      Apply adversarial evaluation (binding rule from `${CLAUDE_PLUGIN_ROOT}/docs/prediction.md` § Adversarial lookback):
 
       > "What are the STRONGEST arguments this hypothesis was NOT actually fulfilled by this signal? Consider: coincidence (signal would have appeared anyway), partial match (signal exists but lacks predicted specifics), alternative interpretations (signal could mean something else entirely), base rate (how often does this signal appear regardless of prediction)."
 
@@ -277,13 +277,13 @@ For each pending shadow hypothesis:
 
       **Symmetry principle (binding):** generosity on substance corrupts calibration one way (motivated reasoning inflates accuracy); strictness on channel/timing corrupts it the other (false negatives deflate it). Default-skeptical applies to substance; channel/timing misses are caveats, not falsifications.
 
-      → Record the verdict in the hypothesis file (`status`, `resolved_date`, `resolved_reasoning`, `adversarial_check`, optional `caveat:`). Move file to `memory/shadow/resolved/<YYYY-MM>/<file>.yaml`. **Do NOT touch `actor-scores.yaml`** — aggregation happens exclusively in `/calibration-report`.
+      → Record the verdict in the hypothesis file (`status`, `resolved_date`, `resolved_reasoning`, `adversarial_check`, optional `caveat:`). Move file to `memory/shadow/resolved/<YYYY-MM>/<file>.yaml`. **Do NOT touch `actor-scores.yaml`** — aggregation happens exclusively in `/giovanni:calibration-report`.
 
    **Bucket B — CONTRADICTING signal present** (active negative evidence):
       - Counterparty observably took the opposite action (e.g. prediction was "Karim signals openness", reality was "Karim explicitly declined"), OR
       - Third-party / market signal directly contradicts predicted outcome
 
-      → Score `falsified`. Record the verdict in the hypothesis file. Move file to `memory/shadow/resolved/<YYYY-MM>/<file>.yaml`. (`actor-scores.yaml` mutation stays in `/calibration-report`.)
+      → Score `falsified`. Record the verdict in the hypothesis file. Move file to `memory/shadow/resolved/<YYYY-MM>/<file>.yaml`. (`actor-scores.yaml` mutation stays in `/giovanni:calibration-report`.)
 
    **Bucket C — SILENT (no positive match, no contradicting signal):**
       - No expected_signal match AND no observable contradicting action
@@ -303,9 +303,9 @@ For each pending shadow hypothesis:
 
    **Binding:** Bucket B MUST populate `adversarial_check` same as A. Apparent contradictions can be misread (e.g. counterparty's negative action was about different topic, third-party signal was unrelated). Skipping adversarial discipline on falsified verdicts produces overconfident calibration in the opposite direction (under-counting matches that were actually right).
 
-   **Lint enforces:** `scripts/lint_rules/shadow_expired_pending.py` flags empty `adversarial_check` on files under `resolved/` (medium severity), alongside its pending-past-horizon check. Files under `expired/` are exempt.
+   **Lint enforces:** `${CLAUDE_PLUGIN_ROOT}/scripts/lint_rules/shadow_expired_pending.py` flags empty `adversarial_check` on files under `resolved/` (medium severity), alongside its pending-past-horizon check. Files under `expired/` are exempt.
 
-**Lookback runs silently.** Verdicts live in the hypothesis files; `actor-scores.yaml` aggregation happens exclusively in monthly `/calibration-report`, and results surface there — not in the rendered digest output.
+**Lookback runs silently.** Verdicts live in the hypothesis files; `actor-scores.yaml` aggregation happens exclusively in monthly `/giovanni:calibration-report`, and results surface there — not in the rendered digest output.
 
 ---
 
@@ -316,7 +316,7 @@ For each stakeholder with new signal in this window's Step 4/5 output:
 1. **If `memory/stakeholders/<slug>.md` exists:**
    - Note the signal for inclusion in Step 12 render ("Stakeholder updates" section).
    - If sentiment shift detected (warming→cooling or vice versa) → mark as extra drift candidate for Step 10.
-   - **Do NOT auto-edit the profile.** Flag the stakeholder as refresh-candidate. Principal invokes `profile-bootstrap` (refresh mode) manually if they want the update applied — see `docs/digest.md` § Profile refresh trigger.
+   - **Do NOT auto-edit the profile.** Flag the stakeholder as refresh-candidate. Principal invokes `giovanni:profile-bootstrap` (refresh mode) manually if they want the update applied — see `${CLAUDE_PLUGIN_ROOT}/docs/digest.md` § Profile refresh trigger.
 
 2. **If profile missing AND stakeholder appears in any Step 4/5 bullet ≥3 times:**
    - Flag "Profile bootstrap pending: `<name>`" in Step 12 render.
@@ -350,7 +350,7 @@ For each new fact / decision from Step 4/5 (post-synthesis):
 
 4. **Re-evaluate expired acks:** if an ack from `digest_state.md` has expired AND the underlying drift still applies, re-flag.
 
-5. **Output to Step 12 render:** numbered drift flags with actionable choices (`confirm` / `ignore Nd` / `patch <file>:<change>`). See `docs/digest.md` § Ack flow for the full state machine.
+5. **Output to Step 12 render:** numbered drift flags with actionable choices (`confirm` / `ignore Nd` / `patch <file>:<change>`). See `${CLAUDE_PLUGIN_ROOT}/docs/digest.md` § Ack flow for the full state machine.
 
 6. **Asymmetric test.** Before rendering the ranked sections (Active blockers, Asks, branch-out candidates), count this run's corrections to existing claims: how many raised an item's stakes, how many lowered them. If every correction went up (and there were at least two), add `⚠ asymmetry: <N>↑ / 0↓` to System hygiene. Random retrieval noise points both ways. A system whose job is ranking priorities pulls toward overstating stakes, because stakes are what justify a rank. When the same flag shows up three runs in a row, the bias is a property of the render step and needs a structural fix (for example, a mandatory "what calmed down since last run" block before Asks), not another reminder.
 
@@ -358,7 +358,7 @@ For each new fact / decision from Step 4/5 (post-synthesis):
 
 ## Step 11 — Shadow generation
 
-**Runs AFTER Step 12 render. Invisibly. Per binding rule from `docs/prediction.md` § Shadow invisibility.**
+**Runs AFTER Step 12 render. Invisibly. Per binding rule from `${CLAUDE_PLUGIN_ROOT}/docs/prediction.md` § Shadow invisibility.**
 
 For each item classified as `shadow-only` in Step 6:
 
@@ -376,7 +376,7 @@ For each item classified as `shadow-only` in Step 6:
    memory/shadow/pending/<YYYY-MM-DD>-<actor-slug>-<topic-slug>-<4char-hash>.yaml
    ```
 
-4. **The hypothesis is invisible.** Never reference it in the rendered digest. Never quote it in 1:1 briefs. Never surface to the principal until `/shadow-review` reveals as a batch.
+4. **The hypothesis is invisible.** Never reference it in the rendered digest. Never quote it in 1:1 briefs. Never surface to the principal until `/giovanni:shadow-review` reveals as a batch.
 
 5. **Update `digest_state.md`:**
    - `shadow_generation_stats.generated_today++`
@@ -437,7 +437,7 @@ Stakeholder updates
 
 ‼ Active branch-out candidates (max 3, per Step 6 triage)
   - <situation-slug> — <1-line context> · actors: <list> · horizon: <days>
-    launch: /branch-out <situation-slug>
+    launch: /giovanni:branch-out <situation-slug>
   - …
 
 Briefs generated this cycle (≤48 h events)
@@ -450,7 +450,7 @@ Active acks
   <expires YYYY-MM-DD> <ack summary> | acked YYYY-MM-DD
 
 System hygiene (flags only when applicable)
-  ⚠ /shadow-review due (last <date> > <cadence> days ago)
+  ⚠ /giovanni:shadow-review due (last <date> > <cadence> days ago)
   ⚠ asymmetry: <N>↑ / 0↓ — every correction this run raised urgency (Step 10.6)
   ⚠ <N> shadow hypotheses expired without ground truth (specificity gate review needed)
   ⚠ Shadow volume hard-fail (>25) — triage heuristics need review
@@ -496,7 +496,7 @@ Rules:
 
 The digest workflow makes file changes (state update, brief files written). It does NOT commit them. The principal reviews + commits in batch.
 
-This is the binding rule that prevents the digest from silently churning the git log. See `docs/digest.md` § Anti-patterns.
+This is the binding rule that prevents the digest from silently churning the git log. See `${CLAUDE_PLUGIN_ROOT}/docs/digest.md` § Anti-patterns.
 
 ---
 
@@ -539,8 +539,8 @@ If the principal verbally says "X changed" in chat:
 
 After digest render, the principal sees active candidates in "Active branch-out candidates". To execute:
 
-1. Principal runs `/branch-out <situation-slug>`.
-2. The `/branch-out` command runs per `.claude/commands/branch-out.md`.
+1. Principal runs `/giovanni:branch-out <situation-slug>`.
+2. The `/giovanni:branch-out` command runs per `${CLAUDE_PLUGIN_ROOT}/skills/branch-out/SKILL.md`.
 3. Output: branch-out artifact in `memory/branch-out/` + decision record draft in `memory/decisions/`.
 4. Principal fills the decision record (`chosen_move`, `reasoning`, `trigger_conditions`) and commits with `decision:` prefix.
 
@@ -550,17 +550,17 @@ After digest render, the principal sees active candidates in "Active branch-out 
 
 This workflow depends on the following deliverables owned by other architects:
 
-- **`source-puller` agent spec** — `subagent-roster-architect` (done; `.claude/agents/source-puller.md`)
-- **`profile-bootstrap` agent spec** — `subagent-roster-architect` (done; `.claude/agents/profile-bootstrap.md`)
-- **Triage heuristic + shadow generation + shadow lookback bindings** — `prediction-architect` (done; `docs/prediction.md` + `memory/triage-heuristic.template.yaml`)
+- **`giovanni:source-puller` agent spec** — `subagent-roster-architect` (done; `${CLAUDE_PLUGIN_ROOT}/agents/source-puller.md`)
+- **`giovanni:profile-bootstrap` agent spec** — `subagent-roster-architect` (done; `${CLAUDE_PLUGIN_ROOT}/agents/profile-bootstrap.md`)
+- **Triage heuristic + shadow generation + shadow lookback bindings** — `prediction-architect` (done; `${CLAUDE_PLUGIN_ROOT}/docs/prediction.md` + `memory/triage-heuristic.template.yaml`)
 - **Brief template** — `memory-architect` (done; `memory/templates/brief.template.md`)
 - **Shadow hypothesis template** — `prediction-architect` (done; `memory/templates/shadow-hypothesis.template.md`)
-- **Slash command `/digest` implementation + drift ack CLI flow** — `slash-command-architect` (PENDING — see open items below)
+- **Slash command `/giovanni:digest` implementation + drift ack CLI flow** — `slash-command-architect` (PENDING — see open items below)
 - **Constitution patch (digest as binding daily cadence)** — `governance-architect` (PENDING — patch text in this architect's report)
 
 ---
 
 ## Open items for downstream architects
 
-- **`slash-command-architect`:** Build `/digest` slash command that orchestrates Step 4 parallel fan-out (single message, N agent calls). Build `--force` flag for cadence guard override. Build drift response CLI mini-grammar (`drift #N confirm | ignore Nd | patch <text>`).
+- **`slash-command-architect`:** Build `/giovanni:digest` slash command that orchestrates Step 4 parallel fan-out (single message, N agent calls). Build `--force` flag for cadence guard override. Build drift response CLI mini-grammar (`drift #N confirm | ignore Nd | patch <text>`).
 - **`governance-architect`:** Add the digest cadence as binding section to the constitution template. See this architect's report for proposed section text.

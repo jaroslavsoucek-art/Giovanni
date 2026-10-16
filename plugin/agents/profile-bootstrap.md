@@ -112,7 +112,7 @@ Set `profile_depth` (frontmatter field per stakeholder template):
 
 ### Step 6b — Regenerate the memory MAP
 
-Run `bash scripts/build-memory-map.sh` after writing the profile — PostToolUse hooks don't fire for subagent writes (shared hook-gap rule in `.claude/agents/README.md`).
+Run `bash ${CLAUDE_PLUGIN_ROOT}/scripts/build-memory-map.sh` after writing the profile — PostToolUse hooks don't fire for subagent writes (shared hook-gap rule in `${CLAUDE_PLUGIN_ROOT}/agents/README.md`).
 
 ### Step 7 — Diff against prior (refresh mode)
 
@@ -169,13 +169,13 @@ Open follow-ups for principal: <list, or "none">
 - **Don't write "Inside knowledge" claims that aren't backed by evidence** — flag as `[ESTIMATE: <basis>]`
 - **Don't auto-commit.** Always leave for principal's batch.
 - **If stakeholder is fully covered and no new signals in window**, return `No update — last signal <date>, no change`. Don't pad.
-- **Don't bootstrap shallow profiles for branch-out simulations** — if the principal asks to bootstrap so they can run /branch-out, surface that <5 touches won't pass the shallow-actor gate. They need to deepen first or accept the simulation can't run.
+- **Don't bootstrap shallow profiles for branch-out simulations** — if the principal asks to bootstrap so they can run /giovanni:branch-out, surface that <5 touches won't pass the shallow-actor gate. They need to deepen first or accept the simulation can't run.
 
 ## What you do NOT own
 
 - **Stakeholder schema design** → defined in `memory/templates/stakeholder.template.md` (you fill it, don't redesign)
 - **Source pulling itself** → reuse source-puller patterns if you need bulk pulls (but typically integrated here)
-- **Predicted-reactions calibration** → prediction-runtime / `/calibration-report` (your predictions get tested by shadow hypotheses)
+- **Predicted-reactions calibration** → prediction-runtime / `/giovanni:calibration-report` (your predictions get tested by shadow hypotheses)
 - **Branch-out execution** → prediction-runtime (consumes your predicted reactions)
 - **Stakeholder profile retirement** → governance hooks check 90d dormant threshold
 - **Privacy decisions** (private repo vs gitignored profiles) → fork-level governance config

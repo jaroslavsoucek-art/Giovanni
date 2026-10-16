@@ -1,17 +1,19 @@
 ---
 description: Monthly calibration report — routes to prediction-runtime in calibration-report mode. Aggregates per-actor + per-tier accuracy, updates actor-scores.yaml.
-allowed-tools: Task, Read, Write, Glob
+allowed-tools: Agent, Read, Write, Glob
+disable-model-invocation: true
+argument-hint: "[--month <YYYY-MM>]"
 ---
 
-# /calibration-report
+# /giovanni:calibration-report
 
-Aggregate the previous month's shadow hypothesis outcomes into a calibration report. This command is a **thin shell** — the aggregation logic and the > 80% accuracy guard rail live in the `prediction-runtime` agent. This file is the invocation contract.
+Aggregate the previous month's shadow hypothesis outcomes into a calibration report. This command is a **thin shell** — the aggregation logic and the > 80% accuracy guard rail live in the `giovanni:prediction-runtime` agent. This file is the invocation contract.
 
 ## Usage
 
 ```
-/calibration-report                       # default — previous full month
-/calibration-report --month <YYYY-MM>     # explicit month
+/giovanni:calibration-report                       # default — previous full month
+/giovanni:calibration-report --month <YYYY-MM>     # explicit month
 ```
 
 ## Argument syntax
@@ -24,10 +26,10 @@ If `--month` is in the future or current month → STOP: `ERROR: --month <YYYY-M
 
 ## Pre-flight (binding — STOP on failure)
 
-Before spawning `prediction-runtime`:
+Before spawning `giovanni:prediction-runtime`:
 
 1. **CWD check.** Working directory is a Giovanni repo. Otherwise STOP.
-2. **Agent definition present.** `.claude/agents/prediction-runtime.md` exists. Missing → STOP.
+2. **Agent definition present.** `${CLAUDE_PLUGIN_ROOT}/agents/prediction-runtime.md` exists. Missing → STOP.
 3. **Calibration directories present.** `memory/calibration/` exists. (`actor-scores.yaml` is created on first run if missing.) Missing dir → STOP: `ERROR: memory/calibration/ missing. The predictive layer hasn't been initialized.`
 4. **Month boundary enforced.** If `--month` is omitted, the default is the **previous full calendar month** (today is 2026-05-21 → default is 2026-04). If today is the 1st-2nd of a month, the previous month's cohort may still have horizon spillover from the month before — surface advisory but continue.
 5. **Cohort non-empty.** If no shadow hypotheses match the month → STOP: `INFO: no hypotheses created/resolved/expired in <YYYY-MM>. Nothing to aggregate this month.` Don't write an empty report.
@@ -36,9 +38,9 @@ Before spawning `prediction-runtime`:
 ## Execution flow
 
 1. **Run pre-flight.** STOP on any failure.
-2. **Spawn `prediction-runtime`** via `Task` with:
+2. **Spawn `giovanni:prediction-runtime`** via `Agent` with:
    ```
-   subagent_type: prediction-runtime
+   subagent_type: giovanni:prediction-runtime
    mode: calibration-report
    month: <YYYY-MM>
    ```
@@ -56,9 +58,9 @@ Before spawning `prediction-runtime`:
 
 If `overall_accuracy > 80%`, the agent surfaces:
 
-> ⚠ Accuracy > 80% — run `/shadow-review` immediately. High accuracy is suspect, not celebratory. Either tier labels have drifted, or adversarial-check verdicts are motivated. Quarterly audit cadence should be moved up.
+> ⚠ Accuracy > 80% — run `/giovanni:shadow-review` immediately. High accuracy is suspect, not celebratory. Either tier labels have drifted, or adversarial-check verdicts are motivated. Quarterly audit cadence should be moved up.
 
-The orchestrator relays this verbatim. The principal decides whether to run `/shadow-review` next.
+The orchestrator relays this verbatim. The principal decides whether to run `/giovanni:shadow-review` next.
 
 ## Output behavior
 
@@ -73,7 +75,7 @@ The orchestrator relays this verbatim. The principal decides whether to run `/sh
 ## Cadence
 
 - **Monthly**, recommended on the 1st of each month for the previous month.
-- Triggered runs are fine (e.g. after a `/shadow-review` that flagged systematic patterns and the principal wants the aggregated view).
+- Triggered runs are fine (e.g. after a `/giovanni:shadow-review` that flagged systematic patterns and the principal wants the aggregated view).
 - Re-runs for the same month require explicit principal confirmation (existing report would be overwritten).
 
 ## Error handling
@@ -85,12 +87,12 @@ The orchestrator relays this verbatim. The principal decides whether to run `/sh
 
 ## Cross-references
 
-- **Agent (executor):** `.claude/agents/prediction-runtime.md` (mode: calibration-report)
-- **Binding principles:** `docs/prediction.md` § 8 binding principles
+- **Agent (executor):** `${CLAUDE_PLUGIN_ROOT}/agents/prediction-runtime.md` (mode: calibration-report)
+- **Binding principles:** `${CLAUDE_PLUGIN_ROOT}/docs/prediction.md` § 8 binding principles
 - **State file:** `memory/calibration/actor-scores.yaml`
 - **Templates:** `memory/templates/calibration-monthly-report.template.md`, `memory/templates/calibration-actor-score.template.md`
-- **Related commands:** `/shadow-review` (triggered when accuracy > 80%)
-- **Lint rules:** `scripts/lint_rules/no_percentages_in_predictions.py`, `shadow_expired_pending.py`
+- **Related commands:** `/giovanni:shadow-review` (triggered when accuracy > 80%)
+- **Lint rules:** `${CLAUDE_PLUGIN_ROOT}/scripts/lint_rules/no_percentages_in_predictions.py`, `shadow_expired_pending.py`
 
 ## Anti-patterns (binding)
 

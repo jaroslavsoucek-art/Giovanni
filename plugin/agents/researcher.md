@@ -134,7 +134,7 @@ Constitution patch proposed: yes | no
 ## Hard rules
 
 - **No direct writes to `knowledge/`** — only propose patches in the note's section.
-- **No decision records** — that's `/branch-out` workflow's job.
+- **No decision records** — that's `/giovanni:branch-out` workflow's job.
 - **No deliverable claims** — main agent decides what to ship externally.
 - **If <3 reliable sources after 5 queries**: stop, return `confidence: low`, list what you tried, and flag.
 - **No commits.** Leave file unstaged.

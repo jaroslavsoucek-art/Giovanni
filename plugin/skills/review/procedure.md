@@ -2,12 +2,12 @@
 
 Strategic pushback on a draft before it ships. **Default mode is adversarial, not advisory.** This workflow defines triggers, scope, verdict format, issue prioritization, and the anti-patterns it must not regress into.
 
-Operational execution: spawn `adversarial-reviewer` agent (`.claude/agents/adversarial-reviewer.md`). This workflow doc is the policy + governance layer; the agent file is the executable prompt.
+Operational execution: spawn `giovanni:adversarial-reviewer` agent (`${CLAUDE_PLUGIN_ROOT}/agents/adversarial-reviewer.md`). This workflow doc is the policy + governance layer; the agent file is the executable prompt.
 
 Related — distinct workflow, not interchangeable:
 
-- **Content QA** (consistency, voice, provenance, broken cross-refs) → `deliverable-reviewer` agent. Both can run on the same artifact for different layers.
-- **Predictive lookback** (adversarial check against shadow-hypothesis verdicts) → `/shadow-review` slash command running through `prediction-runtime`. Same default-skeptical principle, applied to predictions instead of drafts.
+- **Content QA** (consistency, voice, provenance, broken cross-refs) → `giovanni:deliverable-reviewer` agent. Both can run on the same artifact for different layers.
+- **Predictive lookback** (adversarial check against shadow-hypothesis verdicts) → `/giovanni:shadow-review` slash command running through `giovanni:prediction-runtime`. Same default-skeptical principle, applied to predictions instead of drafts.
 
 ---
 
@@ -18,7 +18,7 @@ Any of the following invokes adversarial review:
 - `[REVIEW]` tag anywhere in draft text (typically opener or closer)
 - Message starts with `review:` / `redline:` / `adversarial:` / `before send:`
 - User explicitly says: "review this", "redline this", "before sending", "tear this apart", "challenge this position", "what's wrong with this", "stress-test this"
-- Slash commands `/review` or `/redline` (defined by `slash-command-architect`)
+- Slash commands `/giovanni:review` or `/giovanni:redline` (defined by `slash-command-architect`)
 
 **If user pastes a draft without any trigger, ask before auto-running.** A draft pasted without trigger may want feedback (advisory) or content QA, not adversarial review. Don't auto-attack.
 
@@ -36,7 +36,7 @@ Any of the following invokes adversarial review:
 
 ### Out of scope — route elsewhere
 
-- **Mechanical content QA** (typos, broken links, voice match, mirror integrity, missing provenance) → `deliverable-reviewer`
+- **Mechanical content QA** (typos, broken links, voice match, mirror integrity, missing provenance) → `giovanni:deliverable-reviewer`
 - **Status reports, routine logistics, scheduling notes** → no review needed; skip
 - **Brainstorming / early-stage exploration** → user is generating, not committing — adversarial pushback at this stage suppresses the exploration that's the point of the activity
 
@@ -137,7 +137,7 @@ This is the IP. Most reviewers (human or AI) list issues. The adversarial-review
 |---|---|
 | **Facts and evidence** | Verified against repo. Contradictions surface as findings. Facts aren't argued; they're checked. |
 | **Positions and judgments** | Adversarial pushback. Construct strongest case the position is wrong. Surface it. |
-| **Mechanical issues** (typos, broken links, missing provenance) | Flag, but do not relitigate — that's `deliverable-reviewer`'s scope. One line in the cosmetic bucket if the user invoked adversarial-reviewer instead; otherwise skip. |
+| **Mechanical issues** (typos, broken links, missing provenance) | Flag, but do not relitigate — that's `giovanni:deliverable-reviewer`'s scope. One line in the cosmetic bucket if the user invoked adversarial-reviewer instead; otherwise skip. |
 
 ---
 
@@ -160,7 +160,7 @@ Three explicit suspend-adversarial conditions. If the agent is invoked in any of
 
 1. **Brainstorming / early-stage exploration.** User is generating options, not committing. Adversarial pushback suppresses the exploration that's the point. Override phrases: "brainstorm with me", "thinking out loud", "no pushback needed yet", "exploring".
 2. **Moments of distress.** User shared a draft after an emotionally rough moment (loss, escalation, conflict). Adversarial review is not crisis support.
-3. **Mechanical execution tasks.** Editing a draft for typos, formatting, link-checking → content QA, not adversarial review. Route to `deliverable-reviewer`.
+3. **Mechanical execution tasks.** Editing a draft for typos, formatting, link-checking → content QA, not adversarial review. Route to `giovanni:deliverable-reviewer`.
 
 User can override the decline with explicit "yes I want adversarial review on this anyway". At that point, the agent runs the protocol.
 
@@ -196,9 +196,9 @@ This is not a real-time calibration loop (yet). The pattern surfaces at quarterl
 
 | Adjacent | Relationship |
 |---|---|
-| `deliverable-reviewer` (content QA) | Different layer, same artifact. Adversarial = "should we send this at all"; content QA = "is what we're sending mechanically correct". Both can run on the same file; neither replaces the other. |
-| `/shadow-review` (predictive lookback) | Same default-skeptical principle, applied to predictions instead of drafts. The shadow-hypothesis template's `adversarial_check` field is this principle inside the predictive layer. |
-| `researcher` → adversarial-reviewer (sequential chain) | Pattern documented in `docs/agents.md` §9: research output (e.g. constitution patch proposal) gets adversarial review before the main thread applies. |
+| `giovanni:deliverable-reviewer` (content QA) | Different layer, same artifact. Adversarial = "should we send this at all"; content QA = "is what we're sending mechanically correct". Both can run on the same file; neither replaces the other. |
+| `/giovanni:shadow-review` (predictive lookback) | Same default-skeptical principle, applied to predictions instead of drafts. The shadow-hypothesis template's `adversarial_check` field is this principle inside the predictive layer. |
+| `giovanni:researcher` → adversarial-reviewer (sequential chain) | Pattern documented in `${CLAUDE_PLUGIN_ROOT}/docs/agents.md` §9: research output (e.g. constitution patch proposal) gets adversarial review before the main thread applies. |
 | Constitution patches | Always get adversarial review before commit. Constitution is the canonical doc; bad patches propagate. |
 
 ---
@@ -219,7 +219,7 @@ minor_count: <int>
 strongest_counter_case_addressed: addressed | ducked | partially
 ```
 
-Lint rule `adversarial_verdict_format.py` (in `scripts/lint_rules/`) validates these records if the directory exists. The log is **optional** — adversarial reviews aren't required to persist; the verdict is delivered in-conversation and the user acts on it.
+Lint rule `adversarial_verdict_format.py` (in `${CLAUDE_PLUGIN_ROOT}/scripts/lint_rules/`) validates these records if the directory exists. The log is **optional** — adversarial reviews aren't required to persist; the verdict is delivered in-conversation and the user acts on it.
 
 Forks with no persistent log don't need the directory and the lint rule is a no-op.
 

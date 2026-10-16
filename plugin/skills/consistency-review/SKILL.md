@@ -1,19 +1,21 @@
 ---
-description: Manual per-finding triage of a /consistency-check report — accept-diff / reject / defer / false-positive verdicts, precision tally update. Interactive main-thread workflow, no agent spawn.
+description: Manual per-finding triage of a /giovanni:consistency-check report — accept-diff / reject / defer / false-positive verdicts, precision tally update. Interactive main-thread workflow, no agent spawn.
 allowed-tools: Read, Edit, Write, Grep, Glob, Bash
+disable-model-invocation: true
+argument-hint: "[<YYYY-MM-DD>]"
 ---
 
-# /consistency-review
+# /giovanni:consistency-review
 
-Triage the findings of a `/consistency-check` run, one by one, with the principal as decision-maker. This command is a **thin shell** — the triage procedure lives in `.claude/workflows/consistency-review.md`. This file is the invocation contract.
+Triage the findings of a `/giovanni:consistency-check` run, one by one, with the principal as decision-maker. This command is a **thin shell** — the triage procedure lives in `${CLAUDE_PLUGIN_ROOT}/skills/consistency-review/procedure.md`. This file is the invocation contract.
 
-Like `/digest`, this command routes to a workflow procedure rather than an agent: triage is interactive (per-finding verdicts from the principal), so it runs in the main thread.
+Like `/giovanni:digest`, this command routes to a workflow procedure rather than an agent: triage is interactive (per-finding verdicts from the principal), so it runs in the main thread.
 
 ## Usage
 
 ```
-/consistency-review <YYYY-MM-DD>    # triage the report for that date
-/consistency-review                 # defaults to the most recent report
+/giovanni:consistency-review <YYYY-MM-DD>    # triage the report for that date
+/giovanni:consistency-review                 # defaults to the most recent report
 ```
 
 ## Argument syntax
@@ -26,15 +28,15 @@ Like `/digest`, this command routes to a workflow procedure rather than an agent
 
 1. **CWD check.** Working directory is a Giovanni repo (presence of `memory/CLAUDE_MEMORY.md` + `knowledge/<constitution>.md`). Otherwise STOP.
 2. **Report file present.** `memory/audits/consistency/<YYYY-MM-DD>.md` exists (after resolving the default). Missing → STOP:
-   `ERROR: no consistency report for <YYYY-MM-DD>. Run /consistency-check first.`
-3. **State file present.** `memory/audits/consistency/_state.md` exists. If missing → seed per the `/consistency-check` auto-seed rules (shadow window starts today, 28 days) and surface an advisory — a review without a state file can't record precision.
+   `ERROR: no consistency report for <YYYY-MM-DD>. Run /giovanni:consistency-check first.`
+3. **State file present.** `memory/audits/consistency/_state.md` exists. If missing → seed per the `/giovanni:consistency-check` auto-seed rules (shadow window starts today, 28 days) and surface an advisory — a review without a state file can't record precision.
 4. **Run entry present.** `_state.md` contains a `## Run <YYYY-MM-DD>` entry for the report being reviewed. Missing → STOP with diagnostic (report and state are written together by the agent; a missing entry means a corrupted run).
 5. **Not already reviewed.** If the run entry has `review_status: complete`, warn and confirm at prompt (`y/N`) before re-reviewing — a re-review overwrites the prior verdict counts.
 
 ## Execution flow
 
 1. **Run pre-flight.** STOP on any failure.
-2. **Run the workflow procedure** per `.claude/workflows/consistency-review.md`:
+2. **Run the workflow procedure** per `${CLAUDE_PLUGIN_ROOT}/skills/consistency-review/procedure.md`:
    - Step 1: open the report, print summary + findings
    - Step 2: per-finding interactive triage (accept / reject / defer / false-positive)
    - Step 3: apply accepted diffs (bottom-to-top within a file)
@@ -59,16 +61,16 @@ Like `/digest`, this command routes to a workflow procedure rather than an agent
 
 ## Cadence guidance
 
-- **During shadow mode:** run after **each** `/consistency-check` — every run needs a precision score or the shadow-mode gate has no evidence.
+- **During shadow mode:** run after **each** `/giovanni:consistency-check` — every run needs a precision score or the shadow-mode gate has no evidence.
 - **After shadow mode:** run when a check surfaces findings; unreviewed reports accumulate as operational debt.
 
 ## Cross-references
 
-- **Workflow procedure:** `.claude/workflows/consistency-review.md`
-- **Producer command:** `.claude/commands/consistency-check.md`
-- **Agent that writes the reports:** `.claude/agents/consistency-checker.md`
+- **Workflow procedure:** `${CLAUDE_PLUGIN_ROOT}/skills/consistency-review/procedure.md`
+- **Producer command:** `${CLAUDE_PLUGIN_ROOT}/skills/consistency-check/SKILL.md`
+- **Agent that writes the reports:** `${CLAUDE_PLUGIN_ROOT}/agents/consistency-checker.md`
 - **State file:** `memory/audits/consistency/_state.md`
-- **Governance policy:** `docs/governance.md` § Consistency checks (shadow mode + promotion criteria)
+- **Governance policy:** `${CLAUDE_PLUGIN_ROOT}/docs/governance.md` § Consistency checks (shadow mode + promotion criteria)
 
 ## Anti-patterns (binding)
 

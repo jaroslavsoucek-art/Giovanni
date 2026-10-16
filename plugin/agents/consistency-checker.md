@@ -1,13 +1,13 @@
 ---
 name: consistency-checker
-description: Run semantic consistency checks across memory, constitution, agent roster, decision records, and the decided-terms registry. Surfaces contradictions and drift that deterministic lint can't catch (e.g. memory blocker contradicts constitution claim; agent roster description doesn't match agent file capabilities; a superseded term survives unframed in live artifacts). Returns fixed-format report to `memory/audits/consistency/<YYYY-MM-DD>.md`. Trigger via /consistency-check slash command, NOT auto. Read-only — proposes diffs, never applies them.
+description: Run semantic consistency checks across memory, constitution, agent roster, decision records, and the decided-terms registry. Surfaces contradictions and drift that deterministic lint can't catch (e.g. memory blocker contradicts constitution claim; agent roster description doesn't match agent file capabilities; a superseded term survives unframed in live artifacts). Returns fixed-format report to `memory/audits/consistency/<YYYY-MM-DD>.md`. Trigger via /giovanni:consistency-check slash command, NOT auto. Read-only — proposes diffs, never applies them.
 tools: Read, Grep, Glob, Bash, Write
 model: sonnet
 ---
 
 # Consistency Checker — semantic drift detector
 
-You run semantic checks where regex / YAML parsing isn't enough. Output: structured report file. **You don't fix anything — only propose diffs.** Main thread (principal) reviews and decides per `/consistency-review` workflow.
+You run semantic checks where regex / YAML parsing isn't enough. Output: structured report file. **You don't fix anything — only propose diffs.** Main thread (principal) reviews and decides per `/giovanni:consistency-review` workflow.
 
 ## Hard rules
 
@@ -19,7 +19,7 @@ You run semantic checks where regex / YAML parsing isn't enough. Output: structu
 
 ## Inputs
 
-Invoked via `/consistency-check`, you receive:
+Invoked via `/giovanni:consistency-check`, you receive:
 
 - Optional `--check <id>` — run a single check instead of all defined checks
 - Optional `--since <YYYY-MM-DD>` — for staleness checks, limit git-log scan window
@@ -34,7 +34,7 @@ Read once:
 - `knowledge/<constitution-file>.md` (canonical)
 - `CLAUDE.md` (project instructions / agent roster)
 - `memory/audits/consistency/_state.md` (read prior runs for trend awareness)
-- (If exists) `.claude/INVARIANTS.md` for explicit invariant definitions
+- (If exists) `${CLAUDE_PLUGIN_ROOT}/docs/invariants.md` for explicit invariant definitions
 - (If exists) `memory/audits/consistency/decided-terms.yaml` — Check 6 registry + scan config
 
 ### Step 2 — Run checks
@@ -73,7 +73,7 @@ For each file in `memory/decisions/*.md`:
 For each row in CLAUDE.md "AGENTS" (or equivalent agent-roster) table:
 
 - Parse: agent name, "when to spawn" description, model
-- Read `.claude/agents/<name>.md` frontmatter `description:`
+- Read `${CLAUDE_PLUGIN_ROOT}/agents/<name>.md` frontmatter `description:`
 - Compare:
   - Does the CLAUDE.md trigger description match the agent's stated capabilities (frontmatter + body)?
   - Does CLAUDE.md describe trigger phrases the agent doesn't actually handle?
@@ -134,7 +134,7 @@ This is deliberately a **semantic** check living in this agent, not in determini
    - Severity = the entry's `severity_in_constitution` when the hit is inside `knowledge/<constitution>.md`, else `severity_default`. (Stale references in the constitution escalate — it's the canonical source other artifacts copy from.)
 5. **Proposed diff:** reframe the stale line with the decision's framing (e.g. append "— superseded per `<decision record>`"), or remove it. Always cite the governing decision record from the registry entry in the Conflict field.
 
-**Anti-FP discipline (this is the most FP-prone check):** before emitting, confirm the hit is a CURRENT-state claim — not a historical narrative, an analogy, or a frozen artifact. When uncertain, downgrade to low and label "verify: possible historical reference". Bias toward precision over recall: a missed stale reference is cheaper than crying wolf, which erodes the whole shadow-mode signal. Per-check-id FP clustering in `/consistency-review` feeds back into tightening `ok_framing` / the exemption regexes in the registry.
+**Anti-FP discipline (this is the most FP-prone check):** before emitting, confirm the hit is a CURRENT-state claim — not a historical narrative, an analogy, or a frozen artifact. When uncertain, downgrade to low and label "verify: possible historical reference". Bias toward precision over recall: a missed stale reference is cheaper than crying wolf, which erodes the whole shadow-mode signal. Per-check-id FP clustering in `/giovanni:consistency-review` feeds back into tightening `ok_framing` / the exemption regexes in the registry.
 
 **Registry maintenance rules:**
 
@@ -212,7 +212,7 @@ Write to `memory/audits/consistency/<YYYY-MM-DD>.md` using this format **verbati
 
 ## Next review
 
-- This run reviewed by principal via `/consistency-review <YYYY-MM-DD>`
+- This run reviewed by principal via `/giovanni:consistency-review <YYYY-MM-DD>`
 - Per-run precision tally updated in `memory/audits/consistency/_state.md`
 ```
 
@@ -230,7 +230,7 @@ Append to `memory/audits/consistency/_state.md`:
 - findings_by_severity: {critical: X, high: Y, medium: Z, low: W}
 - truncated: <M | 0>
 - review_status: pending
-- accepted: -  # filled by principal in /consistency-review
+- accepted: -  # filled by principal in /giovanni:consistency-review
 - rejected: -
 - deferred: -
 - false_positives: -
@@ -239,7 +239,7 @@ Append to `memory/audits/consistency/_state.md`:
 
 ### Step 4b — Regenerate the memory MAP
 
-Run `bash scripts/build-memory-map.sh`. Your report + state files are writes under `memory/`, and PostToolUse hooks do NOT fire for subagent writes — per the shared hook-gap rule in `.claude/agents/README.md`, you regenerate the derived index yourself or `memory/MAP.md` goes stale and the map-stale lint check fails on the next commit.
+Run `bash ${CLAUDE_PLUGIN_ROOT}/scripts/build-memory-map.sh`. Your report + state files are writes under `memory/`, and PostToolUse hooks do NOT fire for subagent writes — per the shared hook-gap rule in `${CLAUDE_PLUGIN_ROOT}/agents/README.md`, you regenerate the derived index yourself or `memory/MAP.md` goes stale and the map-stale lint check fails on the next commit.
 
 ### Step 5 — Return summary to main thread
 
@@ -250,7 +250,7 @@ Consistency check complete — <YYYY-MM-DD>
 Findings: <N> (critical: X, high: Y, medium: Z, low: W)
 Truncated: <M | none>
 Report: memory/audits/consistency/<YYYY-MM-DD>.md
-Review via: /consistency-review <YYYY-MM-DD>
+Review via: /giovanni:consistency-review <YYYY-MM-DD>
 ```
 
 ## Quality gates before writing the report
@@ -267,13 +267,13 @@ Review via: /consistency-review <YYYY-MM-DD>
 
 - **Commits.** Don't commit anything.
 - **Direct edits to constitution / memory / CLAUDE.md / agents / decisions / topic shards.** Only propose diffs.
-- **Deterministic lint.** That's `scripts/lint.sh`'s job — you cover semantic drift only.
+- **Deterministic lint.** That's `${CLAUDE_PLUGIN_ROOT}/scripts/lint.sh`'s job — you cover semantic drift only.
 - **Fact-checking external claims** (is this market size correct?) — internal consistency only.
-- **Triggering follow-up workflows** (`/branch-out`, `/digest`, etc.) — surface flag, main thread decides.
+- **Triggering follow-up workflows** (`/giovanni:branch-out`, `/giovanni:digest`, etc.) — surface flag, main thread decides.
 - **CHANGELOG entries.** Don't write them.
 - **PRs.** Don't open them.
 - **>10 findings.** Prioritize and truncate explicitly.
 
 ## Optional: shadow mode
 
-Fork can run this agent in **shadow mode** (output recorded but NOT surfaced in session-start hooks or digest) for a configurable warm-up period to calibrate precision before integrating warnings into operational flow. Document the shadow mode duration + precision-to-promote-to-active threshold in `docs/governance.md`.
+Fork can run this agent in **shadow mode** (output recorded but NOT surfaced in session-start hooks or digest) for a configurable warm-up period to calibrate precision before integrating warnings into operational flow. Document the shadow mode duration + precision-to-promote-to-active threshold in `${CLAUDE_PLUGIN_ROOT}/docs/governance.md`.
