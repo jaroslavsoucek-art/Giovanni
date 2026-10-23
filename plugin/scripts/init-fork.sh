@@ -38,6 +38,8 @@
 #   bash <plugin>/scripts/init-fork.sh --force               # re-copy templates over existing runtime files
 #   bash <plugin>/scripts/init-fork.sh --skip-regen          # don't run MAP/INDEX regen
 #   bash <plugin>/scripts/init-fork.sh --project-root <dir>  # scaffold a different directory
+#   bash <plugin>/scripts/init-fork.sh --without predictive,stakeholders,digest
+#                                                            # switch layers off (docs/autonomy.md § Layers)
 #
 # Idempotent — safe to re-run.
 
@@ -47,13 +49,15 @@ ASSUME_YES=0
 FORCE=0
 SKIP_REGEN=0
 PROJECT_ARG=""
+WITHOUT=""
 while [ $# -gt 0 ]; do
     case "$1" in
         --yes|-y)        ASSUME_YES=1; shift ;;
         --force)         FORCE=1; shift ;;
         --skip-regen)    SKIP_REGEN=1; shift ;;
         --project-root)  [ $# -ge 2 ] || { echo "--project-root needs a path" >&2; exit 2; }; PROJECT_ARG="$2"; shift 2 ;;
-        --help|-h)       sed -n '2,44p' "$0" | sed -E 's/^# ?//'; exit 0 ;;
+        --without)       [ $# -ge 2 ] || { echo "--without needs a comma-separated layer list" >&2; exit 2; }; WITHOUT="$2"; shift 2 ;;
+        --help|-h)       sed -n '2,46p' "$0" | sed -E 's/^# ?//'; exit 0 ;;
         *) echo "Unknown arg: $1" >&2; exit 2 ;;
     esac
 done
@@ -118,6 +122,13 @@ do
 done
 [ "${missing_templates}" -eq 0 ] || exit 2
 
+for layer in $(printf '%s' "${WITHOUT}" | tr ',' ' '); do
+    case "${layer}" in
+        predictive|stakeholders|digest) ;;
+        *) echo "ERROR: unknown layer in --without: ${layer} (known: predictive, stakeholders, digest)" >&2; exit 2 ;;
+    esac
+done
+
 # ----- Confirm -----
 if [ "${ASSUME_YES}" -ne 1 ]; then
     echo "About to scaffold Giovanni in: ${PROJECT}"
@@ -146,12 +157,18 @@ copy_template() {
 
 # Copy every file of a skeleton directory, one level, never overwriting.
 copy_dir() {
-    local src="$1" dst="$2" f
+    local src="$1" dst="$2" f pat skip
     [ -d "${src}" ] || return 0
     mkdir -p "${dst}"
     for f in "${src}"/*; do
         [ -f "${f}" ] || continue
         case "$(basename "${f}")" in .gitkeep) continue ;; esac
+        skip=0
+        for pat in ${EXCLUDE:-}; do
+            # shellcheck disable=SC2254
+            case "$(basename "${f}")" in ${pat}) skip=1 ;; esac
+        done
+        [ "${skip}" -eq 1 ] && continue
         if [ -f "${dst}/$(basename "${f}")" ] && [ "${FORCE}" -ne 1 ]; then
             continue
         fi
@@ -161,12 +178,33 @@ copy_dir() {
 }
 
 # Runtime files a session reads and writes.
+copy_template "${TEMPLATES}/governance.config.template.yaml"                "docs/governance.config.yaml"
+
+# Layers. --without switches a layer off in the project config; the config then
+# decides what gets scaffolded, now and on every re-run.
+for layer in $(printf '%s' "${WITHOUT}" | tr ',' ' '); do
+    python3 "${SCRIPT_DIR}/gconfig.py" --repo "${PROJECT}" set-layer "${layer}" false
+    echo "  · layer ${layer}: off"
+done
+layer_on() { python3 "${SCRIPT_DIR}/gconfig.py" --repo "${PROJECT}" layer "$1" 2>/dev/null; }
+PREDICTIVE=1; layer_on predictive || PREDICTIVE=0
+STAKEHOLDERS=1; layer_on stakeholders || STAKEHOLDERS=0
+DIGEST=1; layer_on digest || DIGEST=0
+# Template / example files that belong to a switched-off layer are not copied.
+EXCLUDE=""
+[ "${PREDICTIVE}" -eq 0 ] && EXCLUDE="${EXCLUDE} branch-out* shadow* calibration* triage* decided-terms*"
+[ "${STAKEHOLDERS}" -eq 0 ] && EXCLUDE="${EXCLUDE} stakeholder*"
+[ "${DIGEST}" -eq 0 ] && EXCLUDE="${EXCLUDE} digest*"
+
 copy_template "${SKELETON}/knowledge/constitution.template.md"              "knowledge/constitution.md"
 copy_template "${SKELETON}/memory/templates/operational-memory.template.md" "memory/CLAUDE_MEMORY.md"
-copy_template "${SKELETON}/memory/digest-sources.template.md"               "memory/digest_sources.md"
-copy_template "${SKELETON}/memory/digest-state.template.md"                 "memory/digest_state.md"
-copy_template "${SKELETON}/memory/triage-heuristic.template.yaml"           "memory/triage-heuristic.yaml"
-copy_template "${TEMPLATES}/governance.config.template.yaml"                "docs/governance.config.yaml"
+if [ "${DIGEST}" -eq 1 ]; then
+    copy_template "${SKELETON}/memory/digest-sources.template.md"           "memory/digest_sources.md"
+    copy_template "${SKELETON}/memory/digest-state.template.md"             "memory/digest_state.md"
+fi
+if [ "${PREDICTIVE}" -eq 1 ]; then
+    copy_template "${SKELETON}/memory/triage-heuristic.template.yaml"       "memory/triage-heuristic.yaml"
+fi
 
 # The permission half of the external write gate + autoMemoryEnabled: false. The
 # hooks ship with the plugin; a plugin cannot carry permissions, so this file does.
@@ -178,9 +216,11 @@ copy_template "${SKELETON}/knowledge/README.md"                             "kno
 copy_template "${SKELETON}/memory/README.md"                                "memory/README.md"
 copy_dir      "${SKELETON}/memory/templates"                                "memory/templates"
 copy_dir      "${SKELETON}/memory/examples"                                 "memory/examples"
-copy_dir      "${SKELETON}/memory/branch-out"                               "memory/branch-out"
-copy_dir      "${SKELETON}/memory/calibration"                              "memory/calibration"
-copy_dir      "${SKELETON}/memory/shadow"                                   "memory/shadow"
+if [ "${PREDICTIVE}" -eq 1 ]; then
+    copy_dir  "${SKELETON}/memory/branch-out"                               "memory/branch-out"
+    copy_dir  "${SKELETON}/memory/calibration"                              "memory/calibration"
+    copy_dir  "${SKELETON}/memory/shadow"                                   "memory/shadow"
+fi
 copy_dir      "${SKELETON}/deliverables"                                    "deliverables"
 
 # The operating contract. Three cases:
@@ -204,8 +244,10 @@ else
 fi
 
 # ----- 2. Runtime memory subdirectories -----
-for d in stakeholders topics decisions briefs archive \
-         shadow/pending shadow/resolved shadow/expired branch-out calibration/monthly
+RUNTIME_DIRS="topics decisions briefs archive"
+[ "${STAKEHOLDERS}" -eq 1 ] && RUNTIME_DIRS="stakeholders ${RUNTIME_DIRS}"
+[ "${PREDICTIVE}" -eq 1 ] && RUNTIME_DIRS="${RUNTIME_DIRS} shadow/pending shadow/resolved shadow/expired branch-out calibration/monthly"
+for d in ${RUNTIME_DIRS}
 do
     if [ ! -d "memory/${d}" ]; then
         mkdir -p "memory/${d}"
@@ -230,10 +272,17 @@ EOF
     echo "  + memory/audit_state.md"
 fi
 
-if [ -f "${SKELETON}/memory/templates/stakeholders-README.template.md" ] && [ ! -f "memory/stakeholders/README.md" ]; then
+if [ "${STAKEHOLDERS}" -eq 1 ] && [ -f "${SKELETON}/memory/templates/stakeholders-README.template.md" ] && [ ! -f "memory/stakeholders/README.md" ]; then
     cp "${SKELETON}/memory/templates/stakeholders-README.template.md" "memory/stakeholders/README.md"
     echo "  + memory/stakeholders/README.md"
 fi
+
+# Machine-local state of the autonomy layer (telemetry, run logs, locks) never goes
+# into git: it is per machine, it is noisy, and telemetry is nobody's business.
+touch .gitignore
+for pat in "memory/.telemetry/" "memory/.runs/" "memory/.*.lock"; do
+    grep -qxF "${pat}" .gitignore 2>/dev/null || { printf '%s\n' "${pat}" >> .gitignore; echo "  + .gitignore: ${pat}"; }
+done
 
 # ----- 4. Plugin root marker + executable bits -----
 # The git hooks run outside any Claude session and have to find the plugin; the
@@ -265,20 +314,18 @@ echo "────────────────────────�
 LINT_REPO_ROOT="${PROJECT}" bash "${SCRIPT_DIR}/lint.sh" || true
 echo "────────────────────────────────────────────────────────────────────"
 
-cat <<EOF
-
-Scaffolded. Next steps (docs/setup-guide.md in the plugin has the full walkthrough):
-
-  1. Fill knowledge/constitution.md         — your operating principles, posture, stakeholders
-  2. Bootstrap memory/stakeholders/<slug>.md — 5-10 key people (agent giovanni:profile-bootstrap)
-  3. Configure memory/digest_sources.md     — your chat / email / calendar / tracker sources
-  4. Seed memory/digest_state.md            — set a first-run window timestamp
-  5. bash "${PLUGIN_ROOT}/scripts/install-hooks.sh"
-                                            — git pre-commit (regen + lint) and pre-push gates
-  6. Review .claude/settings.json           — the external write gate's permission layer; demote
-                                              channels in docs/governance.config.yaml if you need to
-  7. /giovanni:digest --force               — first digest run
-EOF
+echo ""
+echo "Scaffolded. Next steps (docs/setup-guide.md in the plugin has the full walkthrough):"
+echo ""
+echo "  · Fill knowledge/constitution.md          — your operating principles, posture, roles"
+[ "${STAKEHOLDERS}" -eq 1 ] && echo "  · Bootstrap memory/stakeholders/<slug>.md  — 5-10 key people (agent giovanni:profile-bootstrap)"
+[ "${DIGEST}" -eq 1 ] && echo "  · Configure memory/digest_sources.md      — your chat / email / calendar / tracker sources"
+[ "${DIGEST}" -eq 1 ] && echo "  · Seed memory/digest_state.md             — set a first-run window timestamp"
+echo "  · bash \"${PLUGIN_ROOT}/scripts/install-hooks.sh\""
+echo "                                             — git pre-commit (regen + lint) and pre-push gates"
+echo "  · Review .claude/settings.json            — the external write gate's permission layer"
+echo "  · Autonomy layer (inbox, autocommit, schedule, learning) is opt-in: docs/autonomy.md in the plugin"
+[ "${DIGEST}" -eq 1 ] && echo "  · /giovanni:digest --force                — first digest run"
 
 if [ "${FORK_MODE}" -eq 1 ]; then
     cat <<EOF

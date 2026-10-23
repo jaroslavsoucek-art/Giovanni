@@ -37,6 +37,7 @@ import os
 import re
 
 CHECK_ID = "digest-state-freshness"
+LAYER = "digest"
 SEVERITY_DEFAULT = "low"
 
 # Match the timestamp line per memory/digest-state.template.md schema:

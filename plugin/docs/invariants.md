@@ -58,6 +58,7 @@ Unenforced invariants get an id in the same shape, so promoting one to code is a
 | `mcp-uuid-pin` | no install-specific MCP server ids in the plugin's agents / skills / hooks or the project's `.claude/` | high | lint.py |
 | `silence-counter-verified` | a "N days of silence" claim in L1 / an active shard carries a fresh `[verified YYYY-MM-DD]` stamp, or is written as a past fact without a counter | high / medium | lint.py |
 | `rules-register-pointers` | every `docs/invariants.md#<id>` pointer in `CLAUDE.md` / `templates/CLAUDE.template.md` resolves to a Behavioral rules entry | medium | lint.py |
+| `inbox-health` | the inbox file is valid (required fields, dates, no closed items, unique keys) and holds ≤ `inbox.max_open` open items | medium / high | lint.py |
 
 ## Enforced by hook
 
@@ -74,6 +75,11 @@ Hooks warn or gate in the moment. They are **additive** to lint, never a substit
 | `check-unmerged-claude-branches.sh` | no forgotten unmerged `claude/*` branches | warns |
 | `block-external-writes.sh` | external writes gated per action; demoted channels denied | gates |
 | `stop-ephemeral-commit-guard.sh` | no unsaved work at the end of an ephemeral session | warns |
+| `pre-edit-confirm.sh` | `autonomy.confirm_paths` are edited only with the principal's OK (ask), never in a headless run (deny) | gates |
+| `stop-autocommit.sh` | `autonomy.auto_commit_paths` are committed at every Stop through the git pre-commit gate; confirm paths never — they become inbox items | commits |
+| `session-start-inbox.sh` | the inbox is refreshed (refreshers, lint→inbox, scheduler health, expiry) and shown first | shows |
+| `stop-session-record.sh` | the session's generalised shape (no prompt text) is recorded for the learning loop | records |
+| `prompt-correction.sh` | a correction is classified (skill-fix / rule / one-off) and logged before work continues | reminds |
 
 ## Enforced by cadence (a human runs it)
 

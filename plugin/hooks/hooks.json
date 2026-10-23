@@ -1,5 +1,5 @@
 {
-  "description": "Giovanni hook trigger map. Every command is exec form (command + args), anchored on ${CLAUDE_PLUGIN_ROOT}: hooks run in the session's current working directory, and a relative path resolves wherever the session last cd'd — the script then does not exist, exits 127, and the gate goes quiet without a word. The project the hooks act on is $CLAUDE_PROJECT_DIR (exported to every hook process), never the cwd. The permission half of the external write gate (permissions.ask/deny, autoMemoryEnabled) cannot ship in a plugin — /giovanni:init writes it into the project's .claude/settings.json. Two layers on purpose; neither is load-bearing alone (docs/governance.md § External write gate).",
+  "description": "Giovanni hook trigger map. Every command is exec form (command + args), anchored on ${CLAUDE_PLUGIN_ROOT}: hooks run in the session's current working directory, and a relative path resolves wherever the session last cd'd — the script then does not exist, exits 127, and the gate goes quiet without a word. The project the hooks act on is $CLAUDE_PROJECT_DIR (exported to every hook process), never the cwd. The permission half of the external write gate (permissions.ask/deny, autoMemoryEnabled) cannot ship in a plugin — /giovanni:init writes it into the project's .claude/settings.json. Two layers on purpose; neither is load-bearing alone (docs/governance.md § External write gate). The autonomy layer (inbox, confirm paths, autocommit, learning loop) is opt-in per project through docs/governance.config.yaml and is a no-op until configured (docs/autonomy.md).",
   "hooks": {
     "SessionStart": [
       {
@@ -17,6 +17,13 @@
             "args": [],
             "timeout": 10,
             "statusMessage": "Giovanni: checking memory-audit cadence..."
+          },
+          {
+            "type": "command",
+            "command": "${CLAUDE_PLUGIN_ROOT}/hooks/session-start-inbox.sh",
+            "args": [],
+            "timeout": 60,
+            "statusMessage": "Giovanni: refreshing the inbox..."
           }
         ]
       }
@@ -39,6 +46,17 @@
           {
             "type": "command",
             "command": "${CLAUDE_PLUGIN_ROOT}/hooks/block-external-writes.sh",
+            "args": [],
+            "timeout": 5
+          }
+        ]
+      },
+      {
+        "matcher": "Edit|Write|MultiEdit|NotebookEdit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "${CLAUDE_PLUGIN_ROOT}/hooks/pre-edit-confirm.sh",
             "args": [],
             "timeout": 5
           }
@@ -84,6 +102,30 @@
             "command": "${CLAUDE_PLUGIN_ROOT}/hooks/stop-ephemeral-commit-guard.sh",
             "args": [],
             "timeout": 10
+          },
+          {
+            "type": "command",
+            "command": "${CLAUDE_PLUGIN_ROOT}/hooks/stop-session-record.sh",
+            "args": [],
+            "timeout": 10
+          },
+          {
+            "type": "command",
+            "command": "${CLAUDE_PLUGIN_ROOT}/hooks/stop-autocommit.sh",
+            "args": [],
+            "timeout": 10
+          }
+        ]
+      }
+    ],
+    "UserPromptSubmit": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "${CLAUDE_PLUGIN_ROOT}/hooks/prompt-correction.sh",
+            "args": [],
+            "timeout": 5
           }
         ]
       }

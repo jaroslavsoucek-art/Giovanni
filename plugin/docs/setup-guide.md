@@ -44,6 +44,16 @@ claude plugin install giovanni@giovanni --scope project
 
 **Recommendation:** make the state repo private. Stakeholder profiles contain operational predictions and pattern observations about real people. See [`docs/stakeholder-profiles.md`](stakeholder-profiles.md) § Privacy considerations.
 
+### Leaner instances
+
+Not every domain needs every layer. A principal whose work comes as unconnected matters (cases, engagements, files) rather than as a web of recurring stakeholders can switch layers off at scaffold time:
+
+```bash
+bash <plugin>/scripts/init-fork.sh --without predictive,stakeholders,digest
+```
+
+and, if nobody will maintain the system by hand, opt into the autonomy layer (inbox, autocommit, headless schedule, learning loop) in `docs/governance.config.yaml`. Both are explained in [`docs/autonomy.md`](autonomy.md); the steps below that belong to a switched-off layer can be skipped.
+
 ## Step 2 — Fill the constitution
 
 Open `knowledge/constitution.md` (init copied it from the plugin's `skeleton/knowledge/constitution.template.md`; rename to `<domain>_constitution.md` if you like and set `constitution_file` in `docs/governance.config.yaml`) and replace placeholders with your domain content:

@@ -181,3 +181,75 @@ readonly_channels: []
 # Main branch name. Default: main.
 # Override via env: GIOVANNI_MAIN_BRANCH
 # main_branch: main
+
+# ----------------------------------------------------------------------
+# Layers — switch off what your domain does not need
+# ----------------------------------------------------------------------
+
+# A layer set to false is off: init does not scaffold it, its lint rules
+# no-op (they declare LAYER = "<name>"), its skills refuse to run.
+# Set at scaffold time with `init-fork.sh --without predictive,stakeholders,digest`
+# or edit here. See docs/autonomy.md § Layers.
+#
+#   predictive    branch-out, shadow hypotheses, calibration
+#   stakeholders  per-person sentiment-trajectory profiles
+#   digest        the daily multi-source digest (digest_sources/state, source-puller)
+layers:
+  predictive: true
+  stakeholders: true
+  digest: true
+
+# Project-owned lint rules, run next to the plugin's (same contract:
+# CHECK_ID + run(ctx), optional LAYER). Default: scripts/lint_rules
+# project_lint_rules_dir: scripts/lint_rules
+
+# ----------------------------------------------------------------------
+# Autonomy layer — opt-in; every key below is off until you set it
+# ----------------------------------------------------------------------
+# docs/autonomy.md is the mechanism. The short version: one inbox every loop
+# writes to and the principal answers with one word per item; an explicit
+# split between paths the assistant may commit on its own and paths that are
+# canon; headless runs on a clock; a learning loop that proposes skills from
+# repetition and rules from corrections.
+
+# Inbox — shown at session start, ranked, one-word answers.
+# inbox:
+#   file: inbox.yaml                 # under memory_dir
+#   title: "Today"
+#   answer_hint: "Answer per item: `<n> yes` · `<n> no` · `<n> later 7d`."
+#   overdue_label: "OVERDUE"
+#   max_open: 10                     # more than this = the loops produce noise; that is a finding
+#   default_expiry_days: 14          # undated items expire; dated items (due:) never do
+#   lint_to_inbox: true              # lint findings ≥ lint_min_severity become items, and close themselves
+#   lint_min_severity: medium
+#   refreshers:                      # project commands run at session start; they write items themselves
+#     - python3 scripts/<your-refresher>.py
+
+# Autonomy profile — what the Stop hook commits on its own, what stays canon.
+# autonomy:
+#   auto_commit_paths: ["memory/*"]  # working state: committed at the end of every turn
+#   confirm_paths: ["knowledge/*", "CLAUDE.md", ".claude/*", "docs/governance.config.yaml"]
+#   auto_push: false                 # true only for a private backup remote
+#   commit_prefix: "chore(auto):"
+
+# Learning loop — skills from repetition, rules from corrections.
+# learning:
+#   enabled: true
+#   unit_dirs: []                    # dirs whose next path segment is an instance (masked as *)
+#   min_sessions: 3
+#   window_days: 90
+#   max_candidates: 3
+#   retire_after_days: 60
+#   correction_markers: ['^\s*no[,.!]', '\bnext time\b', '\bfrom now on\b', '\balways\b', '\bnever\b']
+
+# Headless runs on a clock — installed with /giovanni:schedule install.
+# schedule:
+#   - name: morning
+#     prompt: "/giovanni:inbox"
+#     at: "07:30"
+#     weekdays: [1, 2, 3, 4, 5]
+#   - name: weekly-learn
+#     prompt: "/giovanni:learn"
+#     at: "07:45"
+#     weekdays: [1]
+

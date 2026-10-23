@@ -80,6 +80,12 @@ jobs:
       - name: Lint-rule self-test (pass/fail fixtures)
         run: bash plugin/scripts/run-lint-fixtures.sh
 
+      - name: Autonomy layer self-test (inbox, confirm gate, autocommit, learning, schedule, layers)
+        run: |
+          git config --global user.email ci@example.invalid
+          git config --global user.name ci
+          python3 plugin/scripts/selftest-autonomy.py
+
       - name: Pseudo-fork lint (examples/lattice-finance)
         run: python3 plugin/scripts/lint.py --repo-root examples/lattice-finance
 
@@ -138,3 +144,25 @@ jobs:
           SECOND_RUN=$(bash plugin/scripts/init-fork.sh --yes --skip-regen)
           grep -q "exists — kept" <<<"${SECOND_RUN}" || { echo "::error::init-fork is not idempotent"; exit 1; }
           echo "init-fork smoke test passed."
+
+      - name: init-fork.sh --without smoke test (layers switched off are not scaffolded)
+        run: |
+          set -euo pipefail
+          CLONE=/tmp/giovanni-fork-minimal
+          rm -rf "$CLONE"
+          git clone --quiet "$GITHUB_WORKSPACE" "$CLONE"
+          cd "$CLONE"
+          rm -rf examples
+          bash plugin/scripts/init-fork.sh --yes --without predictive,stakeholders,digest
+          for d in memory/shadow memory/branch-out memory/calibration memory/stakeholders; do
+            test ! -e "$d" || { echo "::error::--without left $d"; exit 1; }
+          done
+          for f in memory/digest_sources.md memory/digest_state.md memory/triage-heuristic.yaml; do
+            test ! -e "$f" || { echo "::error::--without left $f"; exit 1; }
+          done
+          ls memory/templates | grep -qiE 'shadow|branch-out|stakeholder|calibration' \
+            && { echo "::error::--without copied a template of a switched-off layer"; exit 1; } || true
+          python3 plugin/scripts/gconfig.py layer predictive && { echo "::error::layers.predictive not false"; exit 1; } || true
+          grep -qxF "memory/.telemetry/" .gitignore || { echo "::error::telemetry not gitignored"; exit 1; }
+          bash plugin/scripts/lint.sh
+          echo "minimal init smoke test passed."

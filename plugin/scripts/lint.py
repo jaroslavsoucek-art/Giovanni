@@ -106,6 +106,22 @@ DEFAULT_CONFIG: dict[str, Any] = {
     # Fork-time: populate with prior-domain proper nouns to catch carry-over
     # during template filling. Default empty = no check.
     "domain_leak_denylist": [],
+    # Optional layers. A layer set to false is switched off: its lint rules
+    # no-op (rules declare LAYER = "<name>"), init does not scaffold it, its
+    # skills refuse to run. Absent = on. Known layers: predictive, stakeholders,
+    # digest. See docs/autonomy.md § Layers.
+    "layers": {},
+    # Project-owned lint rules, discovered next to the plugin's own. Same
+    # contract as scripts/lint_rules/*.py in the plugin (CHECK_ID + run(ctx)).
+    # A project rule whose CHECK_ID collides with a plugin rule is skipped.
+    "project_lint_rules_dir": "scripts/lint_rules",
+    # Autonomy profile, inbox and learning loop — read by scripts/inbox.py,
+    # hooks/lib/autonomy.py, hooks/lib/learning.py. Empty = off. Schema in
+    # templates/governance.config.template.yaml; mechanism in docs/autonomy.md.
+    "inbox": {},
+    "autonomy": {},
+    "learning": {},
+    "schedule": [],
 }
 
 ENV_PREFIX = "GIOVANNI_"
@@ -131,6 +147,8 @@ def load_config(repo: Path) -> dict[str, Any]:
             continue
         # Coerce based on default type
         default = DEFAULT_CONFIG[key]
+        if isinstance(default, dict):
+            continue  # structured blocks are file-only
         try:
             if isinstance(default, bool):
                 cfg[key] = raw.lower() in {"1", "true", "yes", "on"}
@@ -185,6 +203,11 @@ class LintContext:
     def deliverables_dir(self) -> Path:
         return self.repo / self.config["deliverables_dir"]
 
+    def layer_enabled(self, name: str) -> bool:
+        """A layer is on unless `layers.<name>` is explicitly false."""
+        layers = self.config.get("layers") or {}
+        return not (isinstance(layers, dict) and layers.get(name) is False)
+
     def today(self):
         """Reference date for time-based checks — `snapshot_date` if set, else today.
 
@@ -219,20 +242,14 @@ class LintContext:
 RULES_DIR_NAME = "lint_rules"
 
 
-def discover_rules(scripts_dir: Path) -> list[tuple[str, Callable[[LintContext], None]]]:
-    """Discover rule plugins in scripts/lint_rules/*.py.
-
-    Returns a list of (check_id, run_fn) pairs in filename-sort order.
-    Rules without CHECK_ID or run() are skipped with a warning.
-    """
-    rules: list[tuple[str, Callable[[LintContext], None]]] = []
-    rules_dir = scripts_dir / RULES_DIR_NAME
+def _load_rules_from(rules_dir: Path, namespace: str) -> list[tuple[str, Callable[[LintContext], None], str | None]]:
+    rules: list[tuple[str, Callable[[LintContext], None], str | None]] = []
     if not rules_dir.is_dir():
         return rules
     for path in sorted(rules_dir.glob("*.py")):
         if path.name.startswith("_"):
             continue
-        spec = importlib.util.spec_from_file_location(f"lint_rules.{path.stem}", path)
+        spec = importlib.util.spec_from_file_location(f"{namespace}.{path.stem}", path)
         if spec is None or spec.loader is None:
             print(f"WARNING: cannot load rule {path.name}", file=sys.stderr)
             continue
@@ -247,7 +264,27 @@ def discover_rules(scripts_dir: Path) -> list[tuple[str, Callable[[LintContext],
         if not check_id or not callable(run_fn):
             print(f"WARNING: rule {path.name} missing CHECK_ID or run()", file=sys.stderr)
             continue
-        rules.append((check_id, run_fn))
+        rules.append((check_id, run_fn, getattr(mod, "LAYER", None)))
+    return rules
+
+
+def discover_rules(scripts_dir: Path, project_rules_dir: Path | None = None
+                   ) -> list[tuple[str, Callable[[LintContext], None], str | None]]:
+    """Discover rule plugins: the plugin's scripts/lint_rules/*.py, then the
+    project's own (`project_lint_rules_dir`). Returns (check_id, run_fn, layer)
+    triples, plugin rules first, each set in filename-sort order. A rule's
+    optional module-level LAYER names the layer it governs; the runner skips it
+    when that layer is switched off in the project config.
+    """
+    rules = _load_rules_from(scripts_dir / RULES_DIR_NAME, "lint_rules")
+    if project_rules_dir is not None and project_rules_dir.resolve() != (scripts_dir / RULES_DIR_NAME).resolve():
+        seen = {cid for cid, _fn, _layer in rules}
+        for cid, fn, layer in _load_rules_from(project_rules_dir, "project_lint_rules"):
+            if cid in seen:
+                print(f"WARNING: project rule {cid} collides with a plugin rule — skipped", file=sys.stderr)
+                continue
+            rules.append((cid, fn, layer))
+            seen.add(cid)
     return rules
 
 
@@ -305,24 +342,27 @@ def main(argv: list[str]) -> int:
         return 2
 
     scripts_dir = Path(__file__).parent
-    rules = discover_rules(scripts_dir)
+    cfg = load_config(repo)
+    project_rules = repo / str(cfg.get("project_lint_rules_dir") or "scripts/lint_rules")
+    rules = discover_rules(scripts_dir, project_rules)
 
     if args.list:
         if not rules:
             print("  (no rules found in scripts/lint_rules/)")
-        for check_id, _fn in rules:
-            print(f"  {check_id}")
+        for check_id, _fn, layer in rules:
+            print(f"  {check_id}" + (f"  [layer: {layer}]" if layer else ""))
         return 0
 
-    if args.check and args.check not in {cid for cid, _fn in rules}:
+    if args.check and args.check not in {cid for cid, _fn, _l in rules}:
         print(f"ERROR: unknown check id: {args.check} (see --list)", file=sys.stderr)
         return 2
 
-    cfg = load_config(repo)
     ctx = LintContext(repo=repo, config=cfg, plugin=scripts_dir.resolve().parent)
 
-    for check_id, run_fn in rules:
+    for check_id, run_fn, layer in rules:
         if args.check and args.check != check_id:
+            continue
+        if layer and not ctx.layer_enabled(layer):
             continue
         try:
             run_fn(ctx)

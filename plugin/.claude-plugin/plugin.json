@@ -1,8 +1,8 @@
 {
   "name": "giovanni",
   "displayName": "Giovanni",
-  "version": "0.1.1",
-  "description": "AI Chief of Staff runtime: 4-layer memory with hard limits, daily digest with drift detection, stakeholder trajectories, invisible shadow hypotheses, adversarial-default review, and a governance lint that fails the build on contradictions. State lives in your repo; the mechanism lives here.",
+  "version": "0.2.0",
+  "description": "AI Chief of Staff runtime: 4-layer memory with hard limits, daily digest with drift detection, stakeholder trajectories, invisible shadow hypotheses, adversarial-default review, and a governance lint that fails the build on contradictions. State lives in your repo; the mechanism lives here. Optional autonomy layer: switchable layers, one inbox, per-path autocommit, headless schedule, a learning loop that proposes skills and rules.",
   "author": {
     "name": "Jaroslav Souček",
     "url": "https://github.com/jaroslavsoucek-art"
@@ -21,6 +21,9 @@
     "governance",
     "stakeholders",
     "prediction",
-    "adversarial-review"
+    "adversarial-review",
+    "autonomy",
+    "inbox",
+    "learning-loop"
   ]
 }

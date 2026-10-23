@@ -27,6 +27,7 @@ from __future__ import annotations
 import re
 
 CHECK_ID = "branch-out-no-recommendation"
+LAYER = "predictive"
 
 # Patterns scanned in branch-out artifact prose
 _PROSE_PATTERNS = [

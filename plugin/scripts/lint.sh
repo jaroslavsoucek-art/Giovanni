@@ -237,7 +237,7 @@ if [ "${LIST_MODE}" = 1 ]; then
     echo ""
     echo "Python checks (scripts/lint.py + scripts/lint_rules/):"
     if command -v python3 >/dev/null 2>&1 && [ -f "${SCRIPT_DIR}/lint.py" ]; then
-        python3 "${SCRIPT_DIR}/lint.py" --list
+        python3 "${SCRIPT_DIR}/lint.py" --list --repo-root "${REPO_ROOT}"
     else
         echo "  (lint.py not available)"
     fi
@@ -255,7 +255,7 @@ if [ -n "${ONLY_CHECK}" ]; then
         [ "${entry%%|*}" = "${ONLY_CHECK}" ] && { ONLY_IS_BASH=1; break; }
     done
     if [ "${ONLY_IS_BASH}" = 0 ] \
-        && ! python3 "${SCRIPT_DIR}/lint.py" --list 2>/dev/null | awk '{print $1}' | grep -qxF "${ONLY_CHECK}"; then
+        && ! python3 "${SCRIPT_DIR}/lint.py" --list --repo-root "${REPO_ROOT}" 2>/dev/null | awk '{print $1}' | grep -qxF "${ONLY_CHECK}"; then
         echo "Unknown check id (or lint.py unavailable): ${ONLY_CHECK} — see scripts/lint.sh --list" >&2
         exit 2
     fi

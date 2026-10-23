@@ -1,6 +1,6 @@
 # Slash commands — design patterns + conventions
 
-Giovanni's invokable surface is nine slash commands. Each is a **thin shell** that wires pre-flight checks + argument parsing + routing to an agent (or to a workflow procedure). This doc is the **why** companion to [`skills/README.md`](../skills/README.md) (the registry).
+Giovanni's invokable surface is a set of slash commands (the registry in `skills/README.md` is the count of record). Each is a **thin shell** that wires pre-flight checks + argument parsing + routing to an agent (or to a workflow procedure). This doc is the **why** companion to [`skills/README.md`](../skills/README.md) (the registry).
 
 Two audiences:
 
@@ -50,7 +50,7 @@ The seven non-workflow commands route to a single agent each. `/giovanni:digest`
 
 ## 2. Argument syntax conventions
 
-Consistency across the nine commands keeps the muscle memory cheap.
+Consistency across the commands keeps the muscle memory cheap.
 
 ### The three forms
 
@@ -162,7 +162,7 @@ If pre-flight is too restrictive, the principal sees a clear "fix this precondit
 
 ## 4. Agent routing pattern
 
-Seven of the nine commands route to a single agent via `Task`. The exceptions route to workflow procedures: `/giovanni:digest` (workflow with parallel agent fan-out) and `/giovanni:consistency-review` (interactive main-thread triage, no agent spawn).
+Most commands route to a single agent via `Task`; the autonomy commands (`/giovanni:inbox`, `/giovanni:learn`, `/giovanni:schedule`) and `/giovanni:init` route to scripts. The other exceptions route to workflow procedures: `/giovanni:digest` (workflow with parallel agent fan-out) and `/giovanni:consistency-review` (interactive main-thread triage, no agent spawn).
 
 ### Single-agent routing (canonical)
 
