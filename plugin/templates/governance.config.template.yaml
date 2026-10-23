@@ -241,6 +241,7 @@ layers:
 #   max_candidates: 3
 #   retire_after_days: 60
 #   correction_markers: ['^\s*no[,.!]', '\bnext time\b', '\bfrom now on\b', '\balways\b', '\bnever\b']
+#   history: {...}                   # /giovanni:learn-history — schema in docs/history-bootstrap.md
 
 # Headless runs on a clock — installed with /giovanni:schedule install.
 # schedule:

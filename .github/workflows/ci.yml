@@ -86,6 +86,9 @@ jobs:
           git config --global user.name ci
           python3 plugin/scripts/selftest-autonomy.py
 
+      - name: Chat-history pipeline self-test (extract, triage, convert, PII gate)
+        run: python3 plugin/scripts/history/selftest.py
+
       - name: Pseudo-fork lint (examples/lattice-finance)
         run: python3 plugin/scripts/lint.py --repo-root examples/lattice-finance
 

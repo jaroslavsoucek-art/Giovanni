@@ -277,10 +277,11 @@ if [ "${STAKEHOLDERS}" -eq 1 ] && [ -f "${SKELETON}/memory/templates/stakeholder
     echo "  + memory/stakeholders/README.md"
 fi
 
-# Machine-local state of the autonomy layer (telemetry, run logs, locks) never goes
-# into git: it is per machine, it is noisy, and telemetry is nobody's business.
+# Machine-local state of the autonomy layer (telemetry, run logs, locks) and the
+# raw chat-export workspace of /giovanni:learn-history (.history/) never go into
+# git: per machine, noisy, and full of personal data.
 touch .gitignore
-for pat in "memory/.telemetry/" "memory/.runs/" "memory/.*.lock"; do
+for pat in "memory/.telemetry/" "memory/.runs/" "memory/.*.lock" ".history/"; do
     grep -qxF "${pat}" .gitignore 2>/dev/null || { printf '%s\n' "${pat}" >> .gitignore; echo "  + .gitignore: ${pat}"; }
 done
 

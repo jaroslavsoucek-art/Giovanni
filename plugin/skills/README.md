@@ -24,6 +24,7 @@ Design patterns + argument syntax conventions: see [`docs/slash-commands.md`](..
 | [`/giovanni:schedule`](schedule/SKILL.md) | Install / inspect / remove headless runs from `schedule:` (launchd, or printed crontab) | `install [--dry-run] \| uninstall \| status \| run <name>` | `scripts/schedule.py` | once per machine |
 | [`/giovanni:review`](review/SKILL.md) | Adversarial review of a draft — SHIP / REWRITE / KILL verdict + strongest counter-case | `<draft-path> [--position "..."] [--audience internal\|external\|mixed]` | `giovanni:adversarial-reviewer` via `review/procedure.md` | ad hoc (high-stakes drafts only) |
 | [`/giovanni:redline`](redline/SKILL.md) | Adversarial review alias emphasizing verbatim-strike list | `<draft-path> [--position "..."] [--audience internal\|external\|mixed]` | `giovanni:adversarial-reviewer` (emphasis: redline) | ad hoc |
+| [`/giovanni:learn-history`](learn-history/SKILL.md) | Bootstrap skills from the principal's chat-app history: extract the data export into a gitignored workspace, triage, one analyst per recurring job, review, then convert approved specs behind a PII gate | `<export> \| review \| apply [--only ids] \| package` | `learn-history/procedure.md` + N × `giovanni:history-analyst` (parallel) + `scripts/history/*.py` | once at setup; monthly re-export |
 
 ## Conventions
 

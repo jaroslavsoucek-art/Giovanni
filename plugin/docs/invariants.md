@@ -59,6 +59,7 @@ Unenforced invariants get an id in the same shape, so promoting one to code is a
 | `silence-counter-verified` | a "N days of silence" claim in L1 / an active shard carries a fresh `[verified YYYY-MM-DD]` stamp, or is written as a past fact without a counter | high / medium | lint.py |
 | `rules-register-pointers` | every `docs/invariants.md#<id>` pointer in `CLAUDE.md` / `templates/CLAUDE.template.md` resolves to a Behavioral rules entry | medium | lint.py |
 | `inbox-health` | the inbox file is valid (required fields, dates, no closed items, unique keys) and holds ≤ `inbox.max_open` open items | medium / high | lint.py |
+| `pii-scan` | nothing learned from chat history carries an identifier; the history workspace is never tracked | critical / high | lint.py |
 
 ## Enforced by hook
 
