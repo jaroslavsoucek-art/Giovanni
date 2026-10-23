@@ -47,6 +47,7 @@ State: `memory/inbox.yaml` — open and snoozed items only. Closed items leave t
 | `on_yes` | what the agent does when the principal says yes. A command, a skill, or one instruction. It never widens permissions; an external write still hits the write gate. |
 | `due` | a date the item is about. **Dated items never expire**: past `due` they escalate to high priority with an overdue label, and only their producer closes them. A deadline that silently ages out of a to-do list is the failure this list exists to prevent. |
 | `expires` | undated items leave after `default_expiry_days` unanswered. An ask nobody answered in two weeks was not worth asking. |
+| *(no)* | a "no" to an undated item mutes its key for `dismiss_days` (default 30). Otherwise a producer that still sees the cause asks again at the next session start, and "no" means nothing. Dated items cannot be dismissed away: the answer to a deadline is what happened to it, recorded by its producer. |
 
 **Producers** at session start (`inbox.py refresh`): the project's `refreshers` (commands that call `inbox.py add` / `sync-source` themselves), `lint_to_inbox` (findings ≥ `lint_min_severity`; they close themselves when the lint goes clean), the scheduler check, expiry. Producers elsewhere: the autocommit hook, scheduled runs, the learning loop.
 

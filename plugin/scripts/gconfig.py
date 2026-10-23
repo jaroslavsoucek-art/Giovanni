@@ -31,6 +31,7 @@ INBOX_DEFAULTS = {
     "overdue_label": "OVERDUE",
     "max_open": 10,
     "default_expiry_days": 14,
+    "dismiss_days": 30,
     "lint_to_inbox": False,
     "lint_min_severity": "medium",
     "refreshers": [],

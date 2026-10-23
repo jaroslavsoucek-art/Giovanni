@@ -220,6 +220,7 @@ layers:
 #   overdue_label: "OVERDUE"
 #   max_open: 10                     # more than this = the loops produce noise; that is a finding
 #   default_expiry_days: 14          # undated items expire; dated items (due:) never do
+#   dismiss_days: 30                 # "no" to an undated item mutes its producer for this long
 #   lint_to_inbox: true              # lint findings ≥ lint_min_severity become items, and close themselves
 #   lint_min_severity: medium
 #   refreshers:                      # project commands run at session start; they write items themselves

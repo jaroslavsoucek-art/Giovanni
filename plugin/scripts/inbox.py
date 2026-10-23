@@ -18,6 +18,12 @@ created, expires, status (open|snoozed); optional ref, on_yes, due, snooze_until
 `on_yes` is the action the agent runs when the principal answers yes — a command,
 a skill invocation, or a one-line instruction.
 
+A "no" (`resolve --status dismissed`) on an undated item suppresses its key for
+`inbox.dismiss_days` (default 30): without that, a producer that still sees the
+cause would put the same ask back at the next session start, and "no" would mean
+nothing. A dated item cannot be dismissed away — only its producer closes it
+(a deadline is closed by recording what happened to it, not by ignoring it).
+
 Usage:
   inbox.py [--repo R] add --kind K --text T [--key K] [--source S] [--priority P]
                           [--ref R] [--on-yes A] [--due YYYY-MM-DD] [--expires-days N]
@@ -77,6 +83,7 @@ class Inbox:
         self.path = self.memory / self.icfg["file"]
         self.lock_path = self.memory / ".inbox.lock"
         self.items: list[dict] = []
+        self.suppressed: dict[str, str] = {}
 
     def active(self) -> bool:
         """The inbox exists for a project that configured it or already has the file.
@@ -100,18 +107,22 @@ class Inbox:
 
     def load(self) -> None:
         if not self.path.is_file():
-            self.items = []
+            self.items, self.suppressed = [], {}
             return
         data = yaml.safe_load(self.path.read_text(encoding="utf-8")) or {}
         items = data.get("items") if isinstance(data, dict) else None
         self.items = [i for i in (items or []) if isinstance(i, dict)]
+        sup = data.get("suppressed") if isinstance(data, dict) else None
+        self.suppressed = {str(k): str(v) for k, v in (sup or {}).items()} if isinstance(sup, dict) else {}
 
     def save(self) -> None:
         header = ("# Generated and consumed by the Giovanni inbox (scripts/inbox.py).\n"
                   "# Open items only; closed ones are archived to memory/archive/inbox-YYYY-MM.md.\n"
                   "# Edit through the script or the agent, not by hand.\n")
-        body = yaml.safe_dump({"version": 1, "items": self.items}, allow_unicode=True,
-                              sort_keys=False, width=1000)
+        doc = {"version": 1, "items": self.items}
+        if self.suppressed:
+            doc["suppressed"] = dict(sorted(self.suppressed.items()))
+        body = yaml.safe_dump(doc, allow_unicode=True, sort_keys=False, width=1000)
         self.path.write_text(header + body, encoding="utf-8")
 
     def archive(self, item: dict, status: str, note: str = "") -> None:
@@ -138,6 +149,13 @@ class Inbox:
             priority: str = "normal", ref: str | None = None, on_yes: str | None = None,
             due: str | None = None, expires_days: int | None = None) -> dict:
         key = key or f"{source}:{hashlib.sha1(text.encode()).hexdigest()[:10]}"
+        until = self.suppressed.get(key)
+        if until and not due:
+            if until >= today().isoformat():
+                # The principal said no to this ask; its producer does not get to ask again
+                # until the suppression runs out. Dated items are never suppressed.
+                return {"id": None, "key": key, "suppressed_until": until}
+            self.suppressed.pop(key, None)
         existing = self.find(key)
         if existing is not None:
             # Same ask again: refresh what may have changed, keep its age and snooze.
@@ -167,6 +185,10 @@ class Inbox:
         if it is None:
             return False
         self.items.remove(it)
+        if status == "dismissed" and not it.get("due"):
+            days = int(self.icfg.get("dismiss_days", 30))
+            self.suppressed[it["key"]] = (today() + dt.timedelta(days=days)).isoformat()
+            note = (note + " · " if note else "") + f"suppressed {days} d"
         self.archive(it, status, note)
         return True
 
@@ -192,6 +214,7 @@ class Inbox:
 
     def expire(self) -> None:
         t = today()
+        self.suppressed = {k: v for k, v in self.suppressed.items() if v >= t.isoformat()}
         for it in list(self.items):
             if it.get("status") == "snoozed" and it.get("snooze_until") and \
                     dt.date.fromisoformat(it["snooze_until"]) <= t:
@@ -339,7 +362,7 @@ def main(argv: list[str]) -> int:
         with Inbox(repo).locked() as b:
             it = b.add(args.kind, args.text, key=args.key, source=args.source, priority=args.priority,
                        ref=args.ref, on_yes=args.on_yes, due=args.due, expires_days=args.expires_days)
-        print(it["id"])
+        print(it["id"] or f"suppressed until {it.get('suppressed_until')}")
         return 0
     if args.cmd == "list":
         b = Inbox(repo)
