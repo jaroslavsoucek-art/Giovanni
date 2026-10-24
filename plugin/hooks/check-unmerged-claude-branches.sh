@@ -18,6 +18,8 @@
 set +e
 # Run only under Claude Code: the helpers live at a literal path under the plugin root.
 [ -n "${CLAUDE_PLUGIN_ROOT:-}" ] || exit 0
+# Interpreter + UTF-8 for this platform (python3 on macOS/Linux; probed on Windows).
+. "${CLAUDE_PLUGIN_ROOT}/hooks/lib/env.sh"
 REPO_ROOT="${CLAUDE_PROJECT_DIR:-$(git rev-parse --show-toplevel 2>/dev/null || pwd)}"
 THRESHOLD="${GIOVANNI_BRANCH_WARN_THRESHOLD:-1}"
 MAIN_BRANCH="${GIOVANNI_MAIN_BRANCH:-main}"
@@ -40,5 +42,5 @@ while IFS= read -r ref; do
 done <<< "${branches}"
 [ "${unmerged_count}" -lt "${THRESHOLD}" ] && exit 0
 msg="⚠ UNMERGED CLAUDE SESSION BRANCHES (${unmerged_count}):\n${unmerged_lines}\nMerge: git merge origin/claude/<name>  |  Delete: git push origin --delete claude/<name>"
-python3 "${CLAUDE_PLUGIN_ROOT}/hooks/lib/hookutil.py" system "$(printf '%b' "${msg}")"
+"${GIOVANNI_PY}" "${CLAUDE_PLUGIN_ROOT}/hooks/lib/hookutil.py" system "$(printf '%b' "${msg}")"
 exit 0

@@ -26,8 +26,13 @@ Config:
       max_budget_usd: 2        # optional
       timeout_min: 30          # optional, default 30
 
+On Windows the Claude Desktop app's own scheduled tasks are the first choice
+(no extra login, no extra setup); `install` there prints Task Scheduler
+(`schtasks`) commands for the fallback and runs nothing.
+
 Usage:
-  schedule.py [--repo R] install [--dry-run]   macOS: write + load launchd agents; Linux: print crontab
+  schedule.py [--repo R] install [--dry-run]   macOS: write + load launchd agents; Linux: print crontab;
+                                               Windows: print schtasks commands
   schedule.py [--repo R] uninstall
   schedule.py [--repo R] status
   schedule.py [--repo R] plist NAME
@@ -140,11 +145,58 @@ def cron_line(repo: Path, job: dict) -> str:
             f"bash -lc 'python3 \"$(cat {_plugin_marker(repo)})/scripts/schedule.py\" --repo {repo} run {job['name']}'")
 
 
+WIN_DAYS = {1: "MON", 2: "TUE", 3: "WED", 4: "THU", 5: "FRI", 6: "SAT", 7: "SUN"}
+
+
+def _git_bash() -> str:
+    for cand in (os.environ.get("CLAUDE_CODE_GIT_BASH_PATH"),
+                 r"C:\Program Files\Git\bin\bash.exe",
+                 r"C:\Program Files (x86)\Git\bin\bash.exe"):
+        if cand and Path(cand).is_file():
+            return cand
+    return "bash.exe"
+
+
+def win_runner(repo: Path, cfg: dict, job: dict, write: bool = True) -> Path:
+    """A per-job runner script in memory/.runs/ (gitignored). Task Scheduler calls it through
+    Git Bash. A file keeps the schtasks /TR value short (its limit is 261 characters) and free
+    of nested quoting; the plugin path is still resolved from the marker at run time."""
+    runner = _runs(repo, cfg) / f"run-{job['name']}.sh"
+    if write:
+        marker = Path(_plugin_marker(repo)).as_posix()
+        runner.write_text(
+            "#!/usr/bin/env bash\n"
+            "# Written by schedule.py install (Windows fallback). Regenerate with /giovanni:schedule install.\n"
+            f"p=\"$(tr -d '\\r' < '{marker}')\"\n"
+            f"exec '{Path(sys.executable).as_posix()}' \"$p/scripts/schedule.py\" --repo '{repo.as_posix()}' run {job['name']}\n",
+            encoding="utf-8", newline="\n")
+    return runner
+
+
+def schtasks_line(repo: Path, job: dict, runner: Path) -> str:
+    if job.get("monthday"):
+        when = f"/SC MONTHLY /D {int(job['monthday'])}"
+    elif job.get("weekdays"):
+        when = "/SC WEEKLY /D " + ",".join(WIN_DAYS[int(w)] for w in job["weekdays"] if int(w) in WIN_DAYS)
+    else:
+        when = "/SC DAILY"
+    task = f"Giovanni\\{re.sub(r'[^A-Za-z0-9-]+', '-', repo.name)}-{job['name']}"
+    return (f'schtasks /Create /F /TN "{task}" {when} /ST {job["hour"]:02d}:{job["minute"]:02d} '
+            f'/TR "\\"{_git_bash()}\\" \\"{runner}\\""')
+
+
 def install(repo: Path, cfg: dict, dry: bool) -> int:
     jobs = _jobs(cfg)
     if not jobs:
         print("no valid jobs under `schedule:` in docs/governance.config.yaml")
         return 1
+    if platform.system() == "Windows":
+        print("REM First choice on Windows: the Claude Desktop app's scheduled tasks (no extra login).")
+        print("REM Fallback — run these in cmd.exe; this script does not touch Task Scheduler itself.")
+        print("REM The CLI must be logged in (`claude`, then the browser) for these runs to work.")
+        for j in jobs:
+            print(schtasks_line(repo, j, win_runner(repo, cfg, j, write=not dry)))
+        return 0
     if platform.system() != "Darwin":
         print("# Add these lines with `crontab -e` (this script does not edit your crontab):")
         for j in jobs:
@@ -180,6 +232,9 @@ def uninstall(repo: Path, cfg: dict) -> int:
     for j in _jobs(cfg):
         label = _label(repo, j["name"])
         dst = agents / f"{label}.plist"
+        if platform.system() == "Windows":
+            print(f'schtasks /Delete /F /TN "Giovanni\\{re.sub(r"[^A-Za-z0-9-]+", "-", repo.name)}-{j["name"]}"')
+            continue
         if platform.system() == "Darwin":
             subprocess.run(["launchctl", "bootout", f"gui/{os.getuid()}", str(dst)], capture_output=True)
             dst.unlink(missing_ok=True)

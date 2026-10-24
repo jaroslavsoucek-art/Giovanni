@@ -23,7 +23,7 @@ Retention is yours to decide: the data lives in your git history until you remov
 
 ## What leaves your machine
 
-Nothing goes to the plugin's author. Data leaves your machine only through channels you already use: Claude itself (your conversation, under Anthropic's terms for your plan), the MCP connectors you configured, and git pushes you make. The plugin's hooks make no network calls, with one opt-in exception: with `autonomy.auto_push: true` the Stop hook pushes automatic commits to the git remote **you** configured. `/giovanni:schedule install` writes launchd agents into `~/Library/LaunchAgents/` that run Claude Code headless on the schedule you set; it does nothing until you run it. The external write gate (`hooks/block-external-writes.sh`) turns every write-type call to an external connector into an explicit confirmation.
+Nothing goes to the plugin's author. Data leaves your machine only through channels you already use: Claude itself (your conversation, under Anthropic's terms for your plan), the MCP connectors you configured, and git pushes you make. The plugin's hooks make no network calls, with one opt-in exception: with `autonomy.auto_push: true` the Stop hook pushes automatic commits to the git remote **you** configured. `/giovanni:schedule install` writes launchd agents into `~/Library/LaunchAgents/` on macOS (on Linux and Windows it only prints crontab or Task Scheduler commands) that run Claude Code headless on the schedule you set; it does nothing until you run it. The external write gate (`hooks/block-external-writes.sh`) turns every write-type call to an external connector into an explicit confirmation.
 
 ## Contact
 

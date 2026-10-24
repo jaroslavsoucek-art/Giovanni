@@ -26,6 +26,8 @@
 set +e
 # Run only under Claude Code: the helpers live at a literal path under the plugin root.
 [ -n "${CLAUDE_PLUGIN_ROOT:-}" ] || exit 0
+# Interpreter + UTF-8 for this platform (python3 on macOS/Linux; probed on Windows).
+. "${CLAUDE_PLUGIN_ROOT}/hooks/lib/env.sh"
 REPO_ROOT="${CLAUDE_PROJECT_DIR:-$(git rev-parse --show-toplevel 2>/dev/null || pwd)}"
 MEMORY_DIR="${GIOVANNI_MEMORY_DIR:-memory}"
 L1_FILE="${GIOVANNI_L1_FILE:-CLAUDE_MEMORY.md}"
@@ -42,7 +44,7 @@ age_days() {
     local d=$1
     [ -z "$d" ] && return 1
     local epoch
-    epoch=$(python3 "${CLAUDE_PLUGIN_ROOT}/hooks/lib/hookutil.py" epoch date "$d" 2>/dev/null)
+    epoch=$("${GIOVANNI_PY}" "${CLAUDE_PLUGIN_ROOT}/hooks/lib/hookutil.py" epoch date "$d" 2>/dev/null)
     [ -z "$epoch" ] && return 1
     local now
     now=$(date -u +%s)
@@ -50,8 +52,8 @@ age_days() {
 }
 
 if [ -f "${STATE_FILE}" ]; then
-    LAST_AUDIT_FULL=$(python3 "${CLAUDE_PLUGIN_ROOT}/hooks/lib/hookutil.py" field "${STATE_FILE}" '^- last_audit_full:' first)
-    LAST_AUDIT_LIGHT=$(python3 "${CLAUDE_PLUGIN_ROOT}/hooks/lib/hookutil.py" field "${STATE_FILE}" '^- last_audit_light:' first)
+    LAST_AUDIT_FULL=$("${GIOVANNI_PY}" "${CLAUDE_PLUGIN_ROOT}/hooks/lib/hookutil.py" field "${STATE_FILE}" '^- last_audit_full:' first)
+    LAST_AUDIT_LIGHT=$("${GIOVANNI_PY}" "${CLAUDE_PLUGIN_ROOT}/hooks/lib/hookutil.py" field "${STATE_FILE}" '^- last_audit_light:' first)
     if AGE=$(age_days "${LAST_AUDIT_FULL}"); then
         if [ "${AGE}" -gt "${AUDIT_FULL_CADENCE}" ]; then
             WARNINGS="${WARNINGS}⚠ Full memory-audit overdue: ${AGE}d since ${LAST_AUDIT_FULL} (cadence ${AUDIT_FULL_CADENCE}d). Run the memory-audit workflow.\n"
@@ -73,7 +75,7 @@ if [ -f "${L1_PATH}" ]; then
     [ -z "${STRIKE_LINES}" ] && STRIKE_LINES=0
     if [ "${LINES}" -gt 0 ] && [ "${STRIKE_LINES}" -gt 0 ]; then
         # "<exceeds 0|1> <pct> <max pct>"
-        RATIO_OUT=$(python3 "${CLAUDE_PLUGIN_ROOT}/hooks/lib/hookutil.py" strike-ratio "${STRIKE_LINES}" "${LINES}" "${STRIKE_RATIO_MAX}")
+        RATIO_OUT=$("${GIOVANNI_PY}" "${CLAUDE_PLUGIN_ROOT}/hooks/lib/hookutil.py" strike-ratio "${STRIKE_LINES}" "${LINES}" "${STRIKE_RATIO_MAX}")
         set -- ${RATIO_OUT}
         if [ "${1:-0}" = "1" ]; then
             WARNINGS="${WARNINGS}⚠ Strikethrough creep in ${L1_FILE}: ${STRIKE_LINES}/${LINES} lines (${2}% > ${3}%). Persistent strikethrough = soft delete. Archive resolved items in same commit.\n"
@@ -84,9 +86,9 @@ fi
 CONSISTENCY_STATE="${REPO_ROOT}/${MEMORY_DIR}/audits/consistency/_state.md"
 CONSISTENCY_CADENCE=${GIOVANNI_CONSISTENCY_CADENCE_DAYS:-7}
 if [ -f "${CONSISTENCY_STATE}" ]; then
-    LAST_RUN_DATE=$(python3 "${CLAUDE_PLUGIN_ROOT}/hooks/lib/hookutil.py" field "${CONSISTENCY_STATE}" '^## Run ' last)
-    LAST_REVIEW_STATUS=$(python3 "${CLAUDE_PLUGIN_ROOT}/hooks/lib/hookutil.py" field "${CONSISTENCY_STATE}" '^- review_status:' last)
-    LAST_FINDINGS=$(python3 "${CLAUDE_PLUGIN_ROOT}/hooks/lib/hookutil.py" field "${CONSISTENCY_STATE}" '^- findings_total:' last)
+    LAST_RUN_DATE=$("${GIOVANNI_PY}" "${CLAUDE_PLUGIN_ROOT}/hooks/lib/hookutil.py" field "${CONSISTENCY_STATE}" '^## Run ' last)
+    LAST_REVIEW_STATUS=$("${GIOVANNI_PY}" "${CLAUDE_PLUGIN_ROOT}/hooks/lib/hookutil.py" field "${CONSISTENCY_STATE}" '^- review_status:' last)
+    LAST_FINDINGS=$("${GIOVANNI_PY}" "${CLAUDE_PLUGIN_ROOT}/hooks/lib/hookutil.py" field "${CONSISTENCY_STATE}" '^- findings_total:' last)
     if AGE=$(age_days "${LAST_RUN_DATE}"); then
         if [ "${AGE}" -gt "${CONSISTENCY_CADENCE}" ]; then
             WARNINGS="${WARNINGS}⚠ Consistency-check overdue: ${AGE}d since ${LAST_RUN_DATE} (cadence ${CONSISTENCY_CADENCE}d). Run /giovanni:consistency-check.\n"

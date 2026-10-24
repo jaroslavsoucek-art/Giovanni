@@ -34,9 +34,12 @@ def check(name: str, ok: bool, detail: str = "") -> None:
 
 
 def run(args, cwd=None, stdin=None, env=None):
-    e = {**os.environ, **(env or {})}
+    # UTF-8 both ways and in the child: on Windows the default is the ANSI code page, and the
+    # Czech test strings below would fail to encode before the child even starts.
+    e = {**os.environ, "PYTHONUTF8": "1", **(env or {})}
     e.pop("GIOVANNI_HEADLESS", None) if not (env or {}).get("GIOVANNI_HEADLESS") else None
-    return subprocess.run(args, cwd=cwd, input=stdin, capture_output=True, text=True, env=e)
+    return subprocess.run(args, cwd=cwd, input=stdin, capture_output=True, text=True, encoding="utf-8",
+                          errors="replace", env=e)
 
 
 def git_repo(root: Path) -> None:
@@ -261,10 +264,26 @@ def t_schedule(tmp: Path) -> None:
           r.returncode != 0 and any(i["key"] == "schedule:morning:failed" for i in inbox_items(repo)))
 
 
+def t_filelock(tmp: Path) -> None:
+    sys.path.insert(0, str(S))
+    import filelock  # noqa: E402
+    f = tmp / "x.lock"
+    a, b = open(f, "a+"), open(f, "a+")
+    try:
+        check("filelock: first holder gets it", filelock.lock(a, blocking=False))
+        check("filelock: second holder is refused", not filelock.lock(b, blocking=False))
+        filelock.unlock(a)
+        check("filelock: free again after unlock", filelock.lock(b, blocking=False))
+        filelock.unlock(b)
+    finally:
+        a.close()
+        b.close()
+
+
 def main() -> int:
     tmp = Path(tempfile.mkdtemp(prefix="giovanni-selftest-"))
     try:
-        for t in (t_layers, t_project_rules, t_inbox, t_autonomy, t_learning, t_schedule):
+        for t in (t_filelock, t_layers, t_project_rules, t_inbox, t_autonomy, t_learning, t_schedule):
             try:
                 t(tmp)
             except Exception as e:  # noqa: BLE001

@@ -27,13 +27,15 @@ Then fill the constitution, the stakeholder profiles and the digest sources. The
 
 ## What the plugin runs, reads and sends
 
-- **Hooks** are plain shell scripts that run locally. They read the current repository (git status, staged files, the memory state files) and call two Python helpers in `hooks/lib/` for JSON parsing, date arithmetic and the write-gate decision. They need `git` and `python3` (with PyYAML) on the path. They make no network calls except an opt-in `git push` of automatic commits (`autonomy.auto_push`), and send nothing to the author or any Giovanni service.
+- **Hooks** are plain shell scripts that run locally. They read the current repository (git status, staged files, the memory state files) and call two Python helpers in `hooks/lib/` for JSON parsing, date arithmetic and the write-gate decision. They need `git` and Python 3 with PyYAML (on Windows also Git for Windows, whose Git Bash runs them). They make no network calls except an opt-in `git push` of automatic commits (`autonomy.auto_push`), and send nothing to the author or any Giovanni service.
 - **Skills and agents** read and write files inside the repository the session is open in. `researcher` and `market-radar` use Claude Code's web search and fetch tools when you invoke them. `source-puller` reads whatever MCP connectors you configure yourself (chat, tasks, mail, calendar); the plugin ships none.
 - **The external write gate** (`hooks/block-external-writes.sh`) turns every write-type MCP tool call into an explicit per-action confirmation and denies writes to channels you demote to read-only. Reads pass. The permission half of the gate (`permissions.ask` / `permissions.deny`) is written into your project's `.claude/settings.json` by `/giovanni:init`; a plugin cannot ship it.
 - **Opt-in autonomy layer** ([`docs/autonomy.md`](docs/autonomy.md)): when configured, a Stop hook commits the paths you list (and pushes to your remote if you say so), and the learning loop keeps a local, gitignored record of each session's generalised tool steps — no prompt text. `/giovanni:schedule install` adds launchd agents only when you run it.
 - No credentials, no remote telemetry, no package installs, no `npx`/`uvx` launchers.
 
 ## Where it works
+
+macOS, Linux and native Windows. On Windows the hooks run through Git Bash, so [Git for Windows](https://git-scm.com/downloads/win) must be installed, plus Python 3 with PyYAML (`python3`, `python` or `py` all work: `hooks/lib/env.sh` finds the one that runs and forces UTF-8). `bash plugin/scripts/platform-smoke.sh` runs every hook the way Claude Code does and says what fails on the machine it runs on. CI runs it on Linux and Windows.
 
 Hooks, agents and the git gates need Claude Code. Installed from the Claude directory into claude.ai or Cowork, only the skills load; the memory discipline and the review verdict format still apply, the automatic gates do not.
 

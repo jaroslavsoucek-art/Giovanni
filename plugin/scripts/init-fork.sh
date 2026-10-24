@@ -64,6 +64,8 @@ done
 
 SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 PLUGIN_ROOT="$(dirname "${SCRIPT_DIR}")"
+# Interpreter + UTF-8 for this platform (python3 on macOS/Linux; probed on Windows).
+. "${PLUGIN_ROOT}/hooks/lib/env.sh"
 SKELETON="${PLUGIN_ROOT}/skeleton"
 TEMPLATES="${PLUGIN_ROOT}/templates"
 
@@ -183,10 +185,10 @@ copy_template "${TEMPLATES}/governance.config.template.yaml"                "doc
 # Layers. --without switches a layer off in the project config; the config then
 # decides what gets scaffolded, now and on every re-run.
 for layer in $(printf '%s' "${WITHOUT}" | tr ',' ' '); do
-    python3 "${SCRIPT_DIR}/gconfig.py" --repo "${PROJECT}" set-layer "${layer}" false
+    "${GIOVANNI_PY}" "${SCRIPT_DIR}/gconfig.py" --repo "${PROJECT}" set-layer "${layer}" false
     echo "  · layer ${layer}: off"
 done
-layer_on() { python3 "${SCRIPT_DIR}/gconfig.py" --repo "${PROJECT}" layer "$1" 2>/dev/null; }
+layer_on() { "${GIOVANNI_PY}" "${SCRIPT_DIR}/gconfig.py" --repo "${PROJECT}" layer "$1" 2>/dev/null; }
 PREDICTIVE=1; layer_on predictive || PREDICTIVE=0
 STAKEHOLDERS=1; layer_on stakeholders || STAKEHOLDERS=0
 DIGEST=1; layer_on digest || DIGEST=0

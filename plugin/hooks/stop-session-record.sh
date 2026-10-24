@@ -8,8 +8,14 @@
 
 set +e
 [ -n "${CLAUDE_PLUGIN_ROOT:-}" ] || exit 0
+# Interpreter + UTF-8 for this platform (python3 on macOS/Linux; probed on Windows).
+. "${CLAUDE_PLUGIN_ROOT}/hooks/lib/env.sh"
 REPO_ROOT="${CLAUDE_PROJECT_DIR:-$(git rev-parse --show-toplevel 2>/dev/null || pwd)}"
 export GIOVANNI_REPO_ROOT="${REPO_ROOT}"
 INPUT=$(cat)
-printf '%s' "${INPUT}" | nohup python3 "${CLAUDE_PLUGIN_ROOT}/hooks/lib/learning.py" record >/dev/null 2>&1 &
+if command -v nohup >/dev/null 2>&1; then
+    printf '%s' "${INPUT}" | nohup "${GIOVANNI_PY}" "${CLAUDE_PLUGIN_ROOT}/hooks/lib/learning.py" record >/dev/null 2>&1 &
+else
+    printf '%s' "${INPUT}" | "${GIOVANNI_PY}" "${CLAUDE_PLUGIN_ROOT}/hooks/lib/learning.py" record >/dev/null 2>&1 &
+fi
 exit 0

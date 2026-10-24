@@ -132,7 +132,7 @@ def load_config(repo: Path) -> dict[str, Any]:
     cfg_path = repo / "docs" / "governance.config.yaml"
     if cfg_path.is_file() and HAVE_YAML:
         try:
-            file_cfg = yaml.safe_load(cfg_path.read_text())
+            file_cfg = yaml.safe_load(cfg_path.read_text(encoding="utf-8"))
             if isinstance(file_cfg, dict):
                 cfg.update({k: v for k, v in file_cfg.items() if v is not None})
         except yaml.YAMLError as e:
@@ -299,8 +299,8 @@ def parse_frontmatter(path: Path) -> dict | None:
     if not HAVE_YAML:
         return None
     try:
-        text = path.read_text()
-    except OSError:
+        text = path.read_text(encoding="utf-8")
+    except (OSError, UnicodeDecodeError):
         return None
     m = _FM_RE.match(text)
     if not m:

@@ -11,6 +11,7 @@ This guide walks through the install-and-fill process. Expect 4-8 hours of focus
 - Claude Code installed (or Antigravity SDK — Giovanni is harness-agnostic in principle, but currently tested only on Claude Code)
 - Git + GitHub account (or equivalent private repo host)
 - PyYAML installed (`pip install pyyaml`) for governance lint
+- **On Windows:** [Git for Windows](https://git-scm.com/downloads/win) (the hooks run through its Git Bash) and Python 3 from the Microsoft Store or python.org. Check the machine with `bash <plugin>/scripts/platform-smoke.sh` after installing the plugin.
 - A domain you operate in with: ≥5 named stakeholders, ≥1 multi-month strategic horizon, ≥3 configurable signal sources (chat / email / calendar / project tracker / etc.)
 - ~4-8 hours initial setup time
 

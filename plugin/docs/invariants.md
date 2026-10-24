@@ -82,6 +82,8 @@ Hooks warn or gate in the moment. They are **additive** to lint, never a substit
 | `stop-session-record.sh` | the session's generalised shape (no prompt text) is recorded for the learning loop | records |
 | `prompt-correction.sh` | a correction is classified (skill-fix / rule / one-off) and logged before work continues | reminds |
 
+Every hook is shell form — `bash "${CLAUDE_PLUGIN_ROOT}/hooks/<file>.sh"` — and sources `hooks/lib/env.sh` first (interpreter + UTF-8 per platform). CI asserts the form and runs `scripts/platform-smoke.sh` on Linux and Windows.
+
 ## Enforced by cadence (a human runs it)
 
 | Id | Invariant | Cadence | Trigger |

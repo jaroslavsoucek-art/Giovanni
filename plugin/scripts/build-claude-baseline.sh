@@ -31,6 +31,8 @@ export LC_ALL=C
 REPO_ROOT="${GIOVANNI_REPO_ROOT:-${CLAUDE_PROJECT_DIR:-$(git rev-parse --show-toplevel 2>/dev/null || pwd)}}"
 REPO_ROOT="$(cd "$REPO_ROOT" && pwd)"
 PLUGIN_ROOT="$(dirname "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)")"
+# Interpreter + UTF-8 for this platform (python3 on macOS/Linux; probed on Windows).
+. "${PLUGIN_ROOT}/hooks/lib/env.sh"
 cd "$REPO_ROOT"
 
 OUT="memory/audits/claude-baseline.md"
@@ -83,7 +85,7 @@ gen() {
     if [ -f "$PLUGIN_ROOT/hooks/hooks.json" ]; then
         echo "## plugin hooks.json (event → registered commands)"
         echo
-        python3 - "$PLUGIN_ROOT/hooks/hooks.json" <<'PY'
+        "${GIOVANNI_PY}" - "$PLUGIN_ROOT/hooks/hooks.json" <<'PY'
 import json, sys
 try:
     h = json.load(open(sys.argv[1])).get("hooks", {})

@@ -8,7 +8,9 @@
 
 set +e
 [ -n "${CLAUDE_PLUGIN_ROOT:-}" ] || exit 0
+# Interpreter + UTF-8 for this platform (python3 on macOS/Linux; probed on Windows).
+. "${CLAUDE_PLUGIN_ROOT}/hooks/lib/env.sh"
 REPO_ROOT="${CLAUDE_PROJECT_DIR:-$(git rev-parse --show-toplevel 2>/dev/null || pwd)}"
 export GIOVANNI_REPO_ROOT="${REPO_ROOT}"
-python3 "${CLAUDE_PLUGIN_ROOT}/hooks/lib/learning.py" correction-check
+"${GIOVANNI_PY}" "${CLAUDE_PLUGIN_ROOT}/hooks/lib/learning.py" correction-check
 exit 0

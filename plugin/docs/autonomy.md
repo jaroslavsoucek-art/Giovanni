@@ -84,7 +84,7 @@ schedule:
     weekdays: [1, 2, 3, 4, 5]
 ```
 
-`/giovanni:schedule install` writes one launchd agent per job (macOS; elsewhere it prints crontab lines and edits nothing). The job resolves the plugin path at run time from `.git/giovanni-plugin-root` — the plugin cache path changes with every version, so a baked-in path would break on the first update.
+`/giovanni:schedule install` writes one launchd agent per job on macOS. On Linux it prints crontab lines and edits nothing. On Windows it writes a small runner per job into `memory/.runs/` and prints the `schtasks` commands that call it through Git Bash; the Claude Desktop app's own scheduled tasks are the better choice there, because they use the app's login. The job resolves the plugin path at run time from `.git/giovanni-plugin-root` — the plugin cache path changes with every version, so a baked-in path would break on the first update.
 
 A run is `claude -p "<prompt>" --permission-mode dontAsk --permission-prompts none` with `GIOVANNI_HEADLESS=1`: anything not pre-allowed in `.claude/settings.json` is denied rather than waited on. **That is the headless safety model**: the allow list is the whole capability set of an unattended run. Review it before installing.
 

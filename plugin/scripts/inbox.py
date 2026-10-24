@@ -40,7 +40,6 @@ from __future__ import annotations
 import argparse
 import contextlib
 import datetime as dt
-import fcntl
 import hashlib
 import json
 import os
@@ -52,6 +51,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 import gconfig  # noqa: E402
+import filelock  # noqa: E402
 
 try:
     import yaml  # type: ignore[import-not-found]
@@ -96,14 +96,14 @@ class Inbox:
     @contextlib.contextmanager
     def locked(self):
         self.memory.mkdir(parents=True, exist_ok=True)
-        with open(self.lock_path, "w") as lock:
-            fcntl.flock(lock, fcntl.LOCK_EX)
+        with open(self.lock_path, "a+") as lock:
+            filelock.lock(lock)
             try:
                 self.load()
                 yield self
                 self.save()
             finally:
-                fcntl.flock(lock, fcntl.LOCK_UN)
+                filelock.unlock(lock)
 
     def load(self) -> None:
         if not self.path.is_file():

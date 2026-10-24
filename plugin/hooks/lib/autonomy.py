@@ -118,13 +118,11 @@ def autocommit() -> int:
         return 0
     if _busy(repo):
         return 0
-    import fcntl
+    import filelock  # noqa: E402 — scripts/ is on sys.path (top of file)
     mem = repo / cfg_all["memory_dir"]
     mem.mkdir(parents=True, exist_ok=True)
-    lock = open(mem / ".autocommit.lock", "w")
-    try:
-        fcntl.flock(lock, fcntl.LOCK_EX | fcntl.LOCK_NB)
-    except OSError:
+    lock = open(mem / ".autocommit.lock", "a+")
+    if not filelock.lock(lock, blocking=False):
         return 0  # another turn's backup is running; it will pick these files up
     from inbox import Inbox  # noqa: E402
 
