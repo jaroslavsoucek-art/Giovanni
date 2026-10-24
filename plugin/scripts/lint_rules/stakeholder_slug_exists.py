@@ -28,6 +28,7 @@ Future extension hooks (not implemented here):
 """
 
 CHECK_ID = "stakeholder-slug-exists"
+LAYER = "stakeholders"
 
 REQUIRED_FIELDS_OK_TO_SKIP_RULE = []  # noop
 

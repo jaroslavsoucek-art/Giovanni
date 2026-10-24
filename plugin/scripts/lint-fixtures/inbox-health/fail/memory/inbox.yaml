@@ -1,0 +1,18 @@
+version: 1
+items:
+- id: i-20260520-ab12
+  kind: deadline
+  text: Verify the claim deadline
+  key: case:x:deadline:1
+  source: cases
+  created: '2026-05-20'
+  expires: 'next week'
+  status: open
+- id: i-20260520-ab13
+  kind: proposal
+  text: Same key again
+  key: case:x:deadline:1
+  source: cases
+  created: '2026-05-20'
+  expires: '2026-06-03'
+  status: done

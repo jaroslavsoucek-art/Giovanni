@@ -108,9 +108,25 @@ Every run has a trigger, a file holding the procedure, what it writes, where it 
 | `/giovanni:calibration-report` | skill `calibration-report` (agent `giovanni:prediction-runtime`) | `memory/calibration/monthly/` | File, no commit | explicit, monthly |
 | `/giovanni:review` · `[REVIEW]` · "before I send" | skill `review` → `review/procedure.md` (agent `giovanni:adversarial-reviewer`) | Chat: redline + disposition table | Chat. Disposition gate, max 3 rounds. REWRITE = does not ship | explicit |
 | `/giovanni:redline <file>` | skill `redline` → `review/procedure.md` | Chat: inline redline | Chat | explicit |
+| `/giovanni:learn-history <export> · review · apply · package` | skill `learn-history` → `learn-history/procedure.md` (agent `giovanni:history-analyst`) | gitignored history workspace; on `apply`: `.claude/skills/<slug>/`, house-style doc, `memory/learning/` | Stops at the review page; `apply` only on decided items; PII gate; no commit | explicit; once at setup, then per re-export |
+| `/giovanni:inbox [refresh]` (or the session-start hook, when the inbox is non-empty) | skill `inbox` → `scripts/inbox.py` | `memory/inbox.yaml`, `memory/archive/inbox-YYYY-MM.md`, whatever an approved `on_yes` writes | Shows the list; acts only on per-item yes / no / later | hook-shown; headless = refresh only |
+| `/giovanni:learn [accept <slug> \| reject <slug> \| retire <skill>]` | skill `learn` → `scripts/mine-workflows.py` | `memory/learning/`, inbox; on accept/retire `.claude/skills/`, this table | Weekly run proposes only. A skill is written only on the principal's yes | weekly (schedulable); accept/retire explicit |
+| `/giovanni:schedule install \| uninstall \| status \| run <name>` | skill `schedule` → `scripts/schedule.py` | `~/Library/LaunchAgents/*.plist` (macOS) or printed crontab lines; `memory/.runs/` | Installs only on the principal's explicit command | explicit |
 | "remember X" / "update memory" | `docs/governance.md` § Classification rule | L1 / shards / `decisions/` / `archive/` | Commit `docs(memory):` | explicit |
 | "update the constitution" | `knowledge/<constitution_file>` + `CHANGELOG.md` | Constitution + changelog entry | Waits for explicit OK before writing | explicit; post-edit hook only reminds |
 | Memory audit (14 d light / 35 d full) | `docs/governance.md` § Audit cadence | L1 edits + `memory/archive/` | Waits for OK, then `chore(memory):` | explicit; hook warns when overdue |
+
+---
+
+## AUTONOMY (opt-in — delete this section if your fork keeps the default "commit only when asked")
+
+Configured in `docs/governance.config.yaml` (`inbox:`, `autonomy:`, `learning:`, `schedule:`); mechanism in `docs/autonomy.md`.
+
+- **Inbox first.** When the session-start context carries an INBOX block, show it to the principal before anything else, as-is. Answers are per item: yes → run its `on_yes`, then resolve; no → dismiss; later Nd → snooze. Never act on an item nobody said yes to.
+- **Questions go to the inbox, not into the air.** Anything that needs the principal and is not answered now becomes an inbox item with a concrete `on_yes`. In a headless run (`GIOVANNI_HEADLESS=1`) that is the only way to ask.
+- **Working state commits itself; canon does not.** `autonomy.auto_commit_paths` are committed by the Stop hook; `autonomy.confirm_paths` need the principal's OK per edit and are never auto-committed. Do not route around this with shell edits.
+- **Corrections are learning.** When the correction hook fires, classify (skill-fix / rule / one-off), act, and log one line to `memory/learning/corrections.md`. No "remember this" required.
+- **Nothing activates itself.** The learning loop proposes skills and rules through the inbox; a skill is written only on a yes.
 
 ---
 

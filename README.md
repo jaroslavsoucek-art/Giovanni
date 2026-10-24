@@ -246,16 +246,17 @@ domain-specific implementation; no proprietary content carried over. See
 | **Daily digest** | `plugin/skills/digest/`, `plugin/skeleton/memory/digest-*.template.md`, `plugin/docs/digest.md` | 12-step procedure, parallel source-puller fan-out, drift detection with ack expiry, brief auto-gen ≤48h, predictive integration. |
 | **Predictive layer** *(the moat)* | `plugin/skeleton/memory/templates/{branch-out,shadow-hypothesis,calibration-actor-score}.*`, `plugin/skeleton/memory/branch-out/canonical-moves.md`, `plugin/docs/prediction.md` | Branch-out (3-tier, no %, hard-stop shallow). Shadow hypotheses (invisible at generation). Per-actor monthly calibration. |
 | **Agents** | `plugin/agents/` (operational, shipped) · `.claude/agents/` (framework architects, not shipped) | 8 operational workers as `giovanni:<name>` — generic, model-tagged, tool-scoped, isolated context. Roster: `plugin/docs/agent-roster.md`. |
-| **Skills** | `plugin/skills/` | `/giovanni:init`, `digest`, `branch-out`, `shadow-review`, `calibration-report`, `consistency-check`, `consistency-review`, `pulse`, `market-radar`, `review`, `redline`. Procedures sit beside the skill that runs them. |
+| **Skills** | `plugin/skills/` | `/giovanni:init`, `digest`, `branch-out`, `shadow-review`, `calibration-report`, `consistency-check`, `consistency-review`, `pulse`, `market-radar`, `review`, `redline`, `inbox`, `learn`, `schedule`. Procedures sit beside the skill that runs them. |
 | **Adversarial-as-default review** | `plugin/agents/adversarial-reviewer.md`, `plugin/skills/review/procedure.md`, `plugin/docs/adversarial.md` | `SHIP / REWRITE / KILL` (no compounds), strongest-counter-case requirement, default-critical. |
-| **Governance + lint + CI** | `plugin/scripts/lint.{sh,py}`, `plugin/scripts/lint_rules/`, `plugin/scripts/build-*`, `plugin/scripts/init-fork.sh`, `plugin/scripts/install-hooks.sh`, `plugin/hooks/`, `.github/workflows/ci.yml` | Pluggable lint (25 Python rules + 5 bash checks — `bash plugin/scripts/lint.sh --list`) that knows the plugin surface from the project state, INDEX/MAP/REGISTRY auto-regen, hard-limit enforcement, audit cadence, scaffolder, digest-readiness harness, CI. |
+| **Autonomy layer** *(opt-in)* | `plugin/docs/autonomy.md`, `plugin/scripts/{inbox,schedule,mine-workflows,gconfig}.py`, `plugin/hooks/lib/{autonomy,learning}.py` | Switchable layers (`init-fork.sh --without …`), project-owned lint rules, one inbox every loop writes to, per-path autocommit vs confirm, headless runs on a clock, a learning loop that proposes skills from repeated workflows and rules from repeated corrections. For instances nobody maintains by hand. |
+| **Governance + lint + CI** | `plugin/scripts/lint.{sh,py}`, `plugin/scripts/lint_rules/`, `plugin/scripts/build-*`, `plugin/scripts/init-fork.sh`, `plugin/scripts/install-hooks.sh`, `plugin/hooks/`, `.github/workflows/ci.yml` | Pluggable lint (26 Python rules + 5 bash checks, plus project-owned rules — `bash plugin/scripts/lint.sh --list`) that knows the plugin surface from the project state, INDEX/MAP/REGISTRY auto-regen, hard-limit enforcement, audit cadence, scaffolder, digest-readiness harness, CI. |
 
 ## Stats
 
 Loose by design — the live lists are one command away (`bash plugin/scripts/lint.sh --list`, `claude plugin details giovanni`).
 
 - 8 architect agents (framework, `.claude/agents/`) + 8 operational agents (plugin) = 16
-- 11 skills · 3 procedures · 30 lint checks (25 Python rules + 5 bash) · 9 hooks
+- 14 skills · 3 procedures · 31 lint checks (26 Python rules + 5 bash) · 14 hooks
 - 13 memory templates + 12 worked Lattice examples · 1 living-constitution template · 1 operating contract (`plugin/templates/CLAUDE.template.md`)
 - 10 mechanism docs in `plugin/docs/` + 4 framework docs in `docs/`
 - 1 fully-filled reference instance (`examples/lattice-finance/`) validated in CI

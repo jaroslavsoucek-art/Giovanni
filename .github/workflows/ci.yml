@@ -63,12 +63,18 @@ jobs:
                   head = a.read_text().split("\n", 12)
                   assert head[0] == "---" and any(l.startswith("name:") for l in head), f"{a.name}: no frontmatter name — would not load as an agent"
               hooks = json.loads((pdir / "hooks/hooks.json").read_text())["hooks"]
+              import re
+              form = re.compile(r'^bash "\$\{CLAUDE_PLUGIN_ROOT\}/(hooks/[\w.-]+\.sh)"$')
               for event, entries in hooks.items():
                   for e in entries:
                       for h in e["hooks"]:
-                          script = h["command"].replace("${CLAUDE_PLUGIN_ROOT}/", "")
-                          assert h.get("args") == [], f"{event}: hook must be exec form (command + args: [])"
-                          assert (pdir / script).is_file(), f"{event}: hook script missing: {script}"
+                          # Shell form through bash: the one form Claude Code runs on macOS, Linux
+                          # and native Windows (Git Bash). Exec form cannot spawn a .sh on Windows.
+                          assert "args" not in h, f"{event}: hook must be shell form (no args) — exec form cannot run a .sh on Windows"
+                          m = form.match(h["command"])
+                          # (No dollar-brace-brace anywhere in this file: Actions parses it as an expression, even inside a run block.)
+                          assert m, f"{event}: hook command must be: bash <quoted CLAUDE_PLUGIN_ROOT path>/hooks/<file>.sh — got: {h['command']}"
+                          assert (pdir / m.group(1)).is_file(), f"{event}: hook script missing: {m.group(1)}"
               skills = [d for d in (pdir / "skills").iterdir() if d.is_dir()]
               assert skills and all((d / "SKILL.md").is_file() for d in skills), "skills/ dir without SKILL.md"
               print(f"{entry['name']}: {len(agents)} agents, {len(skills)} skills, hooks for {sorted(hooks)}")
@@ -79,6 +85,18 @@ jobs:
 
       - name: Lint-rule self-test (pass/fail fixtures)
         run: bash plugin/scripts/run-lint-fixtures.sh
+
+      - name: Hooks run the way Claude Code runs them (platform smoke)
+        run: bash plugin/scripts/platform-smoke.sh
+
+      - name: Autonomy layer self-test (inbox, confirm gate, autocommit, learning, schedule, layers)
+        run: |
+          git config --global user.email ci@example.invalid
+          git config --global user.name ci
+          python3 plugin/scripts/selftest-autonomy.py
+
+      - name: Chat-history pipeline self-test (extract, triage, convert, PII gate)
+        run: python3 plugin/scripts/history/selftest.py
 
       - name: Pseudo-fork lint (examples/lattice-finance)
         run: python3 plugin/scripts/lint.py --repo-root examples/lattice-finance
@@ -138,3 +156,101 @@ jobs:
           SECOND_RUN=$(bash plugin/scripts/init-fork.sh --yes --skip-regen)
           grep -q "exists — kept" <<<"${SECOND_RUN}" || { echo "::error::init-fork is not idempotent"; exit 1; }
           echo "init-fork smoke test passed."
+
+      - name: init-fork.sh --without smoke test (layers switched off are not scaffolded)
+        run: |
+          set -euo pipefail
+          CLONE=/tmp/giovanni-fork-minimal
+          rm -rf "$CLONE"
+          git clone --quiet "$GITHUB_WORKSPACE" "$CLONE"
+          cd "$CLONE"
+          rm -rf examples
+          bash plugin/scripts/init-fork.sh --yes --without predictive,stakeholders,digest
+          for d in memory/shadow memory/branch-out memory/calibration memory/stakeholders; do
+            test ! -e "$d" || { echo "::error::--without left $d"; exit 1; }
+          done
+          for f in memory/digest_sources.md memory/digest_state.md memory/triage-heuristic.yaml; do
+            test ! -e "$f" || { echo "::error::--without left $f"; exit 1; }
+          done
+          ls memory/templates | grep -qiE 'shadow|branch-out|stakeholder|calibration' \
+            && { echo "::error::--without copied a template of a switched-off layer"; exit 1; } || true
+          python3 plugin/scripts/gconfig.py layer predictive && { echo "::error::layers.predictive not false"; exit 1; } || true
+          grep -qxF "memory/.telemetry/" .gitignore || { echo "::error::telemetry not gitignored"; exit 1; }
+          bash plugin/scripts/lint.sh
+          echo "minimal init smoke test passed."
+
+  # Native Windows: the hooks run through Git Bash there, `python3` is often missing or a
+  # Store stub, Python's default encoding is the ANSI code page, fcntl does not exist and
+  # Git checks out CRLF unless .gitattributes says otherwise. Every one of those fails
+  # silently inside a session; this job makes them fail here instead.
+  windows:
+    runs-on: windows-latest
+    env:
+      # What an instance's .claude/settings.json sets (templates/settings.template.json); hooks
+      # and git hooks set it themselves through hooks/lib/env.sh.
+      PYTHONUTF8: "1"
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - name: Checkout (full history for staleness checks)
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install PyYAML
+        run: python -m pip install --quiet pyyaml
+
+      - name: Git identity for the throwaway repos
+        run: |
+          git config --global user.email ci@example.invalid
+          git config --global user.name ci
+
+      - name: Checkout has LF line endings (.gitattributes)
+        run: |
+          # Byte count with tr, not grep: GNU grep on Windows treats CR in text mode by its own rules.
+          bad=0
+          for f in plugin/hooks/*.sh plugin/hooks/lib/*.sh plugin/scripts/*.sh plugin/scripts/git-hooks/*; do
+            if [ "$(tr -dc '\r' < "$f" | wc -c | tr -d ' ')" -gt 0 ]; then echo "::error::CRLF in $f — bash in Git for Windows would fail on it"; bad=1; fi
+          done
+          exit "$bad"
+
+      - name: Hooks run the way Claude Code runs them (platform smoke)
+        run: bash plugin/scripts/platform-smoke.sh
+
+      - name: Autonomy layer self-test
+        run: python plugin/scripts/selftest-autonomy.py
+
+      - name: Chat-history pipeline self-test
+        run: python plugin/scripts/history/selftest.py
+
+      - name: Framework lint
+        run: bash plugin/scripts/lint.sh
+
+      - name: Lint-rule self-test (pass/fail fixtures)
+        run: bash plugin/scripts/run-lint-fixtures.sh
+
+      - name: Pseudo-fork lint (examples/lattice-finance)
+        run: python plugin/scripts/lint.py --repo-root examples/lattice-finance
+
+      - name: init-fork --without smoke + git gates on Windows
+        run: |
+          set -euo pipefail
+          CLONE="$RUNNER_TEMP/giovanni-fork-win"
+          rm -rf "$CLONE"
+          git clone --quiet "$GITHUB_WORKSPACE" "$CLONE"
+          cd "$CLONE"
+          rm -rf examples
+          bash plugin/scripts/init-fork.sh --yes --without predictive,stakeholders,digest
+          test ! -e memory/shadow && test ! -e memory/stakeholders
+          bash plugin/scripts/install-hooks.sh
+          bash plugin/scripts/lint.sh
+          printf 'x\n' >> memory/CLAUDE_MEMORY.md
+          git add -A
+          git commit -qm "smoke: commit through the pre-commit gate on Windows"
+          echo "Windows init + pre-commit gate passed."

@@ -39,6 +39,7 @@ violations; low for optional-enum violations and archived-status mismatch.
 from __future__ import annotations
 
 CHECK_ID = "stakeholder-frontmatter"
+LAYER = "stakeholders"
 SEVERITY = "medium"
 
 REQUIRED_FIELDS = [

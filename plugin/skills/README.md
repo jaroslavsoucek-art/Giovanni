@@ -19,8 +19,12 @@ Design patterns + argument syntax conventions: see [`docs/slash-commands.md`](..
 | [`/giovanni:consistency-review`](consistency-review/SKILL.md) | Per-finding triage of a consistency report — accept-diff / reject / defer / false-positive, precision tally | `[<YYYY-MM-DD>]` | `consistency-review/procedure.md` (interactive main-thread) | after each `/giovanni:consistency-check` during shadow mode |
 | [`/giovanni:pulse`](pulse/SKILL.md) | Weekly state-of-the-work read per work-block — code over tracker. Answers "where does each piece stand", not "what happened". | `[since=<YYYY-MM-DD>] [block=<slug>] [quick]` | main thread (+ agents per source) | weekly |
 | [`/giovanni:market-radar`](market-radar/SKILL.md) | External competitive / market intelligence scan. Constraint-aware (settled decisions = drift flag). | `[--focus <topic>] [--market <code>] [--competitor <slug>] [--horizon <Nd>] [--depth surface\|deep]` | `giovanni:market-radar` | weekly default; focused ad hoc |
+| [`/giovanni:inbox`](inbox/SKILL.md) | Show the one ranked list every loop writes to; act on per-item yes / no / later | `[refresh]` | `scripts/inbox.py` | every session (hook-shown) |
+| [`/giovanni:learn`](learn/SKILL.md) | Learning loop: repeated workflows → skill proposals, unused generated skills → retire, repeated corrections → rules; drafts a skill on yes | `[accept <slug> \| reject <slug> \| retire <skill>]` | `scripts/mine-workflows.py` | weekly |
+| [`/giovanni:schedule`](schedule/SKILL.md) | Install / inspect / remove headless runs from `schedule:` (launchd, or printed crontab) | `install [--dry-run] \| uninstall \| status \| run <name>` | `scripts/schedule.py` | once per machine |
 | [`/giovanni:review`](review/SKILL.md) | Adversarial review of a draft — SHIP / REWRITE / KILL verdict + strongest counter-case | `<draft-path> [--position "..."] [--audience internal\|external\|mixed]` | `giovanni:adversarial-reviewer` via `review/procedure.md` | ad hoc (high-stakes drafts only) |
 | [`/giovanni:redline`](redline/SKILL.md) | Adversarial review alias emphasizing verbatim-strike list | `<draft-path> [--position "..."] [--audience internal\|external\|mixed]` | `giovanni:adversarial-reviewer` (emphasis: redline) | ad hoc |
+| [`/giovanni:learn-history`](learn-history/SKILL.md) | Bootstrap skills from the principal's chat-app history: extract the data export into a gitignored workspace, triage, one analyst per recurring job, review, then convert approved specs behind a PII gate | `<export> \| review \| apply [--only ids] \| package` | `learn-history/procedure.md` + N × `giovanni:history-analyst` (parallel) + `scripts/history/*.py` | once at setup; monthly re-export |
 
 ## Conventions
 
@@ -54,7 +58,7 @@ Pre-flight failure → STOP with explicit diagnostic. No graceful degradation.
 | Mutate `actor-scores.yaml` | only `/giovanni:calibration-report` |
 | Write project scaffolding | only `/giovanni:init` |
 
-**No skill auto-commits.** Principal reviews + commits in batch. This is the binding rule that keeps the git log audit-trail honest.
+**No skill auto-commits.** Principal reviews + commits in batch. This is the binding rule that keeps the git log audit-trail honest. The one opt-in exception is the autonomy profile (`docs/autonomy.md`): a Stop *hook*, not a skill, commits the paths a project lists under `autonomy.auto_commit_paths`, and never its `confirm_paths`.
 
 ### Routing
 

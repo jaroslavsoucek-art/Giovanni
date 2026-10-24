@@ -1,22 +1,26 @@
 {
-  "description": "Giovanni hook trigger map. Every command is exec form (command + args), anchored on ${CLAUDE_PLUGIN_ROOT}: hooks run in the session's current working directory, and a relative path resolves wherever the session last cd'd — the script then does not exist, exits 127, and the gate goes quiet without a word. The project the hooks act on is $CLAUDE_PROJECT_DIR (exported to every hook process), never the cwd. The permission half of the external write gate (permissions.ask/deny, autoMemoryEnabled) cannot ship in a plugin — /giovanni:init writes it into the project's .claude/settings.json. Two layers on purpose; neither is load-bearing alone (docs/governance.md § External write gate).",
+  "description": "Giovanni hook trigger map. Every command is shell form — `bash \"${CLAUDE_PLUGIN_ROOT}/hooks/<file>.sh\"`, no `args` — because that is the one form Claude Code runs on every platform: through `sh -c` on macOS and Linux and through Git Bash on native Windows, where exec form cannot spawn a .sh file at all (it needs a real .exe). Calling the script through `bash` keeps it independent of the executable bit and of a CRLF-mangled shebang. The path is quoted because a Windows user directory can contain spaces. Trade-off, taken knowingly: Anthropic's directory validator reads a quoted shell-form path as computed (blocking for a directory listing, not for installing or running the plugin). The project the hooks act on is $CLAUDE_PROJECT_DIR, never the cwd. Each script sources hooks/lib/env.sh first (interpreter + UTF-8 per platform). The permission half of the external write gate (permissions.ask/deny, autoMemoryEnabled) cannot ship in a plugin — /giovanni:init writes it into the project's .claude/settings.json. The autonomy layer (inbox, confirm paths, autocommit, learning loop) is opt-in per project through docs/governance.config.yaml and is a no-op until configured (docs/autonomy.md).",
   "hooks": {
     "SessionStart": [
       {
         "hooks": [
           {
             "type": "command",
-            "command": "${CLAUDE_PLUGIN_ROOT}/hooks/session-start-digest.sh",
-            "args": [],
+            "command": "bash \"${CLAUDE_PLUGIN_ROOT}/hooks/session-start-digest.sh\"",
             "timeout": 10,
             "statusMessage": "Giovanni: checking digest freshness..."
           },
           {
             "type": "command",
-            "command": "${CLAUDE_PLUGIN_ROOT}/hooks/session-start-audit-check.sh",
-            "args": [],
+            "command": "bash \"${CLAUDE_PLUGIN_ROOT}/hooks/session-start-audit-check.sh\"",
             "timeout": 10,
             "statusMessage": "Giovanni: checking memory-audit cadence..."
+          },
+          {
+            "type": "command",
+            "command": "bash \"${CLAUDE_PLUGIN_ROOT}/hooks/session-start-inbox.sh\"",
+            "timeout": 60,
+            "statusMessage": "Giovanni: refreshing the inbox..."
           }
         ]
       }
@@ -27,8 +31,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "${CLAUDE_PLUGIN_ROOT}/hooks/check-decision-records.sh",
-            "args": [],
+            "command": "bash \"${CLAUDE_PLUGIN_ROOT}/hooks/check-decision-records.sh\"",
             "timeout": 5
           }
         ]
@@ -38,8 +41,17 @@
         "hooks": [
           {
             "type": "command",
-            "command": "${CLAUDE_PLUGIN_ROOT}/hooks/block-external-writes.sh",
-            "args": [],
+            "command": "bash \"${CLAUDE_PLUGIN_ROOT}/hooks/block-external-writes.sh\"",
+            "timeout": 5
+          }
+        ]
+      },
+      {
+        "matcher": "Edit|Write|MultiEdit|NotebookEdit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash \"${CLAUDE_PLUGIN_ROOT}/hooks/pre-edit-confirm.sh\"",
             "timeout": 5
           }
         ]
@@ -51,20 +63,17 @@
         "hooks": [
           {
             "type": "command",
-            "command": "${CLAUDE_PLUGIN_ROOT}/hooks/post-constitution-edit-check.sh",
-            "args": [],
+            "command": "bash \"${CLAUDE_PLUGIN_ROOT}/hooks/post-constitution-edit-check.sh\"",
             "timeout": 5
           },
           {
             "type": "command",
-            "command": "${CLAUDE_PLUGIN_ROOT}/hooks/post-knowledge-edit.sh",
-            "args": [],
+            "command": "bash \"${CLAUDE_PLUGIN_ROOT}/hooks/post-knowledge-edit.sh\"",
             "timeout": 10
           },
           {
             "type": "command",
-            "command": "${CLAUDE_PLUGIN_ROOT}/hooks/post-memory-edit.sh",
-            "args": [],
+            "command": "bash \"${CLAUDE_PLUGIN_ROOT}/hooks/post-memory-edit.sh\"",
             "timeout": 10
           }
         ]
@@ -75,15 +84,34 @@
         "hooks": [
           {
             "type": "command",
-            "command": "${CLAUDE_PLUGIN_ROOT}/hooks/check-unmerged-claude-branches.sh",
-            "args": [],
+            "command": "bash \"${CLAUDE_PLUGIN_ROOT}/hooks/check-unmerged-claude-branches.sh\"",
             "timeout": 10
           },
           {
             "type": "command",
-            "command": "${CLAUDE_PLUGIN_ROOT}/hooks/stop-ephemeral-commit-guard.sh",
-            "args": [],
+            "command": "bash \"${CLAUDE_PLUGIN_ROOT}/hooks/stop-ephemeral-commit-guard.sh\"",
             "timeout": 10
+          },
+          {
+            "type": "command",
+            "command": "bash \"${CLAUDE_PLUGIN_ROOT}/hooks/stop-session-record.sh\"",
+            "timeout": 10
+          },
+          {
+            "type": "command",
+            "command": "bash \"${CLAUDE_PLUGIN_ROOT}/hooks/stop-autocommit.sh\"",
+            "timeout": 10
+          }
+        ]
+      }
+    ],
+    "UserPromptSubmit": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash \"${CLAUDE_PLUGIN_ROOT}/hooks/prompt-correction.sh\"",
+            "timeout": 5
           }
         ]
       }

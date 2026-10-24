@@ -129,9 +129,14 @@ def main(argv: list[str]) -> int:
     entries = load_entries(registry_yaml)
     out = render(entries)
     if args.dry:
-        sys.stdout.write(out)
+        # Bytes, not text: on Windows a text-mode stdout turns every \n into \r\n, and the
+        # lint compares this output with the committed (LF) REGISTRY.md byte for byte.
+        sys.stdout.flush()
+        sys.stdout.buffer.write(out.encode("utf-8"))
+        sys.stdout.buffer.flush()
     else:
-        registry_md.write_text(out)
+        with open(registry_md, "w", encoding="utf-8", newline="\n") as fh:  # LF on every platform
+            fh.write(out)
         print(f"{deliverables_dir}/REGISTRY.md regenerated ({len(entries)} entries)")
     return 0
 
