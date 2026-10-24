@@ -72,7 +72,8 @@ jobs:
                           # and native Windows (Git Bash). Exec form cannot spawn a .sh on Windows.
                           assert "args" not in h, f"{event}: hook must be shell form (no args) — exec form cannot run a .sh on Windows"
                           m = form.match(h["command"])
-                          assert m, f"{event}: hook command must be bash \"${{CLAUDE_PLUGIN_ROOT}}/hooks/<file>.sh\": {h['command']}"
+                          # (No dollar-brace-brace anywhere in this file: Actions parses it as an expression, even inside a run block.)
+                          assert m, f"{event}: hook command must be: bash <quoted CLAUDE_PLUGIN_ROOT path>/hooks/<file>.sh — got: {h['command']}"
                           assert (pdir / m.group(1)).is_file(), f"{event}: hook script missing: {m.group(1)}"
               skills = [d for d in (pdir / "skills").iterdir() if d.is_dir()]
               assert skills and all((d / "SKILL.md").is_file() for d in skills), "skills/ dir without SKILL.md"
