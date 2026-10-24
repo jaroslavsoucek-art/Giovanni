@@ -31,7 +31,13 @@ if [ "$("${GIOVANNI_PY}" "${PLUGIN_ROOT}/hooks/lib/hookutil.py" ping 2>/dev/null
 else
     bad "interpreter runs the hook helpers" "set GIOVANNI_PYTHON to a working Python 3 with PyYAML"
 fi
-CRLF=$(grep -l $'\r' "${PLUGIN_ROOT}"/hooks/*.sh "${PLUGIN_ROOT}"/hooks/lib/*.sh "${PLUGIN_ROOT}"/scripts/*.sh 2>/dev/null | head -3)
+# Count CR bytes with tr, not grep: GNU grep on Windows handles CR in text mode by its
+# own rules (CI saw it flag every LF file), and a byte count has no heuristics.
+CRLF=""
+for f in "${PLUGIN_ROOT}"/hooks/*.sh "${PLUGIN_ROOT}"/hooks/lib/*.sh "${PLUGIN_ROOT}"/scripts/*.sh "${PLUGIN_ROOT}"/scripts/git-hooks/*; do
+    [ -f "${f}" ] || continue
+    [ "$(tr -dc '\r' < "${f}" | wc -c | tr -d ' ')" -gt 0 ] && CRLF="${CRLF} $(basename "${f}")"
+done
 if [ -z "${CRLF}" ]; then ok "hook scripts have LF line endings"; else bad "hook scripts have LF line endings" "${CRLF}"; fi
 
 # 2. throwaway project with the autonomy layer on

@@ -213,9 +213,12 @@ jobs:
 
       - name: Checkout has LF line endings (.gitattributes)
         run: |
-          if grep -l $'\r' plugin/hooks/*.sh plugin/hooks/lib/*.sh plugin/scripts/*.sh plugin/scripts/git-hooks/*; then
-            echo "::error::CRLF in a shell script — bash in Git for Windows would fail on it"; exit 1
-          fi
+          # Byte count with tr, not grep: GNU grep on Windows treats CR in text mode by its own rules.
+          bad=0
+          for f in plugin/hooks/*.sh plugin/hooks/lib/*.sh plugin/scripts/*.sh plugin/scripts/git-hooks/*; do
+            if [ "$(tr -dc '\r' < "$f" | wc -c | tr -d ' ')" -gt 0 ]; then echo "::error::CRLF in $f — bash in Git for Windows would fail on it"; bad=1; fi
+          done
+          exit "$bad"
 
       - name: Hooks run the way Claude Code runs them (platform smoke)
         run: bash plugin/scripts/platform-smoke.sh
