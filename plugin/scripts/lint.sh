@@ -179,13 +179,15 @@ check_registry_stale() {
         return 0  # lint-py-missing-runtime already reported by the Python section
     fi
     local generated committed
-    if ! generated=$("${GIOVANNI_PY}" "${SCRIPT_DIR}/build-deliverables-registry.py" --repo-root "${REPO_ROOT}" --dry 2>/dev/null); then
+    # CR-insensitive on both sides, like the INDEX / MAP checks: a Windows working tree or a
+    # text-mode stdout may carry CRLF where the committed file has LF.
+    if ! generated=$("${GIOVANNI_PY}" "${SCRIPT_DIR}/build-deliverables-registry.py" --repo-root "${REPO_ROOT}" --dry 2>/dev/null | tr -d '\r'); then
         emit_finding medium "${id}" \
             "${DELIVERABLES_DIR}/_registry.yaml present but generator failed — PyYAML installed? registry parseable?"
         return 0
     fi
     committed=""
-    [ -f "${DELIVERABLES_DIR}/REGISTRY.md" ] && committed=$(cat "${DELIVERABLES_DIR}/REGISTRY.md")
+    [ -f "${DELIVERABLES_DIR}/REGISTRY.md" ] && committed=$(tr -d '\r' < "${DELIVERABLES_DIR}/REGISTRY.md")
     if [ "${committed}" != "${generated}" ]; then
         emit_finding critical "${id}" \
             "${DELIVERABLES_DIR}/REGISTRY.md differs from regen — run 'python3 scripts/build-deliverables-registry.py'"
