@@ -218,9 +218,11 @@ What that does **not** yet include: an instance in an actual operational
 domain running live `/giovanni:digest` against real signal; independent
 cross-validation (the same agent built the schemas and filled the synthetic
 examples — confirmation bias is acknowledged and unresolved); a listing in
-Anthropic's plugin directory (the plugin is installable from this repo as a
-marketplace today). The predictive layer's accuracy claims are unproven until
-months of real shadow hypotheses resolve. Hobby project — no commercial
+Anthropic's plugin directory: the directory's policy for organizations it has
+not verified (November 2026) accepts no hooks, no scripts and no `allowed-tools`
+beyond Read/Grep/Glob/LS, which is the mechanism this plugin exists to ship, so
+it is distributed only from this repository as a marketplace. The predictive
+layer's accuracy claims are unproven until months of real shadow hypotheses resolve. Hobby project — no commercial
 support, no roadmap promises. Sanitized clean-room extraction from a private
 domain-specific implementation; no proprietary content carried over. See
 [`docs/setup1-complete.md`](docs/setup1-complete.md).
