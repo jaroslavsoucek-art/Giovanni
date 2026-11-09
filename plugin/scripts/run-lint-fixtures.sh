@@ -47,6 +47,11 @@ run_one() {
             # Pinned clock: the pass fixture's stamps are fresh only relative to this date.
             env_overrides=(GIOVANNI_SNAPSHOT_DATE=2026-05-20)
             ;;
+        topic-shard-stale)
+            # Pinned clock: the pass shard's last_touch (2026-09-11) is fresh only relative
+            # to this date; the fail shard (2020-01-01) is stale against any date.
+            env_overrides=(GIOVANNI_SNAPSHOT_DATE=2026-09-20)
+            ;;
     esac
 
     local exit_code=0
