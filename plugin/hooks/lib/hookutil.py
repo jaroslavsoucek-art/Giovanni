@@ -17,6 +17,7 @@ Subcommands (stdin is the hook's JSON where noted):
   trigger-conditions FILE        decision record → ok | empty
   strike-ratio STRIKE LINES MAX  → "<exceeds 0|1> <pct> <max pct>"
   ack-expired FILE               count of `- [ack …expires YYYY-MM-DD…]` lines past today
+  ping                           prints "ok" — lib/env.sh uses it to find a working interpreter on Windows
 """
 import datetime
 import json
@@ -152,7 +153,12 @@ def cmd_ack_expired(args):
     print(count)
 
 
+def cmd_ping(_args):
+    print("ok")
+
+
 COMMANDS = {
+    "ping": cmd_ping,
     "tool-name": cmd_tool_name,
     "file-path": cmd_file_path,
     "commit-gate": cmd_commit_gate,

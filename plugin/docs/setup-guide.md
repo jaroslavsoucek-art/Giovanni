@@ -11,6 +11,7 @@ This guide walks through the install-and-fill process. Expect 4-8 hours of focus
 - Claude Code installed (or Antigravity SDK — Giovanni is harness-agnostic in principle, but currently tested only on Claude Code)
 - Git + GitHub account (or equivalent private repo host)
 - PyYAML installed (`pip install pyyaml`) for governance lint
+- **On Windows:** [Git for Windows](https://git-scm.com/downloads/win) (the hooks run through its Git Bash) and Python 3 from the Microsoft Store or python.org. Check the machine with `bash <plugin>/scripts/platform-smoke.sh` after installing the plugin.
 - A domain you operate in with: ≥5 named stakeholders, ≥1 multi-month strategic horizon, ≥3 configurable signal sources (chat / email / calendar / project tracker / etc.)
 - ~4-8 hours initial setup time
 
@@ -43,6 +44,16 @@ claude plugin install giovanni@giovanni --scope project
 ```
 
 **Recommendation:** make the state repo private. Stakeholder profiles contain operational predictions and pattern observations about real people. See [`docs/stakeholder-profiles.md`](stakeholder-profiles.md) § Privacy considerations.
+
+### Leaner instances
+
+Not every domain needs every layer. A principal whose work comes as unconnected matters (cases, engagements, files) rather than as a web of recurring stakeholders can switch layers off at scaffold time:
+
+```bash
+bash <plugin>/scripts/init-fork.sh --without predictive,stakeholders,digest
+```
+
+and, if nobody will maintain the system by hand, opt into the autonomy layer (inbox, autocommit, headless schedule, learning loop) in `docs/governance.config.yaml`. Both are explained in [`docs/autonomy.md`](autonomy.md); the steps below that belong to a switched-off layer can be skipped.
 
 ## Step 2 — Fill the constitution
 

@@ -12,6 +12,7 @@ accumulate. This file holds timestamps, counters, one sentence per source.
 """
 
 CHECK_ID = "digest-state-size"
+LAYER = "digest"
 SEVERITY = "medium"
 
 

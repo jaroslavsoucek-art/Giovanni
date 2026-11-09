@@ -1,0 +1,12 @@
+version: 1
+items:
+- id: i-20260520-ab12
+  kind: deadline
+  priority: high
+  text: Verify the claim deadline
+  key: case:x:deadline:1
+  source: cases
+  created: '2026-05-20'
+  expires: '2026-06-03'
+  due: '2026-05-28'
+  status: open

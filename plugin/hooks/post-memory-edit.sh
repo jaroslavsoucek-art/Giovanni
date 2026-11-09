@@ -17,7 +17,9 @@
 set +e
 # Run only under Claude Code: the helpers live at a literal path under the plugin root.
 [ -n "${CLAUDE_PLUGIN_ROOT:-}" ] || exit 0
-FILE=$(python3 "${CLAUDE_PLUGIN_ROOT}/hooks/lib/hookutil.py" file-path 2>/dev/null)
+# Interpreter + UTF-8 for this platform (python3 on macOS/Linux; probed on Windows).
+. "${CLAUDE_PLUGIN_ROOT}/hooks/lib/env.sh"
+FILE=$("${GIOVANNI_PY}" "${CLAUDE_PLUGIN_ROOT}/hooks/lib/hookutil.py" file-path 2>/dev/null)
 [ -z "${FILE}" ] && exit 0
 MEMORY_DIR="${GIOVANNI_MEMORY_DIR:-memory}"
 case "${FILE}" in
@@ -33,9 +35,9 @@ REPO_ROOT="${CLAUDE_PROJECT_DIR:-$(git rev-parse --show-toplevel 2>/dev/null || 
 export GIOVANNI_REPO_ROOT="${REPO_ROOT}"
 if [ -x "${CLAUDE_PLUGIN_ROOT}/scripts/build-memory-map.sh" ]; then
     if "${CLAUDE_PLUGIN_ROOT}/scripts/build-memory-map.sh" >/dev/null 2>&1; then
-        python3 "${CLAUDE_PLUGIN_ROOT}/hooks/lib/hookutil.py" context PostToolUse "${MEMORY_DIR}/MAP.md auto-refreshed (${MEMORY_DIR}/ touched) — include the regenerated MAP.md in the same commit as the memory change."
+        "${GIOVANNI_PY}" "${CLAUDE_PLUGIN_ROOT}/hooks/lib/hookutil.py" context PostToolUse "${MEMORY_DIR}/MAP.md auto-refreshed (${MEMORY_DIR}/ touched) — include the regenerated MAP.md in the same commit as the memory change."
     else
-        python3 "${CLAUDE_PLUGIN_ROOT}/hooks/lib/hookutil.py" context PostToolUse "⚠ build-memory-map.sh FAILED — ${MEMORY_DIR}/MAP.md may be stale. Run it manually and read the error before committing."
+        "${GIOVANNI_PY}" "${CLAUDE_PLUGIN_ROOT}/hooks/lib/hookutil.py" context PostToolUse "⚠ build-memory-map.sh FAILED — ${MEMORY_DIR}/MAP.md may be stale. Run it manually and read the error before committing."
     fi
 fi
 exit 0

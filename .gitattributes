@@ -1,0 +1,8 @@
+# Line endings are LF in the repository and in every checkout, Windows included.
+# Git for Windows defaults to core.autocrlf=true, which would check out the hook
+# scripts with CRLF — and bash then fails on "$'\r': command not found" in a hook
+# nobody watches. A marketplace install on Windows is such a checkout.
+* text=auto eol=lf
+*.png binary
+*.ico binary
+*.zip binary

@@ -17,7 +17,9 @@
 set +e
 # Run only under Claude Code: the helpers live at a literal path under the plugin root.
 [ -n "${CLAUDE_PLUGIN_ROOT:-}" ] || exit 0
-FILE=$(python3 "${CLAUDE_PLUGIN_ROOT}/hooks/lib/hookutil.py" file-path 2>/dev/null)
+# Interpreter + UTF-8 for this platform (python3 on macOS/Linux; probed on Windows).
+. "${CLAUDE_PLUGIN_ROOT}/hooks/lib/env.sh"
+FILE=$("${GIOVANNI_PY}" "${CLAUDE_PLUGIN_ROOT}/hooks/lib/hookutil.py" file-path 2>/dev/null)
 [ -z "${FILE}" ] && exit 0
 KNOWLEDGE_DIR="${GIOVANNI_KNOWLEDGE_DIR:-knowledge}"
 CONSTITUTION_FILE="${GIOVANNI_CONSTITUTION_FILE:-constitution.md}"
@@ -52,5 +54,5 @@ if grep -qE '^##.*SUPERSEDED' "${CONST_PATH}" 2>/dev/null; then
    Expected format:  ## <name> (SUPERSEDED → §<new-anchor>)"
     fi
 fi
-python3 "${CLAUDE_PLUGIN_ROOT}/hooks/lib/hookutil.py" context PostToolUse "${MSG}"
+"${GIOVANNI_PY}" "${CLAUDE_PLUGIN_ROOT}/hooks/lib/hookutil.py" context PostToolUse "${MSG}"
 exit 0

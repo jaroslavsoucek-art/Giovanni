@@ -81,6 +81,9 @@ if [ -z "${PLUGIN}" ]; then
     echo "⚠  pre-commit: Giovanni plugin not found (no .git/giovanni-plugin-root, no ./plugin) — index regen and lint skipped. Start a Claude session once, or run install-hooks.sh again." >&2
     exit 0
 fi
+# Interpreter + UTF-8 for this platform (python3 on macOS/Linux; probed on Windows, where
+# git runs this hook in Git Bash and `python3` is often missing or a Store stub).
+. "${PLUGIN}/hooks/lib/env.sh"
 
 KNOWLEDGE_DIR="${GIOVANNI_KNOWLEDGE_DIR:-knowledge}"
 MEMORY_DIR="${GIOVANNI_MEMORY_DIR:-memory}"
@@ -167,7 +170,7 @@ if [ -n "${STAGED}" ] && echo "${STAGED}" | grep -qE "${GEN_RE}"; then
     [ -f "${INDEX_OUT}" ] && [ -f "${PLUGIN}/scripts/build-knowledge-index.sh" ] && NEED_INDEX=1
     [ -f "${MAP_OUT}" ] && [ -f "${PLUGIN}/scripts/build-memory-map.sh" ] && NEED_MAP=1
     [ -f "${DELIVERABLES_DIR}/_registry.yaml" ] && [ -f "${PLUGIN}/scripts/build-deliverables-registry.py" ] \
-        && command -v python3 >/dev/null 2>&1 && NEED_REG=1
+        && command -v "${GIOVANNI_PY}" >/dev/null 2>&1 && NEED_REG=1
 fi
 
 # Shallow clone: `git log -1 -- <file>` attributes old files to the graft commit, so the
@@ -179,7 +182,7 @@ fi
 
 [ "${NEED_INDEX}" -eq 1 ] && regen build-knowledge-index.sh "${INDEX_OUT}"
 [ "${NEED_MAP}" -eq 1 ] && regen build-memory-map.sh "${MAP_OUT}"
-[ "${NEED_REG}" -eq 1 ] && regen build-deliverables-registry.py "${REG_OUT}" python3
+[ "${NEED_REG}" -eq 1 ] && regen build-deliverables-registry.py "${REG_OUT}" "${GIOVANNI_PY}"
 
 # ---------- 2. lint gate, on the tree being committed ----------
 

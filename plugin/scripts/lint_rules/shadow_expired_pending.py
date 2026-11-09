@@ -38,6 +38,7 @@ import datetime as dt
 import re
 
 CHECK_ID = "shadow-expired-pending"
+LAYER = "predictive"
 SEVERITY_DEFAULT = "medium"
 SEVERITY_HIGH_DAYS = 7
 

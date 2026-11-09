@@ -18,6 +18,8 @@ if [ -z "${CLAUDE_CODE_REMOTE:-}" ] && [ "${GIOVANNI_EPHEMERAL:-0}" != "1" ]; th
     exit 0
 fi
 [ -n "${CLAUDE_PLUGIN_ROOT:-}" ] || exit 0
+# Interpreter + UTF-8 for this platform (python3 on macOS/Linux; probed on Windows).
+. "${CLAUDE_PLUGIN_ROOT}/hooks/lib/env.sh"
 REPO_ROOT="${CLAUDE_PROJECT_DIR:-$(git rev-parse --show-toplevel 2>/dev/null || pwd)}"
 cd "${REPO_ROOT}" || exit 0
 DIRTY=$(git status --porcelain 2>/dev/null | head -5)
@@ -30,5 +32,5 @@ MSG="⚠ Ephemeral session with unsaved work: "
 [ -n "${DIRTY}" ] && MSG="${MSG}dirty tree (git status). "
 [ "${AHEAD}" -gt 0 ] && MSG="${MSG}${AHEAD} commit(s) unpushed. "
 MSG="${MSG}This environment does not survive the session — commit and push before it ends."
-python3 "${CLAUDE_PLUGIN_ROOT}/hooks/lib/hookutil.py" system "${MSG}"
+"${GIOVANNI_PY}" "${CLAUDE_PLUGIN_ROOT}/hooks/lib/hookutil.py" system "${MSG}"
 exit 0

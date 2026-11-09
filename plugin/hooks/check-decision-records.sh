@@ -22,9 +22,11 @@ if [ "${GIOVANNI_SKIP_DECISION_CHECK:-0}" = "1" ]; then
     exit 0
 fi
 [ -n "${CLAUDE_PLUGIN_ROOT:-}" ] || exit 0
+# Interpreter + UTF-8 for this platform (python3 on macOS/Linux; probed on Windows).
+. "${CLAUDE_PLUGIN_ROOT}/hooks/lib/env.sh"
 # Self-filter: as a PreToolUse hook on Bash we see every command; gate only `git commit`.
 if [ ! -t 0 ]; then
-    VERDICT=$(python3 "${CLAUDE_PLUGIN_ROOT}/hooks/lib/hookutil.py" commit-gate 2>/dev/null)
+    VERDICT=$("${GIOVANNI_PY}" "${CLAUDE_PLUGIN_ROOT}/hooks/lib/hookutil.py" commit-gate 2>/dev/null)
     if [ "${VERDICT}" = "skip" ]; then
         exit 0
     fi
@@ -37,7 +39,7 @@ STAGED=$(git -C "${REPO_ROOT}" diff --cached --name-only --diff-filter=ACM 2>/de
 VIOLATIONS=()
 while IFS= read -r FILE; do
     [ -f "${REPO_ROOT}/${FILE}" ] || continue
-    STATUS=$(python3 "${CLAUDE_PLUGIN_ROOT}/hooks/lib/hookutil.py" trigger-conditions "${REPO_ROOT}/${FILE}")
+    STATUS=$("${GIOVANNI_PY}" "${CLAUDE_PLUGIN_ROOT}/hooks/lib/hookutil.py" trigger-conditions "${REPO_ROOT}/${FILE}")
     if [ "${STATUS}" = "empty" ]; then
         VIOLATIONS+=("${FILE}")
     fi

@@ -1,0 +1,5 @@
+learning:
+  history:
+    workspace: .history
+    pii_patterns:
+      - {name: national-id, regex: '\b\d{6}/\d{3,4}\b'}

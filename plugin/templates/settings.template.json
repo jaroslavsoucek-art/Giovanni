@@ -1,15 +1,12 @@
 {
   "$schema": "https://json.schemastore.org/claude-code-settings.json",
   "_comment": "Giovanni project settings template. /giovanni:init (scripts/init-fork.sh) copies this to .claude/settings.json. It carries what a plugin cannot: the permission layer of the external write gate (docs/governance.md § External write gate) and autoMemoryEnabled. The hooks themselves ship with the plugin (hooks/hooks.json) — do NOT add a hooks block here, or every hook runs twice. The hook and these globs are two independent layers on purpose; neither is load-bearing alone.",
-
   "enabledPlugins": {
     "giovanni@giovanni": true
   },
-
   "permissions": {
     "_comment_deny": "Channels demoted to absolute read-only. Empty by default: demotion is a decision your fork makes after a misfire, not a default. When you demote a channel, add its write globs here AND to readonly_channels in docs/governance.config.yaml (the hook reads that one). Example for a chat platform: mcp__*__chat_send*, mcp__*__chat_post*.",
     "deny": [],
-
     "_comment_ask": "Write verbs on external connectors, plus the two local commands that reach outside the repo. Glob on verb, not on vendor — a new connector should land in the gate on the day it is added, not on the day someone remembers to list it.",
     "ask": [
       "Bash(git push *)",
@@ -30,7 +27,10 @@
       "mcp__*__draft*"
     ]
   },
-
   "_comment_automemory": "Harness-side auto-memory writes to a per-machine path outside this repo. That splits memory between git and local disk — drift across devices and sessions. Memory lives in memory/, in git, always.",
-  "autoMemoryEnabled": false
+  "autoMemoryEnabled": false,
+  "_comment_env": "PYTHONUTF8=1 makes every Python run in a session read and write UTF-8. Python's default on Windows is the ANSI code page, where a config or memory file with non-ASCII text fails to parse. Harmless on macOS and Linux.",
+  "env": {
+    "PYTHONUTF8": "1"
+  }
 }

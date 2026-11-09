@@ -50,6 +50,8 @@
 set -uo pipefail
 
 SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+# Interpreter + UTF-8 for this platform (python3 on macOS/Linux; probed on Windows).
+. "$(dirname "${SCRIPT_DIR}")/hooks/lib/env.sh"
 REPO_ROOT="${LINT_REPO_ROOT:-$(git rev-parse --show-toplevel 2>/dev/null || pwd)}"
 # Canonicalize to an absolute path — a relative LINT_REPO_ROOT would otherwise
 # break path resolution (python --repo-root, generator calls) after the cd below.
@@ -173,17 +175,19 @@ check_registry_stale() {
     local id="registry-stale"
     [ -f "${DELIVERABLES_DIR}/_registry.yaml" ] || return 0
     [ -f "${SCRIPT_DIR}/build-deliverables-registry.py" ] || return 0
-    if ! command -v python3 >/dev/null 2>&1; then
+    if ! command -v "${GIOVANNI_PY}" >/dev/null 2>&1; then
         return 0  # lint-py-missing-runtime already reported by the Python section
     fi
     local generated committed
-    if ! generated=$(python3 "${SCRIPT_DIR}/build-deliverables-registry.py" --repo-root "${REPO_ROOT}" --dry 2>/dev/null); then
+    # CR-insensitive on both sides, like the INDEX / MAP checks: a Windows working tree or a
+    # text-mode stdout may carry CRLF where the committed file has LF.
+    if ! generated=$("${GIOVANNI_PY}" "${SCRIPT_DIR}/build-deliverables-registry.py" --repo-root "${REPO_ROOT}" --dry 2>/dev/null | tr -d '\r'); then
         emit_finding medium "${id}" \
             "${DELIVERABLES_DIR}/_registry.yaml present but generator failed — PyYAML installed? registry parseable?"
         return 0
     fi
     committed=""
-    [ -f "${DELIVERABLES_DIR}/REGISTRY.md" ] && committed=$(cat "${DELIVERABLES_DIR}/REGISTRY.md")
+    [ -f "${DELIVERABLES_DIR}/REGISTRY.md" ] && committed=$(tr -d '\r' < "${DELIVERABLES_DIR}/REGISTRY.md")
     if [ "${committed}" != "${generated}" ]; then
         emit_finding critical "${id}" \
             "${DELIVERABLES_DIR}/REGISTRY.md differs from regen — run 'python3 scripts/build-deliverables-registry.py'"
@@ -236,8 +240,8 @@ if [ "${LIST_MODE}" = 1 ]; then
     done
     echo ""
     echo "Python checks (scripts/lint.py + scripts/lint_rules/):"
-    if command -v python3 >/dev/null 2>&1 && [ -f "${SCRIPT_DIR}/lint.py" ]; then
-        python3 "${SCRIPT_DIR}/lint.py" --list
+    if command -v "${GIOVANNI_PY}" >/dev/null 2>&1 && [ -f "${SCRIPT_DIR}/lint.py" ]; then
+        "${GIOVANNI_PY}" "${SCRIPT_DIR}/lint.py" --list --repo-root "${REPO_ROOT}"
     else
         echo "  (lint.py not available)"
     fi
@@ -255,7 +259,7 @@ if [ -n "${ONLY_CHECK}" ]; then
         [ "${entry%%|*}" = "${ONLY_CHECK}" ] && { ONLY_IS_BASH=1; break; }
     done
     if [ "${ONLY_IS_BASH}" = 0 ] \
-        && ! python3 "${SCRIPT_DIR}/lint.py" --list 2>/dev/null | awk '{print $1}' | grep -qxF "${ONLY_CHECK}"; then
+        && ! "${GIOVANNI_PY}" "${SCRIPT_DIR}/lint.py" --list --repo-root "${REPO_ROOT}" 2>/dev/null | awk '{print $1}' | grep -qxF "${ONLY_CHECK}"; then
         echo "Unknown check id (or lint.py unavailable): ${ONLY_CHECK} — see scripts/lint.sh --list" >&2
         exit 2
     fi
@@ -270,15 +274,15 @@ done
 
 LINT_PY="${SCRIPT_DIR}/lint.py"
 if [ -f "${LINT_PY}" ]; then
-    if ! command -v python3 >/dev/null 2>&1; then
-        emit_finding critical "lint-py-missing-runtime" "python3 not available — Python checks skipped"
+    if ! command -v "${GIOVANNI_PY}" >/dev/null 2>&1; then
+        emit_finding critical "lint-py-missing-runtime" "no working Python (${GIOVANNI_PY}) — Python checks skipped"
     else
         py_args=("--repo-root" "${REPO_ROOT}")
         [ -n "${ONLY_CHECK}" ] && py_args+=("--check" "${ONLY_CHECK}")
         py_out=""
         py_findings=0
         if [ "${ONLY_IS_BASH}" = 0 ]; then
-            py_out=$(python3 "${LINT_PY}" "${py_args[@]}" 2>&1)
+            py_out=$("${GIOVANNI_PY}" "${LINT_PY}" "${py_args[@]}" 2>&1)
             py_rc=$?
         fi
         if [ -n "${py_out}" ]; then

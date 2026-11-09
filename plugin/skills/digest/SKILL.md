@@ -29,6 +29,8 @@ Quoted strings supported. `--flag=value` and `--flag value` both work.
 
 ## Pre-flight (binding — STOP on failure)
 
+**Layer gate, before anything else.** `python3 ${CLAUDE_PLUGIN_ROOT}/scripts/gconfig.py layer digest` exits 0. Exit 1 → STOP: "The digest layer is switched off in docs/governance.config.yaml (layers.digest)."
+
 Before spawning any agent, the orchestrator verifies:
 
 1. **CWD check.** Working directory contains both `memory/digest_sources.md` and `${CLAUDE_PLUGIN_ROOT}/docs/digest.md`. Otherwise STOP:

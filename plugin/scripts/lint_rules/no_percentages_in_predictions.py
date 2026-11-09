@@ -29,6 +29,7 @@ from __future__ import annotations
 import re
 
 CHECK_ID = "no-percentages-in-predictions"
+LAYER = "predictive"
 SEVERITY = "high"
 
 # Match: digit(s), optional decimal, then % — but not other typographic %

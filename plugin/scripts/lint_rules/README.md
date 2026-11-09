@@ -78,6 +78,7 @@ bash scripts/lint.sh --check <CHECK_ID>
 | `topic-shard-frontmatter` | medium | Topic shards have required frontmatter fields |
 | `silence-counter-verified` | high / medium | A "N days of silence" claim in L1 / an active shard carries `[verified YYYY-MM-DD]` ≤ `silence_stamp_max_days`, or is a past fact with no counter |
 | `rules-register-pointers` | medium | Every `docs/invariants.md#<id>` pointer in `CLAUDE.md` / `templates/CLAUDE.template.md` resolves to a Behavioral rules entry |
+| `pii-scan` | critical / high | Chat-history workspace never tracked by git; learned skills, house style and `memory/learning/` carry no identifiers (patterns + harvested denylist). No-op without `learning.history` |
 
 Plus bash-side checks (in `scripts/lint.sh`, not Python plugins):
 

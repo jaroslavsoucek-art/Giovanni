@@ -26,6 +26,8 @@ If `--month` is in the future or current month → STOP: `ERROR: --month <YYYY-M
 
 ## Pre-flight (binding — STOP on failure)
 
+**Layer gate, before anything else.** `python3 ${CLAUDE_PLUGIN_ROOT}/scripts/gconfig.py layer predictive` exits 0. Exit 1 → STOP: "The predictive layer is switched off in docs/governance.config.yaml (layers.predictive)."
+
 Before spawning `giovanni:prediction-runtime`:
 
 1. **CWD check.** Working directory is a Giovanni repo. Otherwise STOP.

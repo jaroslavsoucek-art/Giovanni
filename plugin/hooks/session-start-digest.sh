@@ -27,6 +27,8 @@
 set +e
 # Run only under Claude Code: the helpers live at a literal path under the plugin root.
 [ -n "${CLAUDE_PLUGIN_ROOT:-}" ] || exit 0
+# Interpreter + UTF-8 for this platform (python3 on macOS/Linux; probed on Windows).
+. "${CLAUDE_PLUGIN_ROOT}/hooks/lib/env.sh"
 REPO_ROOT="${CLAUDE_PROJECT_DIR:-$(git rev-parse --show-toplevel 2>/dev/null || pwd)}"
 # Record where the plugin lives so the git gates (which run outside any Claude
 # session) can find lint.sh and the generators again.
@@ -47,15 +49,15 @@ WARNINGS=""
 
 iso_to_epoch() {
     [ -z "$1" ] && return 1
-    python3 "${CLAUDE_PLUGIN_ROOT}/hooks/lib/hookutil.py" epoch iso "$1" 2>/dev/null || return 1
+    "${GIOVANNI_PY}" "${CLAUDE_PLUGIN_ROOT}/hooks/lib/hookutil.py" epoch iso "$1" 2>/dev/null || return 1
 }
 date_to_epoch() {
     [ -z "$1" ] && return 1
-    python3 "${CLAUDE_PLUGIN_ROOT}/hooks/lib/hookutil.py" epoch date "$1" 2>/dev/null || return 1
+    "${GIOVANNI_PY}" "${CLAUDE_PLUGIN_ROOT}/hooks/lib/hookutil.py" epoch date "$1" 2>/dev/null || return 1
 }
 
 NOW_EPOCH=$(date -u +%s)
-TS=$(python3 "${CLAUDE_PLUGIN_ROOT}/hooks/lib/hookutil.py" field "${STATE_FILE}" '^- timestamp:' first)
+TS=$("${GIOVANNI_PY}" "${CLAUDE_PLUGIN_ROOT}/hooks/lib/hookutil.py" field "${STATE_FILE}" '^- timestamp:' first)
 if [ -n "${TS}" ]; then
     if TS_EPOCH=$(iso_to_epoch "${TS}"); then
         AGE=$((NOW_EPOCH - TS_EPOCH))
@@ -66,12 +68,12 @@ if [ -n "${TS}" ]; then
     fi
 fi
 
-EXPIRED_COUNT=$(python3 "${CLAUDE_PLUGIN_ROOT}/hooks/lib/hookutil.py" ack-expired "${STATE_FILE}")
+EXPIRED_COUNT=$("${GIOVANNI_PY}" "${CLAUDE_PLUGIN_ROOT}/hooks/lib/hookutil.py" ack-expired "${STATE_FILE}")
 if [ "${EXPIRED_COUNT:-0}" -gt 0 ]; then
     WARNINGS="${WARNINGS}⚠ ${EXPIRED_COUNT} active ack(s) past expiry in ${MEMORY_DIR}/${STATE_FILENAME}. Next \`/giovanni:digest\` will re-evaluate the underlying drift; either patch canonical state or extend the ack consciously.\n"
 fi
 
-LAST_SR=$(python3 "${CLAUDE_PLUGIN_ROOT}/hooks/lib/hookutil.py" field "${STATE_FILE}" '^- last_shadow_review_date:' first)
+LAST_SR=$("${GIOVANNI_PY}" "${CLAUDE_PLUGIN_ROOT}/hooks/lib/hookutil.py" field "${STATE_FILE}" '^- last_shadow_review_date:' first)
 case "${LAST_SR}" in
     null|"")
         if [ -n "${TS}" ]; then
@@ -94,5 +96,5 @@ case "${LAST_SR}" in
 esac
 
 [ -z "${WARNINGS}" ] && exit 0
-python3 "${CLAUDE_PLUGIN_ROOT}/hooks/lib/hookutil.py" context SessionStart "$(printf '%b' "${WARNINGS}")"
+"${GIOVANNI_PY}" "${CLAUDE_PLUGIN_ROOT}/hooks/lib/hookutil.py" context SessionStart "$(printf '%b' "${WARNINGS}")"
 exit 0
