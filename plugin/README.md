@@ -33,7 +33,7 @@ Then fill the constitution, the stakeholder profiles and the digest sources. The
 
 ## Where it works
 
-Hooks, agents and the git gates need Claude Code. Installed from the Claude directory into claude.ai or Cowork, only the skills load; the memory discipline and the review verdict format still apply, the automatic gates do not.
+Hooks, agents and the git gates need Claude Code. The plugin is distributed from this repository as a marketplace, not through Anthropic's plugin directory: the directory's policy for organizations it has not verified (November 2026) accepts no hooks, no scripts and no `allowed-tools` beyond Read/Grep/Glob/LS, which is the mechanism Giovanni exists to ship. On claude.ai and in Cowork only the skills would load anyway; the memory discipline and the review verdict format still apply there, the automatic gates do not.
 
 ## Repository layout
 
